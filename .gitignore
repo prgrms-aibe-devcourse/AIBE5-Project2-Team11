@@ -6,3 +6,6 @@
 *.iml
 out
 gen
+
+
+/backend/src/main/resources/application.properties
