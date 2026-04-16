@@ -15,6 +15,8 @@ import JobDetail from "./pages/JobDetail";
 import MemberMypage from "./pages/MemberMypage";
 import CompanyApplicants from "./pages/CompanyApplicants.jsx";
 import AiRecommend from "./pages/AiRecommend";
+import Notice from "./pages/Notice";
+import NoticeDetail from "./pages/NoticeDetail";
 
 export default function App() {
   return (
@@ -34,6 +36,8 @@ export default function App() {
         <Route path="/jobs/:id" element={<JobDetail />} />
         <Route path="/companyapplicants/:jobId" element={<CompanyApplicants />} />
         <Route path="/ai-recommend" element={<AiRecommend />} />
+        <Route path="/notice" element={<Notice />} />
+        <Route path="/notice/:id" element={<NoticeDetail />} />
 
         {/* 마이페이지: 사이드바가 유지되는 중첩 라우트 */}
         <Route path="/memberMypage" element={<MemberMypage />}>
