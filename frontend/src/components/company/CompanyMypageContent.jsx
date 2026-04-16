@@ -13,13 +13,13 @@ export default function CompanyMypageContent() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // 저장 로직 (API 연동 시 이곳에 작성)
     console.log("저장된 데이터:", formData);
-    
+
     // 저장 성공 알림
     alert("기업 정보가 성공적으로 저장되었습니다!");
-    
+
     setIsModalOpen(false);
   };
 
@@ -27,16 +27,16 @@ export default function CompanyMypageContent() {
     <section className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 relative">
       <div className="flex justify-between items-center mb-8 border-b pb-4">
         <h2 className="text-lg font-semibold text-gray-900">기업 기본 정보</h2>
-        
+
         {/* 수정 버튼*/}
-        <button 
+        <button
           onClick={() => setIsModalOpen(true)}
           className="text-xs bg-[#F59E0B] hover:bg-[#D97706] px-4 py-1.5 rounded-md text-white font-bold transition-colors shadow-sm"
         >
           ✎ 정보 수정
         </button>
       </div>
-      
+
       {/*  기업 기본 정보 */}
       <div className="grid grid-cols-2 gap-y-8 text-sm">
         <div>
@@ -65,7 +65,7 @@ export default function CompanyMypageContent() {
         </div>
       </div>
 
-      <CompanyInfoEditModal 
+      <CompanyInfoEditModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         formData={formData}
