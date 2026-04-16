@@ -1,13 +1,112 @@
 package com.sprint.daonil.domain.member.controller;
 
+import com.sprint.daonil.domain.member.dto.CompanySignupRequestDto;
+import com.sprint.daonil.domain.member.dto.LoginRequestDto;
+import com.sprint.daonil.domain.member.dto.SignupRequestDto;
 import com.sprint.daonil.domain.member.entity.Member;
+import com.sprint.daonil.domain.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/members")
 public class MemberController {
 
+    private final MemberService memberService;
 
+    @PostMapping("/signup")
+    public ResponseEntity<Map<String, Object>> signup(@RequestBody SignupRequestDto requestDto) {
+        try {
+            Member member = memberService.signup(requestDto);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "회원가입이 완료되었습니다.");
+            response.put("memberId", member.getMemberId());
+
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PostMapping("/signup/company")
+    public ResponseEntity<Map<String, Object>> companySignup(@RequestBody CompanySignupRequestDto requestDto) {
+        try {
+            Member member = memberService.companySignup(requestDto);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "기업회원 가입이 완료되었습니다.");
+            response.put("memberId", member.getMemberId());
+
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(@RequestBody LoginRequestDto requestDto) {
+        try {
+            Member member = memberService.login(requestDto);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "로그인에 성공했습니다.");
+            response.put("memberId", member.getMemberId());
+            response.put("loginId", member.getLoginId());
+            response.put("name", member.getName());
+            response.put("role", member.getRole().toString());
+
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @GetMapping
+    public List<Member> getMembers() {
+        return memberService.getAllMembers();
+    }
+
+    @GetMapping("/check-loginId/{loginId}")
+    public ResponseEntity<Map<String, Object>> checkLoginId(@PathVariable String loginId) {
+        boolean exists = memberService.existsByLoginId(loginId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("exists", exists);
+        response.put("available", !exists);
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/check-email/{email}")
+    public ResponseEntity<Map<String, Object>> checkEmail(@PathVariable String email) {
+        boolean exists = memberService.existsByEmail(email);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("exists", exists);
+        response.put("available", !exists);
+
+        return ResponseEntity.ok(response);
     }
 }

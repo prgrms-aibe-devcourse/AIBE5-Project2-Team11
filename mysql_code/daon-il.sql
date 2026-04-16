@@ -1,8 +1,11 @@
-CREATE DATABASE IF NOT EXISTS daon_il
+CREATE DATABASE IF NOT EXISTS daonil
 DEFAULT CHARACTER SET utf8mb4
 DEFAULT COLLATE utf8mb4_unicode_ci;
 
-USE daon_il;
+USE daonil;
+
+SELECT * FROM member;
+SELECT * FROM company;
 
 CREATE TABLE member (
     member_id BIGINT NOT NULL AUTO_INCREMENT,
@@ -338,8 +341,8 @@ CREATE TABLE post_comment (
 
 CREATE TABLE post_like (
     post_like_id BIGINT NOT NULL AUTO_INCREMENT,
-    post_id BIGINT NOT NULL,
-    comment_id BIGINT NOT NULL,
+    post_id BIGINT NULL,
+    comment_id BIGINT NULL,
     member_id BIGINT NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (post_like_id),

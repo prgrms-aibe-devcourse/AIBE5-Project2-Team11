@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const initialForm = {
     loginId: "",
@@ -24,6 +24,8 @@ export default function CompanyMembership() {
         privacy: false,
         marketing: false,
     });
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -54,7 +56,7 @@ export default function CompanyMembership() {
         setTerms(nextTerms);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (form.password !== form.confirmPassword) {
@@ -67,29 +69,47 @@ export default function CompanyMembership() {
             return;
         }
 
-        const memberPayload = {
+        const companyPayload = {
             email: form.email,
-            login_id: form.loginId,
+            loginId: form.loginId,
             password: form.password,
             name: form.managerName,
-            phone_number: form.phoneNumber,
+            phoneNumber: form.phoneNumber,
             address: form.memberAddress,
             role: "COMPANY",
+            businessNumber: form.businessNumber,
+            companyName: form.companyName,
+            companyEmail: form.companyEmail,
+            companyAddress: form.companyAddress,
+            companyDescription: form.companyDescription,
         };
 
-        const companyPayload = {
-            business_number: form.businessNumber,
-            address: form.companyAddress,
-            company_name: form.companyName,
-            company_email: form.companyEmail,
-            company_description: form.companyDescription,
-            industry_type_id: null,
-            detail_industry_type_id: null,
-        };
+        try {
+            setLoading(true);
 
-        console.log("기업회원 member payload:", memberPayload);
-        console.log("기업회원 company payload:", companyPayload);
-        alert("기업회원 회원가입 요청");
+            const response = await fetch("http://localhost:8080/members/signup/company", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(companyPayload),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                alert("기업회원 가입이 완료되었습니다.");
+                setForm(initialForm);
+                navigate("/login");
+            } else {
+                alert(data.message || "기업회원 가입에 실패했습니다.");
+            }
+        } catch (error) {
+            console.error("기업회원 가입 오류:", error);
+            alert("기업회원 가입 중 오류가 발생했습니다.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
