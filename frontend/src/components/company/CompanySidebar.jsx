@@ -20,7 +20,7 @@ export default function CompanySidebar() {
   return (
     <aside className="w-full md:w-64 shrink-0 sticky top-20 self-start">
       <div className="mb-4">
-        <h2 className="text-2xl font-bold text-[#3C2A21]">마이페이지</h2>
+        <h2 className="text-2xl font-bold text-[#3C2A21]">기업 마이페이지</h2>
       </div>
 
       <nav className="space-y-4">

@@ -1,5 +1,4 @@
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import CommunityBanner from "../components/community/CommunityBanner";
 import CommunityDetailContent from "../components/community/CommunityDetailContent";
 
@@ -14,7 +13,6 @@ export default function CommunityDetail() {
         showButton={false}
       />
       <CommunityDetailContent/>
-      <Footer/>
     </>
     
   );
