@@ -18,14 +18,38 @@ export default function CompanyLoginForm( {setMemberType}) {
         }));
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
-        // 임시 로그인 처리
-        localStorage.setItem("isLogin", "true");
-        localStorage.setItem("memberType", "company");
+        try {
+            const response = await fetch("http://localhost:8080/members/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    loginId: form.username,
+                    password: form.password,
+                }),
+            });
 
-        navigate("/");
+            const data = await response.json();
+
+            if (data.success) {
+                // 로그인 성공
+                localStorage.setItem("isLogin", "true");
+                localStorage.setItem("memberType", data.role === "JOB_SEEKER" ? "JOB_SEEKER" : "COMPANY");
+                localStorage.setItem("memberId", data.memberId);
+                localStorage.setItem("memberName", data.name);
+                navigate("/");
+            } else {
+                // 로그인 실패
+                alert(data.message || "로그인에 실패했습니다.");
+            }
+        } catch (error) {
+            console.error("로그인 오류:", error);
+            alert("로그인 중 오류가 발생했습니다.");
+        }
     };
 
     return (

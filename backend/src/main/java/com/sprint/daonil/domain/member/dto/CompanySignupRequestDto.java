@@ -8,8 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class SignupRequestDto {
-
+public class CompanySignupRequestDto {
     private String email;
     private String loginId;
     private String password;
@@ -17,4 +16,10 @@ public class SignupRequestDto {
     private String phoneNumber;
     private String address;
     private Role role;
+
+    private String businessNumber;
+    private String companyName;
+    private String companyEmail;
+    private String companyAddress;
+    private String companyDescription;
 }

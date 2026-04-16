@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const initialForm = {
     loginId: "",
@@ -19,6 +19,8 @@ export default function PersonalMembership() {
         privacy: false,
         marketing: false,
     });
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -49,7 +51,7 @@ export default function PersonalMembership() {
         setTerms(nextTerms);
     };
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
 
         if (form.password !== form.confirmPassword) {
@@ -64,16 +66,39 @@ export default function PersonalMembership() {
 
         const payload = {
             email: form.email,
-            login_id: form.loginId,
+            loginId: form.loginId,
             password: form.password,
             name: form.name,
-            phone_number: form.phoneNumber,
+            phoneNumber: form.phoneNumber,
             address: form.address,
             role: "JOB_SEEKER",
         };
 
-        console.log("개인회원 회원가입 payload:", payload);
-        alert("개인회원 회원가입 요청");
+        try {
+            setLoading(true);
+
+            const response = await fetch("http://localhost:8080/members/signup", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || "회원가입에 실패했습니다.");
+            }
+
+            alert("회원가입이 완료되었습니다.");
+            setForm(initialForm);
+            navigate("/login");
+        } catch (error) {
+            console.error("회원가입 오류:", error);
+            alert(error.message || "회원가입 중 오류가 발생했습니다.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -170,9 +195,10 @@ export default function PersonalMembership() {
 
                 <button
                     type="submit"
-                    className="w-full py-5 bg-[#feb300] text-[#382400] text-xl md:text-2xl font-black rounded-2xl shadow-lg hover:brightness-95 active:scale-[0.99] transition-all"
+                    disabled={loading}
+                    className="w-full py-5 bg-[#feb300] text-[#382400] text-xl md:text-2xl font-black rounded-2xl shadow-lg hover:brightness-95 active:scale-[0.99] transition-all disabled:opacity-60"
                 >
-                    개인회원 가입 완료
+                    {loading ? "가입 중..." : "개인회원 가입 완료"}
                 </button>
             </form>
 
