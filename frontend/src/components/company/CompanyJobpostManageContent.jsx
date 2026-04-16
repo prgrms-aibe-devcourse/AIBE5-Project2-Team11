@@ -3,7 +3,8 @@ import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { job_posting as initialData } from "../../mockData/job_posting";
 import CompanyJobpostCloseModal from './CompanyJobpostCloseModal';
-import CompanyJobpostFormModal from './CompanyJobpostFormModal'; // 1. 폼 모달 임포트
+import CompanyJobpostFormModal from './CompanyJobpostFormModal';
+import CompanyJobpostDetailModal from './CompanyJobpostDetailModal'; // 상세 모달 임포트
 
 export default function CompanyJobpostManageContent() {
   const navigate = useNavigate();
@@ -12,7 +13,8 @@ export default function CompanyJobpostManageContent() {
   // 모달 상태 관리
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false); // 마감 모달
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);   // 등록/수정 폼 모달
-  
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false); // 상세 조회 모달
+
   const [selectedJob, setSelectedJob] = useState(null);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
@@ -33,7 +35,7 @@ export default function CompanyJobpostManageContent() {
 
   const formatDate = (dateString) => dateString?.split('T')[0].replace(/-/g, '.');
 
-  // 상세 페이지 이동
+  // 상세 페이지 이동 (지원자 관리 페이지로 이동)
   const handleRowClick = (jobId) => {
     navigate(`/companyapplicants/${jobId}`);
   };
@@ -41,8 +43,16 @@ export default function CompanyJobpostManageContent() {
   // 폼 모달 열기 (등록/수정 공통)
   const handleOpenForm = (e, job = null) => {
     if (e) e.stopPropagation();
-    setSelectedJob(job); // job이 있으면 수정(initialData), 없으면 등록
+    setSelectedJob(job);
     setIsFormModalOpen(true);
+    setOpenMenuId(null);
+  };
+
+  // 상세 조회 모달 열기
+  const handleOpenDetail = (e, job) => {
+    if (e) e.stopPropagation();
+    setSelectedJob(job);
+    setIsDetailModalOpen(true);
     setOpenMenuId(null);
   };
 
@@ -110,8 +120,7 @@ export default function CompanyJobpostManageContent() {
       <section className="bg-white p-8 rounded-3xl border border-[#F1EEE5]">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-bold text-gray-800">게시한 공고 리스트</h2>
-          {/* 새 공고 등록 버튼 */}
-          <button 
+          <button
             onClick={(e) => handleOpenForm(e)}
             className="bg-[#F59E0B] text-white px-5 py-2.5 rounded-full text-sm font-bold shadow-md hover:bg-[#D98E06] transition-all"
           >
@@ -190,8 +199,13 @@ export default function CompanyJobpostManageContent() {
           style={{ top: menuPos.top, left: menuPos.left }}
           onClick={(e) => e.stopPropagation()}
         >
-          <button className="w-full px-4 py-3 text-left text-xs text-gray-700 hover:bg-gray-50 border-b border-gray-50">공고 보기</button>
-          {/* 수정 버튼: 현재 행의 job 데이터를 전달 */}
+          {/* 공고 보기 버튼 클릭 시 상세 모달 열기 */}
+          <button
+            onClick={(e) => handleOpenDetail(e, postings.find(j => j.job_posting_id === openMenuId))}
+            className="w-full px-4 py-3 text-left text-xs text-gray-700 hover:bg-gray-50 border-b border-gray-50"
+          >
+            공고 보기
+          </button>
           <button 
             onClick={(e) => handleOpenForm(e, postings.find(j => j.job_posting_id === openMenuId))}
             className="w-full px-4 py-3 text-left text-xs text-gray-700 hover:bg-gray-50 border-b border-gray-50"
@@ -202,17 +216,27 @@ export default function CompanyJobpostManageContent() {
         document.body
       )}
 
-      {/* 2. 등록/수정 폼 모달 */}
+      {/* 등록/수정 폼 모달 */}
       <CompanyJobpostFormModal 
         isOpen={isFormModalOpen} 
         onClose={() => {
           setIsFormModalOpen(false);
           setSelectedJob(null);
         }} 
-        initialData={selectedJob} // selectedJob이 있으면 수정 모드, 없으면 등록 모드
+        initialData={selectedJob}
       />
 
-      {/* 3. 마감 확인 모달 */}
+      {/* 공고 상세 조회 모달 */}
+      <CompanyJobpostDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={() => {
+          setIsDetailModalOpen(false);
+          setSelectedJob(null);
+        }}
+        job={selectedJob}
+      />
+
+      {/* 마감 확인 모달 */}
       <CompanyJobpostCloseModal 
         isOpen={isCloseModalOpen} 
         onClose={() => {
