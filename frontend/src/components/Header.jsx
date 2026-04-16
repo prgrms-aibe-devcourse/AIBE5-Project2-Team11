@@ -1,10 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import AlarmPopover from "./alarm";
 
 export default function Header() {
   const location = useLocation();
   const navigate = useNavigate();
-  // const memberType = localStorage.getItem("memberType").toUpperCase().replace(/-/g, "");
+
   let memberType = localStorage.getItem("memberType");
 
   if (!memberType) {
@@ -17,6 +18,35 @@ export default function Header() {
   const [isLogin, setIsLogin] = useState(() => {
     return localStorage.getItem("isLogin") === "true";
   });
+
+  const [isAlarmOpen, setIsAlarmOpen] = useState(false);
+
+  // 임시 데이터
+  const [alarms, setAlarms] = useState([
+    {
+      alarm_id: 1,
+      receiver_id: 3,
+      message: "새로운 지원자가 이력서를 제출했습니다.",
+      is_read: false,
+      created_at: "2026-04-16 11:30",
+    },
+    {
+      alarm_id: 2,
+      receiver_id: 3,
+      message: "공지사항이 새로 등록되었습니다.",
+      is_read: false,
+      created_at: "2026-04-16 10:10",
+    },
+    {
+      alarm_id: 3,
+      receiver_id: 3,
+      message: "관심 공고의 마감일이 하루 남았습니다.",
+      is_read: true,
+      created_at: "2026-04-15 18:20",
+    },
+  ]);
+
+  const alarmRef = useRef(null);
 
   const navItems = [
     { label: "채용공고", path: "/jobs", icon: "ri-file-list-3-line" },
@@ -33,6 +63,35 @@ export default function Header() {
     setIsLogin(false);
     navigate("/");
   };
+
+  const unreadCount = alarms.filter((alarm) => !alarm.is_read).length;
+
+  const handleAlarmClick = (alarm) => {
+    // 클릭한 알림 읽음 처리
+    setAlarms((prev) =>
+        prev.map((item) =>
+            item.alarm_id === alarm.alarm_id
+                ? { ...item, is_read: true }
+                : item
+        )
+    );
+
+    // 필요 시 여기서 페이지 이동
+    // navigate("/notice");
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (alarmRef.current && !alarmRef.current.contains(event.target)) {
+        setIsAlarmOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   return (
       <header className="sticky top-0 z-20 w-full bg-white border-b border-[#F3E8D0]">
@@ -68,13 +127,30 @@ export default function Header() {
           <div className="flex items-center gap-3">
             {isLogin ? (
                 <>
-                  <Link
-                      to="/notification"
-                      className="relative w-9 h-9 flex items-center justify-center rounded-md hover:bg-gray-100 transition"
-                  >
-                    <i className="ri-notification-3-line text-xl text-gray-600"></i>
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full"></span>
-                  </Link>
+                  {/* 알림 */}
+                  <div className="relative" ref={alarmRef}>
+                    <button
+                        type="button"
+                        onClick={() => setIsAlarmOpen((prev) => !prev)}
+                        className="relative w-9 h-9 flex items-center justify-center rounded-md hover:bg-gray-100 transition"
+                    >
+                      <i className="ri-notification-3-line text-xl text-gray-600"></i>
+
+                      {unreadCount > 0 && (
+                          <span className="absolute top-1.5 right-1.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-[10px] text-white flex items-center justify-center leading-none">
+                      {unreadCount}
+                    </span>
+                      )}
+                    </button>
+
+                    {isAlarmOpen && (
+                        <AlarmPopover
+                            alarms={alarms}
+                            onClose={() => setIsAlarmOpen(false)}
+                            onAlarmClick={handleAlarmClick}
+                        />
+                    )}
+                  </div>
 
                   <Link
                       to={memberType === "COMPANY" ? "/company-mypage" : "/memberMypage"}
