@@ -161,14 +161,6 @@ function ScrapSection() {
 }
 
 // 현재 경로에 따라 활성 메뉴를 판별하는 헬퍼
-function useActiveMenu() {
-    const location = useLocation();
-    const path = location.pathname;
-    if (path.includes("/memberMypage/resumes")) return "resume";
-    if (path.includes("/memberMypage/scrap")) return "scrap";
-    return "profile";
-}
-
 export default function MemberMypage() {
     const navigate = useNavigate();
     const location = useLocation();
