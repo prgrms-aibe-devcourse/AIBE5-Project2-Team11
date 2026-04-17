@@ -36,15 +36,27 @@ public class SecurityConfig {
         return source;
     }
 
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+//        http
+//            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+//            .csrf(csrf -> csrf.disable())
+//            .authorizeHttpRequests(authz -> authz
+//                .requestMatchers("/members/**").permitAll()
+//                .anyRequest().authenticated()
+//            );
+//
+//        return http.build();
+//    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(csrf -> csrf.disable())
-            .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/members/**").permitAll()
-                .anyRequest().authenticated()
-            );
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(csrf -> csrf.disable())
+                .authorizeHttpRequests(authz -> authz
+                        .anyRequest().permitAll() // 🔥 모든 요청 허용 (로그인/권한 체크 없음)
+                );
 
         return http.build();
     }
