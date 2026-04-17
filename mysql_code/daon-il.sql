@@ -116,18 +116,18 @@ CREATE TABLE report (
 CREATE TABLE profile (
     profile_id BIGINT NOT NULL AUTO_INCREMENT,
     member_id BIGINT NOT NULL,
-    career VARCHAR(255) NULL,
+    birth_date DATE NULL,
     preferred_job VARCHAR(100) NULL,
     preferred_region VARCHAR(100) NULL,
     introduction TEXT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    envBothHands INT NULL,
-    envEyesight INT NULL,
-    envHandWork INT NULL,
-    envLiftPower INT NULL,
-    envLstnTalk INT NULL,
-    envStndWalk INT NULL,
+    env_both_hands INT NULL,
+    env_eyesight INT NULL,
+    env_hand_work INT NULL,
+    env_lift_power INT NULL,
+    env_lstn_talk INT NULL,
+    env_stnd_walk INT NULL,
     PRIMARY KEY (profile_id),
     CONSTRAINT FK_profile_member
         FOREIGN KEY (member_id) REFERENCES member (member_id)
@@ -150,6 +150,42 @@ CREATE TABLE resume (
     PRIMARY KEY (resume_id),
     CONSTRAINT FK_resume_member
         FOREIGN KEY (member_id) REFERENCES member (member_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE resume_career (
+    career_id BIGINT NOT NULL AUTO_INCREMENT,
+    resume_id BIGINT NOT NULL,
+    company_name VARCHAR(150) NOT NULL,
+    position VARCHAR(100) NOT NULL,
+    start_date DATE NOT NULL,
+    end_date DATE NULL,
+    content TEXT NULL,
+    created_date DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (career_id),
+    CONSTRAINT FK_resume_career_resume
+        FOREIGN KEY (resume_id) REFERENCES resume (resume_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE resume_education (
+    education_id BIGINT NOT NULL AUTO_INCREMENT,
+    resume_id BIGINT NOT NULL,
+    school_name VARCHAR(150) NOT NULL,
+    major VARCHAR(100) NULL,
+    start_date DATE NULL,
+    end_date DATE NULL,
+    degree VARCHAR(100) NULL,
+    PRIMARY KEY (education_id),
+    CONSTRAINT FK_resume_education_resume
+        FOREIGN KEY (resume_id) REFERENCES resume (resume_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE resume_skill (
+    skill_id BIGINT NOT NULL AUTO_INCREMENT,
+    resume_id BIGINT NOT NULL,
+    skill_keyword VARCHAR(100) NOT NULL,
+    PRIMARY KEY (skill_id),
+    CONSTRAINT FK_resume_skill_resume
+        FOREIGN KEY (resume_id) REFERENCES resume (resume_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE alarm (
@@ -268,12 +304,12 @@ CREATE TABLE job_posting (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     content VARCHAR(225) NULL,
     work_hours VARCHAR(100) NULL,
-    envBothHands INT NULL,
-    envEyesight INT NULL,
-    envHandWork INT NULL,
-    envLiftPower INT NULL,
-    envLstnTalk INT NULL,
-    envStndWalk INT NULL,
+    env_both_hands INT NULL,
+    env_eyesight INT NULL,
+    env_hand_work INT NULL,
+    env_lift_power INT NULL,
+    env_lstn_talk INT NULL,
+    env_stnd_walk INT NULL,
     PRIMARY KEY (job_posting_id),
     CONSTRAINT FK_job_posting_company
         FOREIGN KEY (company_id) REFERENCES company (company_id)

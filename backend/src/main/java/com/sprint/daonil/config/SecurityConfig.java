@@ -52,11 +52,14 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                .csrf(csrf -> csrf.disable())
-                .authorizeHttpRequests(authz -> authz
-                        .anyRequest().permitAll() // 🔥 모든 요청 허용 (로그인/권한 체크 없음)
-                );
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(authz -> authz
+                .requestMatchers("/members/**").permitAll()
+                .requestMatchers("/api/notices/**").permitAll()
+                .requestMatchers("/api/notices").permitAll()
+                .anyRequest().authenticated()
+            );
 
         return http.build();
     }
