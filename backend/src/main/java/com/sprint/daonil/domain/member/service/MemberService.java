@@ -1,8 +1,8 @@
 package com.sprint.daonil.domain.member.service;
 
+import com.sprint.daonil.domain.company.dto.CompanySignupRequestDto;
 import com.sprint.daonil.domain.company.entity.Company;
 import com.sprint.daonil.domain.company.repository.CompanyRepository;
-import com.sprint.daonil.domain.member.dto.CompanySignupRequestDto;
 import com.sprint.daonil.domain.member.dto.LoginRequestDto;
 import com.sprint.daonil.domain.member.dto.SignupRequestDto;
 import com.sprint.daonil.domain.member.entity.Member;
