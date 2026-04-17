@@ -1,7 +1,18 @@
 export default function Hero() {
   return (
-    <section className="w-full bg-gradient-to-bl from-[#FEB508] via-[#FFDFA4] to-[#FFF4F1] py-24 flex items-center justify-center">
-      <div className="text-center max-w-3xl px-4">
+    <section className="w-full py-24 flex items-center justify-center relative overflow-hidden">
+      {/* 배경 비디오 */}
+      <video
+        autoPlay
+        loop
+        muted
+        className="absolute inset-0 w-full h-full object-cover"
+      >
+        <source src="/src/assets/video/video1.mp4" type="video/mp4" />
+      </video>
+
+      {/* 콘텐츠 */}
+      <div className="relative z-10 text-center max-w-3xl px-4">
 
         {/* 작은 배지 */}
         <div className="inline-block mb-6 px-4 py-1 bg-white/60 rounded-full text-sm text-gray-700">
