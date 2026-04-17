@@ -1,36 +1,69 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function NoticeBody() {
-    const notices = [
-        { id: 15, category: "공지", title: "다온팀 서비스 이용약관 개정 안내", date: "2025.04.12" },
-        { id: 14, category: "공지", title: "개인정보 처리방침 변경 사전 안내", date: "2025.04.12" },
-        { id: 13, category: "공지", title: "시스템 점검 일정 안내 (4월 20일)", date: "2025.04.10" },
-        { id: 12, category: "공지", title: "모바일 앱 v2.3.0 업데이트 안내", date: "2025.04.08" },
-        { id: 11, category: "공지", title: "새 봄맞이 서비스 기능 업데이트 안내", date: "2025.04.05" },
-        { id: 10, category: "공지", title: "채용 공고 필터링 기능 개선 안내", date: "2025.04.01" },
-        { id: 9, category: "공지", title: "장애인 고용 우수기업 인증 배지 도입 안내", date: "2025.03.28" },
-        { id: 8, category: "공지", title: "커뮤니티 이용 규칙 안내", date: "2025.03.20" },
-        { id: 7, category: "공지", title: "다온 서비스 임시 로그인 오류 관련 안내", date: "2025.03.15" },
-        { id: 6, category: "공지", title: "기업 회원 공고 등록 가이드 업데이트", date: "2025.03.10" },
-    ];
-
+    const [notices, setNotices] = useState([]);
     const [searchKeyword, setSearchKeyword] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(0);
+    const [loading, setLoading] = useState(false);
 
     const navigate = useNavigate();
     const itemsPerPage = 10;
 
-    const filteredNotices = notices.filter((notice) =>
-        notice.title.toLowerCase().includes(searchKeyword.toLowerCase())
-    );
+    // 공지사항 조회
+    const fetchNotices = async (page = 1, keyword = "") => {
+        setLoading(true);
+        try {
+            let url = `http://localhost:8080/api/notices?page=${page}&size=${itemsPerPage}`;
 
-    const totalPages = Math.ceil(filteredNotices.length / itemsPerPage);
+            if (keyword) {
+                url = `http://localhost:8080/api/notices/search?keyword=${keyword}&page=${page}&size=${itemsPerPage}`;
+            }
 
-    const currentNotices = filteredNotices.slice(
-        (currentPage - 1) * itemsPerPage,
-        currentPage * itemsPerPage
-    );
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error(`HTTP Error: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            const formattedNotices = data.content.map((notice) => ({
+                id: notice.noticeId,
+                category: "공지",
+                title: notice.title,
+                date: new Date(notice.createdAt).toLocaleDateString("ko-KR").replace(/\//g, "."),
+            }));
+
+            setNotices(formattedNotices);
+            setTotalPages(data.totalPages);
+            setCurrentPage(page);
+        } catch (error) {
+            console.error("공지사항 조회 실패:", error);
+            alert(`공지사항 조회에 실패했습니다.\n상태: ${error.message}`);
+            setNotices([]);
+            setTotalPages(0);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 컴포넌트 마운트 시 공지사항 조회
+    useEffect(() => {
+        fetchNotices(1, "");
+        setCurrentPage(1);
+    }, []);
+
+    // 검색 기능
+    const handleSearch = () => {
+        fetchNotices(1, searchKeyword);
+    };
+
+    // 페이지 변경
+    const handlePageChange = (page) => {
+        fetchNotices(page, searchKeyword);
+    };
 
     return (
         <>
@@ -44,10 +77,15 @@ export default function NoticeBody() {
                 </div>
             </section>
 
+            {loading ? (
+                <section className="max-w-5xl mx-auto px-6 py-10 text-center">
+                    <p>로딩 중...</p>
+                </section>
+            ) : (
             <section className="max-w-5xl mx-auto px-6 py-10">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
                     <p className="text-sm text-[#8B6B4A]">
-                        총 <span className="font-semibold">{filteredNotices.length}</span>개의 공지사항
+                        총 <span className="font-semibold">{notices.length}</span>개의 공지사항
                     </p>
 
                     <div className="flex items-center gap-2">
@@ -55,13 +93,13 @@ export default function NoticeBody() {
                             type="text"
                             placeholder="공지사항 검색"
                             value={searchKeyword}
-                            onChange={(e) => {
-                                setSearchKeyword(e.target.value);
-                                setCurrentPage(1);
-                            }}
+                            onChange={(e) => setSearchKeyword(e.target.value)}
+                            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                             className="w-64 md:w-72 px-4 py-2 text-sm rounded-lg border border-[#E6D7C8] bg-white focus:outline-none"
                         />
-                        <button className="px-4 py-2 text-sm rounded-lg bg-[#3A2317] text-white">
+                        <button
+                            onClick={handleSearch}
+                            className="px-4 py-2 text-sm rounded-lg bg-[#3A2317] text-white">
                             검색
                         </button>
                     </div>
@@ -74,7 +112,7 @@ export default function NoticeBody() {
                         <div className="text-right">작성일</div>
                     </div>
 
-                    {currentNotices.map((notice) => (
+                    {notices.map((notice) => (
                         <div
                             key={notice.id}
                             onClick={() => navigate(`/notice/${notice.id}`)}
@@ -98,7 +136,7 @@ export default function NoticeBody() {
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                         <button
                             key={page}
-                            onClick={() => setCurrentPage(page)}
+                            onClick={() => handlePageChange(page)}
                             className={`w-8 h-8 rounded-md text-sm ${
                                 currentPage === page
                                     ? "bg-[#3A2317] text-white"
@@ -110,6 +148,7 @@ export default function NoticeBody() {
                     ))}
                 </div>
             </section>
+            )}
         </>
     );
 }
