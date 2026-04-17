@@ -1,5 +1,4 @@
 import { useState } from "react";
-import Footer from "../components/Footer";
 import PersonalMembership from "../components/membership/PersonalMembership";
 import CompanyMembership from "../components/membership/CompanyMembership";
 
@@ -55,8 +54,6 @@ export default function Membership() {
                     </div>
                 </div>
             </main>
-
-            <Footer />
         </div>
     );
 }

@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import ApplicantsStatusTabs from "../components/companyApplicants/ApplicantsStatusTabs";
 import ApplicantsSidebar from "../components/companyApplicants/ApplicantsSidebar";
 import ApplicantDetail from "../components/companyApplicants/ApplicantDetail";
@@ -172,8 +171,6 @@ export default function CompanyApplicants() {
                     </div>
                 </div>
             </main>
-
-            <Footer />
         </div>
     );
 }

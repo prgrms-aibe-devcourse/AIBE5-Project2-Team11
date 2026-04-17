@@ -1,5 +1,4 @@
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import CompanySidebar from "../components/company/CompanySidebar";
 import CompanyProfileCard from "../components/company/CompanyProfileCard";
 import CompanyMypageContent from "../components/Company/CompanyMypageContent";
@@ -16,7 +15,6 @@ export default function CompanyMypage() {
             <CompanyMypageContent />
           </div>
       </div>
-      <Footer/>
     </>
     
   );

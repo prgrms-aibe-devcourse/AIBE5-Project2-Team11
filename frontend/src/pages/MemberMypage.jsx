@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import MemberSidebar from "../components/membermypage/MemberSidebar";
 import MemberMypageBody from "../components/membermypage/MemberMypageBody";
 
@@ -218,8 +217,6 @@ export default function MemberMypage() {
                     </div>
                 </div>
             </main>
-
-            <Footer />
         </div>
     );
 }

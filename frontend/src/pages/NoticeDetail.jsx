@@ -1,5 +1,4 @@
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import NoticeDetailBody from "../components/notice/NoticeDetailBody";
 
 export default function NoticeDetail() {
@@ -9,7 +8,6 @@ export default function NoticeDetail() {
             <main className="flex-grow">
                 <NoticeDetailBody />
             </main>
-            <Footer />
         </div>
     );
 }
