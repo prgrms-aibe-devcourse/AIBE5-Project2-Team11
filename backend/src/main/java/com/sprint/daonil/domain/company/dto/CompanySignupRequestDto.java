@@ -1,4 +1,4 @@
-package com.sprint.daonil.domain.member.dto;
+package com.sprint.daonil.domain.company.dto;
 
 import com.sprint.daonil.domain.member.enumtype.Role;
 import lombok.Getter;

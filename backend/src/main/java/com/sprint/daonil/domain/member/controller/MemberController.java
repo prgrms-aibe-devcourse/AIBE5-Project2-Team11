@@ -1,6 +1,6 @@
 package com.sprint.daonil.domain.member.controller;
 
-import com.sprint.daonil.domain.member.dto.CompanySignupRequestDto;
+import com.sprint.daonil.domain.company.dto.CompanySignupRequestDto;
 import com.sprint.daonil.domain.member.dto.LoginRequestDto;
 import com.sprint.daonil.domain.member.dto.SignupRequestDto;
 import com.sprint.daonil.domain.member.entity.Member;
