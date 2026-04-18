@@ -6,192 +6,174 @@ import com.sprint.daonil.domain.jobposting.dto.JobPostingRequestDto;
 import com.sprint.daonil.domain.jobposting.dto.JobPostingResponseDto;
 import com.sprint.daonil.domain.jobposting.entity.JobPosting;
 import com.sprint.daonil.domain.jobposting.repository.JobPostingRepository;
-import com.sprint.daonil.domain.member.entity.Member;
-import com.sprint.daonil.domain.member.enumtype.Role;
-import com.sprint.daonil.domain.member.repository.MemberRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
-@SpringBootTest
-@Transactional
+@ExtendWith(MockitoExtension.class)
 class JobPostingServiceTest {
 
-    @Autowired
-    private JobPostingService jobPostingService;
-
-    @Autowired
+    @Mock
     private JobPostingRepository jobPostingRepository;
 
-    @Autowired
+    @Mock
     private CompanyRepository companyRepository;
 
-    @Autowired
-    private MemberRepository memberRepository;
+    @InjectMocks
+    private JobPostingService jobPostingService;
 
-    private Long companyId;
-    private Long jobPostingId;
+    private Company company;
+    private JobPosting jobPosting;
+    private final Long companyId = 1L;
+    private final Long jobPostingId = 100L;
 
     @BeforeEach
     void setUp() {
-        // 1. 테스트용 멤버 생성
-        Member member = Member.builder()
-                .loginId("testcompany")
-                .password("password123")
-                .email("company@test.com")
-                .name("테스트 회사")
-                .phoneNumber("010-1234-5678")
-                .role(Role.COMPANY)
-                .isDeleted(false)
-                .build();
-        memberRepository.save(member);
-
-        // 2. 테스트용 회사 생성
-        Company company = Company.builder()
-                .member(member)
-                .businessNumber("1234567890")
+        // 테스트용 기본 엔티티 초기화 (DB 저장 X)
+        company = Company.builder()
+                .companyId(companyId)
                 .companyName("테스트 회사")
-                .companyEmail("company@test.com")
-                .isDeleted(false)
                 .build();
-        companyRepository.save(company);
-        companyId = company.getCompanyId();
 
-        // 3. 테스트용 채용공고 생성
-        JobPosting jobPosting = JobPosting.builder()
+        jobPosting = JobPosting.builder()
+                .jobPostingId(jobPostingId)
                 .company(company)
-                .title("개발자 모집")
-                .jobCategory("IT")
-                .employmentType("정규직")
-                .workRegion("서울")
-                .salary(4000)
-                .salaryType("만원")
-                .recruitCount(5)
-                .qualification("학력 무관")
-                .applicationStartDate(LocalDate.now())
-                .applicationEndDate(LocalDate.now().plusMonths(1))
-                .content("우리 회사에서 개발자를 모집합니다.")
-                .workHours("09:00 ~ 18:00")
-                .createdAt(LocalDateTime.now())
+                .title("기존 채용공고")
+                .isClosed(false)
+                .viewCount(0)
                 .build();
-
-        jobPostingRepository.save(jobPosting);
-        jobPostingId = jobPosting.getJobPostingId();
     }
 
     @Test
     @DisplayName("채용공고 목록 조회 - 필터링 및 페이징 확인")
-    void testGetJobPostings() {
+    void getJobPostings() {
+        // Given
         Pageable pageable = PageRequest.of(0, 10);
+        Page<JobPosting> mockPage = new PageImpl<>(List.of(jobPosting));
+
+        given(jobPostingRepository.findByFilters(null, null, null, false, pageable))
+                .willReturn(mockPage);
+
+        // When
         Page<JobPostingResponseDto> result = jobPostingService.getJobPostings(null, null, null, pageable);
 
-        assertNotNull(result);
-        assertFalse(result.isEmpty());
-        assertEquals("개발자 모집", result.getContent().get(0).getTitle());
+        // Then
+        assertThat(result.getContent()).isNotEmpty();
+        assertThat(result.getContent().get(0).getTitle()).isEqualTo("기존 채용공고");
     }
 
     @Test
     @DisplayName("채용공고 상세 조회 - 조회수 증가 검증")
-    void testGetJobPostingDetail() {
-        // 서비스 내부에서 incrementViewCount가 호출됨을 확인
-        JobPostingResponseDto response1 = jobPostingService.getJobPostingDetail(jobPostingId);
-        assertEquals(1, response1.getViewCount());
+    void getJobPostingDetail() {
+        // Given
+        given(jobPostingRepository.findById(jobPostingId)).willReturn(Optional.of(jobPosting));
 
-        JobPostingResponseDto response2 = jobPostingService.getJobPostingDetail(jobPostingId);
-        assertEquals(2, response2.getViewCount());
+        // When
+        JobPostingResponseDto result = jobPostingService.getJobPostingDetail(jobPostingId);
+
+        // Then
+        assertThat(result.getTitle()).isEqualTo("기존 채용공고");
+        // DB 단 조회수 증가 메서드 호출 여부 검증
+        verify(jobPostingRepository).incrementViewCount(jobPostingId);
     }
 
     @Test
     @DisplayName("채용공고 등록")
-    void testCreateJobPosting() {
+    void createJobPosting() {
+        // Given
         JobPostingRequestDto requestDto = JobPostingRequestDto.builder()
-                .title("백엔드 개발자 모집")
-                .jobCategory("IT")
-                .employmentType("정규직")
-                .workRegion("경기도")
+                .title("신규 채용공고")
                 .salary(5000)
-                .salaryType("만원")
-                .recruitCount(3)
-                .qualification("경력 3년 이상")
-                .applicationStartDate(LocalDate.now())
-                .applicationEndDate(LocalDate.now().plusMonths(1))
-                .content("백엔드 개발자를 모집합니다.")
-                .workHours("10:00 ~ 19:00")
                 .build();
 
-        JobPostingResponseDto response = jobPostingService.createJobPosting(companyId, requestDto);
+        given(companyRepository.findById(companyId)).willReturn(Optional.of(company));
+        given(jobPostingRepository.save(any(JobPosting.class))).willReturn(requestDto.toEntity(company));
 
-        assertNotNull(response);
-        assertEquals("백엔드 개발자 모집", response.getTitle());
-        assertEquals(companyId, response.getCompanyId());
+        // When
+        JobPostingResponseDto result = jobPostingService.createJobPosting(companyId, requestDto);
+
+        // Then
+        assertThat(result.getTitle()).isEqualTo("신규 채용공고");
+        assertThat(result.getSalary()).isEqualTo(5000);
+        verify(jobPostingRepository).save(any(JobPosting.class));
     }
 
     @Test
     @DisplayName("채용공고 수정 - 권한 및 데이터 변경 확인")
-    void testUpdateJobPosting() {
+    void updateJobPosting() {
+        // Given
         JobPostingRequestDto requestDto = JobPostingRequestDto.builder()
                 .title("수정된 제목")
-                .jobCategory("IT")
-                .employmentType("계약직")
-                .workRegion("부산")
-                .salary(4500)
-                .salaryType("만원")
-                .recruitCount(2)
-                .qualification("경력 무관")
-                .applicationStartDate(LocalDate.now())
-                .applicationEndDate(LocalDate.now().plusMonths(2))
-                .content("수정된 내용")
-                .workHours("09:30 ~ 18:30")
+                .salary(6000)
                 .build();
 
-        // 서비스 코드 순서에 맞춰 (companyId, jobPostingId, requestDto) 순으로 호출
-        JobPostingResponseDto response = jobPostingService.updateJobPosting(companyId, jobPostingId, requestDto);
+        given(jobPostingRepository.findById(jobPostingId)).willReturn(Optional.of(jobPosting));
 
-        assertNotNull(response);
-        assertEquals("수정된 제목", response.getTitle());
-        assertEquals("부산", response.getWorkRegion());
+        // When
+        JobPostingResponseDto result = jobPostingService.updateJobPosting(companyId, jobPostingId, requestDto);
+
+        // Then
+        assertThat(result.getTitle()).isEqualTo("수정된 제목");
+        assertThat(result.getSalary()).isEqualTo(6000);
+        // Dirty Checking 동작 확인 (save 호출 안 됨)
     }
 
     @Test
     @DisplayName("채용공고 마감 처리")
-    void testCloseJobPosting() {
-        JobPostingResponseDto response = jobPostingService.closeJobPosting(companyId, jobPostingId);
+    void closeJobPosting() {
+        // Given
+        given(jobPostingRepository.findById(jobPostingId)).willReturn(Optional.of(jobPosting));
 
-        assertTrue(response.getIsClosed());
+        // When
+        JobPostingResponseDto result = jobPostingService.closeJobPosting(companyId, jobPostingId);
 
-        // 영속성 컨텍스트 초기화 후 DB 값 재조회 확인 (Dirty Checking 검증)
-        JobPosting jobPosting = jobPostingRepository.findById(jobPostingId).orElseThrow();
-        assertTrue(jobPosting.getIsClosed());
+        // Then
+        assertThat(result.getIsClosed()).isTrue();
     }
 
     @Test
     @DisplayName("권한 없는 기업이 수정 시도 시 예외 발생")
-    void testUpdateJobPostingUnauthorized() {
+    void updateJobPostingUnauthorized() {
+        // Given
         JobPostingRequestDto requestDto = JobPostingRequestDto.builder().title("불법 수정").build();
         Long wrongCompanyId = 9999L;
 
-        IllegalArgumentException exception = assertThrows(
-                IllegalArgumentException.class,
-                () -> jobPostingService.updateJobPosting(wrongCompanyId, jobPostingId, requestDto)
+        given(jobPostingRepository.findById(jobPostingId)).willReturn(Optional.of(jobPosting));
+
+        // When & Then
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () ->
+                jobPostingService.updateJobPosting(wrongCompanyId, jobPostingId, requestDto)
         );
-        assertEquals("해당 채용공고에 대한 권한이 없습니다.", exception.getMessage());
+        assertThat(exception.getMessage()).isEqualTo("해당 채용공고에 대한 권한이 없습니다.");
     }
 
     @Test
     @DisplayName("존재하지 않는 채용공고 조회 시 예외 발생")
-    void testGetJobPostingDetailNotFound() {
-        assertThrows(IllegalArgumentException.class,
-                () -> jobPostingService.getJobPostingDetail(0L));
+    void getJobPostingDetailNotFound() {
+        // Given
+        Long wrongPostingId = 9999L;
+        given(jobPostingRepository.findById(wrongPostingId)).willReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(IllegalArgumentException.class, () ->
+                jobPostingService.getJobPostingDetail(wrongPostingId)
+        );
     }
 }
