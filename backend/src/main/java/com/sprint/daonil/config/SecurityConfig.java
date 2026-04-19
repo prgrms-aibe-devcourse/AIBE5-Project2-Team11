@@ -50,4 +50,19 @@ public class SecurityConfig {
 
         return http.build();
     }
+
+//    /***
+//     *  테스트 용
+//     ***/
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+//        http
+//                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+//                .csrf(csrf -> csrf.disable())
+//                .authorizeHttpRequests(authz -> authz
+//                        .anyRequest().permitAll() //  모든 요청 일단 다 통과
+//                );
+//
+//        return http.build();
+//    }
 }
