@@ -1,7 +1,7 @@
 package com.sprint.daonil.domain.resume.dto;
 
 import com.sprint.daonil.domain.resume.entity.Resume;
-import com.sprint.daonil.domain.resume.entity.ResumeEducation;
+import com.sprint.daonil.domain.resume.entity.ResumeCareer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -13,21 +13,21 @@ import java.time.LocalDate;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ResumeEducationDto {
+public class ResumeCareerDto {
 
-    private String schoolName;
-    private String major;
+    private String companyName;
+    private String position;
     private LocalDate startDate;
     private LocalDate endDate;
-    private String degree;
+    private String content;
 
-    public ResumeEducation toEntity(Resume resume) {
-        ResumeEducation entity = new ResumeEducation();
-        entity.setSchoolName(schoolName);
-        entity.setMajor(major);
+    public ResumeCareer toEntity(Resume resume) {
+        ResumeCareer entity = new ResumeCareer();
+        entity.setCompanyName(companyName);
+        entity.setPosition(position);
         entity.setStartDate(startDate);
         entity.setEndDate(endDate);
-        entity.setDegree(degree);
+        entity.setContent(content);
         entity.setResume(resume);
         return entity;
     }
