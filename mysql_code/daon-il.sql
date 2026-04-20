@@ -119,15 +119,14 @@ CREATE TABLE profile (
     birth_date DATE NULL,
     preferred_job VARCHAR(100) NULL,
     preferred_region VARCHAR(100) NULL,
-    introduction TEXT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    env_both_hands INT NULL,
-    env_eyesight INT NULL,
-    env_hand_work INT NULL,
-    env_lift_power INT NULL,
-    env_lstn_talk INT NULL,
-    env_stnd_walk INT NULL,
+    env_both_hands VARCHAR(50) NULL,
+    env_eyesight VARCHAR(50) NULL,   
+    env_hand_work VARCHAR(50) NULL,    
+    env_lift_power VARCHAR(50) NULL,
+    env_lstn_talk VARCHAR(50) NULL,   
+    env_stnd_walk VARCHAR(50) NULL,   
     PRIMARY KEY (profile_id),
     CONSTRAINT FK_profile_member
         FOREIGN KEY (member_id) REFERENCES member (member_id)
@@ -138,10 +137,7 @@ CREATE TABLE resume (
     member_id BIGINT NOT NULL,
     title VARCHAR(150) NOT NULL,
     user_photo VARCHAR(255) NULL,
-    content TEXT NULL,
     portfolio_url VARCHAR(255) NULL,
-    education TEXT NULL,
-    career_history TEXT NULL,
     self_introduction TEXT NULL,
     is_public BOOLEAN NOT NULL DEFAULT FALSE,
     is_deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -188,6 +184,44 @@ CREATE TABLE resume_skill (
         FOREIGN KEY (resume_id) REFERENCES resume (resume_id)
 ) ENGINE=InnoDB;
 
+CREATE TABLE resume_certificate (
+    resume_certificate_id BIGINT NOT NULL AUTO_INCREMENT,
+    resume_id BIGINT NOT NULL,
+    certificate_id BIGINT NOT NULL,
+    acquired_date DATE NOT NULL,
+    PRIMARY KEY (resume_certificate_id),
+    CONSTRAINT FK_resume_certificate_resume
+        FOREIGN KEY (resume_id) REFERENCES resume (resume_id),
+    CONSTRAINT FK_resume_certificate_certificate
+        FOREIGN KEY (certificate_id) REFERENCES certificate (certificate_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE resume_lang_qualification (
+    resume_lang_qualification_id BIGINT NOT NULL AUTO_INCREMENT,
+    resume_id BIGINT NOT NULL,
+    language_name VARCHAR(50) NOT NULL,
+    test_name VARCHAR(100) NULL,
+    score VARCHAR(50) NULL,
+    acquired_date DATE NULL,
+    expiration_date DATE NULL,
+    PRIMARY KEY (resume_lang_qualification_id),
+    CONSTRAINT FK_resume_lang_qualification_resume
+        FOREIGN KEY (resume_id) REFERENCES resume (resume_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE resume_disability (
+    resume_disability_id BIGINT NOT NULL AUTO_INCREMENT,
+    resume_id BIGINT NOT NULL,
+    disability_id BIGINT NOT NULL,
+    description VARCHAR(255) NULL,
+    PRIMARY KEY (resume_disability_id),
+    CONSTRAINT FK_resume_disability_resume
+        FOREIGN KEY (resume_id) REFERENCES resume (resume_id),
+    CONSTRAINT FK_resume_disability_disability
+        FOREIGN KEY (disability_id) REFERENCES disability (disability_id)
+) ENGINE=InnoDB;
+
+
 CREATE TABLE alarm (
     alarm_id BIGINT NOT NULL AUTO_INCREMENT,
     receiver_id BIGINT NULL,
@@ -221,19 +255,6 @@ CREATE TABLE company (
         FOREIGN KEY (detail_industry_type_id) REFERENCES detail_industry_type (detail_industry_type_id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE profile_lang_qualification (
-    profile_lang_qualification_id BIGINT NOT NULL AUTO_INCREMENT,
-    profile_id BIGINT NOT NULL,
-    language_name VARCHAR(50) NOT NULL,
-    test_name VARCHAR(100) NULL,
-    score VARCHAR(50) NULL,
-    acquired_date DATE NULL,
-    expiration_date DATE NULL,
-    PRIMARY KEY (profile_lang_qualification_id),
-    CONSTRAINT FK_profile_lang_qualification_profile
-        FOREIGN KEY (profile_id) REFERENCES profile (profile_id)
-) ENGINE=InnoDB;
-
 CREATE TABLE profile_certificate (
     profile_certificate_id BIGINT NOT NULL AUTO_INCREMENT,
     profile_id BIGINT NOT NULL,
@@ -261,29 +282,6 @@ CREATE TABLE profile_disability (
         FOREIGN KEY (disability_id) REFERENCES disability (disability_id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE resume_certificate (
-    resume_certificate_id BIGINT NOT NULL AUTO_INCREMENT,
-    resume_id BIGINT NOT NULL,
-    certificate_id BIGINT NOT NULL,
-    description VARCHAR(255) NULL,
-    PRIMARY KEY (resume_certificate_id),
-    CONSTRAINT FK_resume_certificate_resume
-        FOREIGN KEY (resume_id) REFERENCES resume (resume_id),
-    CONSTRAINT FK_resume_certificate_certificate
-        FOREIGN KEY (certificate_id) REFERENCES certificate (certificate_id)
-) ENGINE=InnoDB;
-
-CREATE TABLE resume_disability (
-    resume_disability_id BIGINT NOT NULL AUTO_INCREMENT,
-    resume_id BIGINT NOT NULL,
-    disability_id BIGINT NOT NULL,
-    description VARCHAR(255) NULL,
-    PRIMARY KEY (resume_disability_id),
-    CONSTRAINT FK_resume_disability_resume
-        FOREIGN KEY (resume_id) REFERENCES resume (resume_id),
-    CONSTRAINT FK_resume_disability_disability
-        FOREIGN KEY (disability_id) REFERENCES disability (disability_id)
-) ENGINE=InnoDB;
 
 CREATE TABLE job_posting (
     job_posting_id BIGINT NOT NULL AUTO_INCREMENT,
@@ -304,12 +302,12 @@ CREATE TABLE job_posting (
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     content VARCHAR(225) NULL,
     work_hours VARCHAR(100) NULL,
-    env_both_hands INT NULL,
-    env_eyesight INT NULL,
-    env_hand_work INT NULL,
-    env_lift_power INT NULL,
-    env_lstn_talk INT NULL,
-    env_stnd_walk INT NULL,
+    env_both_hands VARCHAR(50) NULL,
+    env_eyesight VARCHAR(50) NULL,   
+    env_hand_work VARCHAR(50) NULL,    
+    env_lift_power VARCHAR(50) NULL,
+    env_lstn_talk VARCHAR(50) NULL,   
+    env_stnd_walk VARCHAR(50) NULL,   
     PRIMARY KEY (job_posting_id),
     CONSTRAINT FK_job_posting_company
         FOREIGN KEY (company_id) REFERENCES company (company_id)
