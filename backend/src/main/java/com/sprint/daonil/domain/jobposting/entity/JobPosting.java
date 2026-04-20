@@ -75,23 +75,23 @@ public class JobPosting {
     @Column(name = "work_hours", length = 100)
     private String workHours;
 
-    @Column(name = "env_both_hands")
-    private Integer envBothHands;
+    @Column(name = "env_both_hands", length = 50)
+    private String envBothHands;
 
-    @Column(name = "env_eyesight")
-    private Integer envEyesight;
+    @Column(name = "env_eyesight", length = 50)
+    private String envEyesight;
 
-    @Column(name = "env_hand_work")
-    private Integer envHandWork;
+    @Column(name = "env_hand_work", length = 50)
+    private String envHandWork;
 
-    @Column(name = "env_lift_power")
-    private Integer envLiftPower;
+    @Column(name = "env_lift_power", length = 50)
+    private String envLiftPower;
 
-    @Column(name = "env_lstn_talk")
-    private Integer envLstnTalk;
+    @Column(name = "env_lstn_talk", length = 50)
+    private String envLstnTalk;
 
-    @Column(name = "env_stnd_walk")
-    private Integer envStndWalk;
+    @Column(name = "env_stnd_walk", length = 50)
+    private String envStndWalk;
 
 
 

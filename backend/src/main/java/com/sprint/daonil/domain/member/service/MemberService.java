@@ -1,5 +1,6 @@
 package com.sprint.daonil.domain.member.service;
 
+import com.sprint.daonil.config.JwtUtil;
 import com.sprint.daonil.domain.company.dto.CompanySignupRequestDto;
 import com.sprint.daonil.domain.company.entity.Company;
 import com.sprint.daonil.domain.company.repository.CompanyRepository;
@@ -24,6 +25,7 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final CompanyRepository companyRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
     @Transactional
     public Member signup(SignupRequestDto requestDto) {
@@ -121,6 +123,20 @@ public class MemberService {
         }
 
         return member;
+    }
+
+    public String generateToken(Member member) {
+        return jwtUtil.generateToken(member.getMemberId(), member.getLoginId());
+    }
+
+    public Member getMemberById(Long memberId) {
+        return memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+    }
+
+    public Member getMemberByLoginId(String loginId) {
+        return memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
     }
 
     public boolean existsByLoginId(String loginId) {

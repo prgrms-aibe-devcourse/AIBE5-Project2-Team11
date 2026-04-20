@@ -132,6 +132,11 @@ CREATE TABLE profile (
         FOREIGN KEY (member_id) REFERENCES member (member_id)
 ) ENGINE=InnoDB;
 
+ALTER TABLE profile
+    ADD COLUMN career VARCHAR(100) NULL,
+ADD COLUMN introduction TEXT NULL,
+ADD COLUMN desired_salary VARCHAR(100) NULL;
+
 CREATE TABLE resume (
     resume_id BIGINT NOT NULL AUTO_INCREMENT,
     member_id BIGINT NOT NULL,
@@ -267,6 +272,19 @@ CREATE TABLE profile_certificate (
         FOREIGN KEY (profile_id) REFERENCES profile (profile_id),
     CONSTRAINT FK_profile_certificate_certificate
         FOREIGN KEY (certificate_id) REFERENCES certificate (certificate_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE profile_language (
+    profile_language_id BIGINT NOT NULL AUTO_INCREMENT,
+    profile_id BIGINT NOT NULL,
+    language_name VARCHAR(50) NULL,
+    test_name VARCHAR(100) NULL,
+    score VARCHAR(50) NULL,
+    acquired_date VARCHAR(50) NULL,
+    expiration_date VARCHAR(50) NULL,
+    PRIMARY KEY (profile_language_id),
+    CONSTRAINT FK_profile_language_profile
+        FOREIGN KEY (profile_id) REFERENCES profile (profile_id)
 ) ENGINE=InnoDB;
 
 CREATE TABLE profile_disability (
