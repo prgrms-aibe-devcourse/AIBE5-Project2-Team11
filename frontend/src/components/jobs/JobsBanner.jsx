@@ -77,11 +77,7 @@ export default function JobsPage() {
           original: apiJob,
           ...apiJob
         }));
-        if (currentPage === 0) {
-          setJobs(transformedJobs);
-        } else {
-          setJobs(prev => [...prev, ...transformedJobs]);
-        }
+        setJobs(transformedJobs);
         setTotalPages(data.totalPages);
         setTotalElements(data.totalElements);
       }
@@ -98,12 +94,75 @@ export default function JobsPage() {
     return () => clearTimeout(timeoutId);
   }, [searchTerm, filters]);
 
-  const handleLoadMore = () => {
-    if (page < totalPages - 1) {
-      const nextPage = page + 1;
-      setPage(nextPage);
-      fetchJobs(nextPage);
+  const handlePageChange = (pageNum) => {
+    if (pageNum >= 0 && pageNum < totalPages) {
+      setPage(pageNum);
+      fetchJobs(pageNum);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    let startPage = Math.max(0, page - 2);
+    let endPage = Math.min(totalPages - 1, page + 2);
+    
+    if (endPage - startPage < 4) {
+      if (startPage === 0) {
+        endPage = Math.min(totalPages - 1, 4);
+      } else if (endPage === totalPages - 1) {
+        startPage = Math.max(0, totalPages - 5);
+      }
+    }
+
+    return (
+      <div className="mt-12 flex items-center justify-center gap-2">
+        <button 
+          onClick={() => handlePageChange(page - 1)}
+          disabled={page === 0}
+          className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          <i className="ri-arrow-left-s-line"></i>
+        </button>
+        {startPage > 0 && (
+          <>
+            <button onClick={() => handlePageChange(0)} className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-all">1</button>
+            {startPage > 1 && <span className="text-gray-400">...</span>}
+          </>
+        )}
+        
+        {Array.from({ length: endPage - startPage + 1 }).map((_, i) => {
+          const p = startPage + i;
+          return (
+            <button
+              key={p}
+              onClick={() => handlePageChange(p)}
+              className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold transition-all ${
+                page === p 
+                  ? 'bg-[#E66235] text-white shadow-md' 
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {p + 1}
+            </button>
+          );
+        })}
+
+        {endPage < totalPages - 1 && (
+          <>
+            {endPage < totalPages - 2 && <span className="text-gray-400">...</span>}
+            <button onClick={() => handlePageChange(totalPages - 1)} className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-all">{totalPages}</button>
+          </>
+        )}
+        <button 
+          onClick={() => handlePageChange(page + 1)}
+          disabled={page === totalPages - 1}
+          className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          <i className="ri-arrow-right-s-line"></i>
+        </button>
+      </div>
+    );
   };
 
   // 필터 초기화
@@ -367,18 +426,8 @@ export default function JobsPage() {
               </div>
           )}
 
-          {/* 더보기 버튼 */}
-          {page < totalPages - 1 && (
-            <div className="mt-10 flex justify-center">
-              <button 
-                onClick={handleLoadMore} 
-                className="px-10 py-3.5 bg-white border border-gray-300 text-gray-700 font-bold rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all shadow-sm flex items-center justify-center gap-2 group"
-              >
-                더보기 ({page + 1}/{totalPages})
-                <i className="ri-arrow-down-s-line text-lg text-gray-400 group-hover:text-gray-600"></i>
-              </button>
-            </div>
-          )}
+          {/* 페이지네이션 */}
+          {renderPagination()}
         </div>
       </div>
   );
