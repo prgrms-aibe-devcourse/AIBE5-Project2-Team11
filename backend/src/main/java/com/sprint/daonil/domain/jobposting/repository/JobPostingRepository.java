@@ -23,10 +23,22 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
     @Query("SELECT jp FROM JobPosting jp WHERE jp.isClosed = :isClosed " +
             "AND (:keyword IS NULL OR jp.title LIKE %:keyword% OR jp.content LIKE %:keyword%) " +
             "AND (:jobCategory IS NULL OR jp.jobCategory = :jobCategory) " +
-            "AND (:workRegion IS NULL OR jp.workRegion = :workRegion)")
+            "AND (:workRegion IS NULL OR jp.workRegion LIKE %:workRegion%) " +
+            "AND (:envBothHands IS NULL OR jp.envBothHands = :envBothHands) " +
+            "AND (:envEyesight IS NULL OR jp.envEyesight = :envEyesight) " +
+            "AND (:envHandWork IS NULL OR jp.envHandWork = :envHandWork) " +
+            "AND (:envLiftPower IS NULL OR jp.envLiftPower = :envLiftPower) " +
+            "AND (:envLstnTalk IS NULL OR jp.envLstnTalk = :envLstnTalk) " +
+            "AND (:envStndWalk IS NULL OR jp.envStndWalk = :envStndWalk)")
     Page<JobPosting> findByFilters(@Param("keyword") String keyword,
                                    @Param("jobCategory") String jobCategory,
                                    @Param("workRegion") String workRegion,
+                                   @Param("envBothHands") String envBothHands,
+                                   @Param("envEyesight") String envEyesight,
+                                   @Param("envHandWork") String envHandWork,
+                                   @Param("envLiftPower") String envLiftPower,
+                                   @Param("envLstnTalk") String envLstnTalk,
+                                   @Param("envStndWalk") String envStndWalk,
                                    @Param("isClosed") Boolean isClosed,
                                    Pageable pageable);
 

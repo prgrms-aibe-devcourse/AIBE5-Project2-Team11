@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { sampleJobs } from '../../data/sampleJobs';
+import { jobPostingApi } from '../../api/jobPostingApi';
 
 // ==========================================
 // 1. 순수 헬퍼 함수 및 공통 UI 컴포넌트, 옵션 데이터
@@ -385,12 +385,38 @@ export default function JobDetail() {
     const fetchJobData = async () => {
       setIsLoadingJob(true);
       setJobError(null);
-      setTimeout(() => {
-        const foundJob = sampleJobs.find((j) => String(j.id) === String(id));
-        if (foundJob) setJob(foundJob);
-        else setJobError('존재하지 않거나 삭제된 공고입니다.');
+      try {
+        const apiJob = await jobPostingApi.getJobPostingDetail(id);
+        if (apiJob) {
+          const transformedJob = {
+            id: apiJob.jobPostingId,
+            company: apiJob.companyName || '미상',
+            title: apiJob.title || '제목 없음',
+            location: apiJob.workRegion || '전국',
+            date: apiJob.applicationEndDate ? apiJob.applicationEndDate.toString() : '상시',
+            workEnv: [apiJob.envBothHands, apiJob.envEyesight, apiJob.envHandWork, apiJob.envLiftPower, apiJob.envLstnTalk, apiJob.envStndWalk].filter(Boolean),
+            badges: [apiJob.employmentType].filter(Boolean),
+            tags: [apiJob.jobCategory].filter(Boolean),
+            tech: [],
+            original: {
+              ...apiJob,
+              compAddr: apiJob.workRegion,
+              empType: apiJob.employmentType,
+              reqCareer: apiJob.qualification,
+              salary: apiJob.salary,
+              salaryType: apiJob.salaryType,
+              termDate: apiJob.applicationEndDate ? apiJob.applicationEndDate.toString() : '상시',
+            }
+          };
+          setJob(transformedJob);
+        } else {
+          setJobError('존재하지 않거나 삭제된 공고입니다.');
+        }
+      } catch (err) {
+        setJobError('공고를 불러오는 데 실패했습니다.');
+      } finally {
         setIsLoadingJob(false);
-      }, 500);
+      }
     };
     fetchJobData();
   }, [id]);
