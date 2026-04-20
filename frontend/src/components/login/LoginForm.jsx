@@ -44,6 +44,8 @@ export default function LoginForm({ setMemberType}) {
                 localStorage.setItem("memberType", data.role === "JOB_SEEKER" ? "JOB_SEEKER" : "COMPANY");
                 localStorage.setItem("memberId", data.memberId);
                 localStorage.setItem("memberName", data.name);
+                localStorage.setItem("accessToken", data.token);
+                localStorage.setItem("loginId", data.loginId);
                 navigate("/");
             } else {
                 // 로그인 실패
