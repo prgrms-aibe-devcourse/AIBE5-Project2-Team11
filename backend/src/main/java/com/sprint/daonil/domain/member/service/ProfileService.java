@@ -1,8 +1,10 @@
 package com.sprint.daonil.domain.member.service;
 
+import com.sprint.daonil.domain.disability.repository.DisabilityRepository;
 import com.sprint.daonil.domain.member.dto.*;
 import com.sprint.daonil.domain.member.entity.*;
 import com.sprint.daonil.domain.member.repository.ProfileRepository;
+import com.sprint.daonil.domain.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,10 +16,12 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
+@Transactional
 public class ProfileService {
 
     private final ProfileRepository profileRepository;
+    private final MemberRepository memberRepository;
+    private final DisabilityRepository disabilityRepository;
     private final MemberService memberService;
 
     @Transactional
@@ -85,13 +89,17 @@ public class ProfileService {
         if (requestDto.getDisabilities() != null) {
             profile.getDisabilities().clear();
             for (ProfileDisabilityDto disDto : requestDto.getDisabilities()) {
-                ProfileDisability disability = ProfileDisability.builder()
+                // disabilityName으로 Disability 조회
+                var disability = disabilityRepository.findByName(disDto.getDisabilityName())
+                        .orElseThrow(() -> new IllegalArgumentException("장애 유형을 찾을 수 없습니다: " + disDto.getDisabilityName()));
+
+                ProfileDisability profileDisability = ProfileDisability.builder()
                         .profile(profile)
-                        .disabilityName(disDto.getDisabilityName())
+                        .disability(disability)
                         .severity(disDto.getSeverity())
                         .note(disDto.getNote())
                         .build();
-                profile.getDisabilities().add(disability);
+                profile.getDisabilities().add(profileDisability);
             }
         }
 
@@ -143,7 +151,7 @@ public class ProfileService {
         List<ProfileDisabilityDto> disabilities = profile.getDisabilities().stream()
                 .map(dis -> ProfileDisabilityDto.builder()
                         .id(dis.getProfileDisabilityId())
-                        .disabilityName(dis.getDisabilityName())
+                        .disabilityName(dis.getDisability().getName())
                         .severity(dis.getSeverity())
                         .note(dis.getNote())
                         .build())

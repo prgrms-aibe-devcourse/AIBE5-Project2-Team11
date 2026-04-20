@@ -1,5 +1,6 @@
 package com.sprint.daonil.domain.member.entity;
 
+import com.sprint.daonil.domain.disability.entity.Disability;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -21,8 +22,9 @@ public class ProfileDisability {
     @JoinColumn(name = "profile_id", nullable = false)
     private Profile profile;
 
-    @Column(name = "disability_name", length = 100)
-    private String disabilityName;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "disability_id", nullable = false)
+    private Disability disability;
 
     @Column(name = "severity", length = 50)
     private String severity;

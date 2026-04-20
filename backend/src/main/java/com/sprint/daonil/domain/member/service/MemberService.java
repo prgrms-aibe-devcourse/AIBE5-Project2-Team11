@@ -150,4 +150,37 @@ public class MemberService {
     public List<Member> getAllMembers() {
         return memberRepository.findAll();
     }
+
+    @Transactional
+    public void changePassword(String loginId, String currentPassword, String newPassword) {
+        Member member = memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        // 현재 비밀번호 검증
+        if (!passwordEncoder.matches(currentPassword, member.getPassword())) {
+            throw new IllegalArgumentException("현재 비밀번호가 일치하지 않습니다.");
+        }
+
+        // 새 비밀번호와 현재 비밀번호가 같은지 확인
+        if (currentPassword.equals(newPassword)) {
+            throw new IllegalArgumentException("새 비밀번호는 현재 비밀번호와 다르게 설정해주세요.");
+        }
+
+        // 새 비밀번호 암호화하여 저장
+        String encodedNewPassword = passwordEncoder.encode(newPassword);
+        member.setPassword(encodedNewPassword);
+        member.setUpdatedAt(LocalDateTime.now());
+        memberRepository.save(member);
+    }
+
+    @Transactional
+    public void deleteMember(String loginId) {
+        Member member = memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        // isDeleted를 true로 변경
+        member.setIsDeleted(true);
+        member.setUpdatedAt(LocalDateTime.now());
+        memberRepository.save(member);
+    }
 }

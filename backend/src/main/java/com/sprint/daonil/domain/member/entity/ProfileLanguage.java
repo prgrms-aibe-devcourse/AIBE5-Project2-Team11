@@ -3,8 +3,10 @@ package com.sprint.daonil.domain.member.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Entity
-@Table(name = "profile_language")
+@Table(name = "profile_lang_qualification")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -14,7 +16,7 @@ public class ProfileLanguage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "profile_language_id")
+    @Column(name = "profile_lang_qualification_id")
     private Long profileLanguageId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -31,9 +33,9 @@ public class ProfileLanguage {
     private String score;
 
     @Column(name = "acquired_date")
-    private String acquiredDate;
+    private LocalDate acquiredDate;
 
     @Column(name = "expiration_date")
-    private String expirationDate;
+    private LocalDate expirationDate;
 }
 

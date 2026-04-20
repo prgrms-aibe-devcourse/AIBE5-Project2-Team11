@@ -2,6 +2,7 @@ package com.sprint.daonil.domain.member.controller;
 
 import com.sprint.daonil.config.JwtUtil;
 import com.sprint.daonil.domain.company.dto.CompanySignupRequestDto;
+import com.sprint.daonil.domain.member.dto.ChangePasswordRequestDto;
 import com.sprint.daonil.domain.member.dto.LoginRequestDto;
 import com.sprint.daonil.domain.member.dto.SignupRequestDto;
 import com.sprint.daonil.domain.member.entity.Member;
@@ -150,5 +151,83 @@ public class MemberController {
         response.put("available", !exists);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<Map<String, Object>> changePassword(@RequestBody ChangePasswordRequestDto requestDto) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+            if (auth == null || !auth.isAuthenticated()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "인증되지 않은 사용자입니다.");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            // 새 비밀번호 확인
+            if (!requestDto.getNewPassword().equals(requestDto.getConfirmPassword())) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            String loginId = auth.getName();
+            memberService.changePassword(loginId, requestDto.getCurrentPassword(), requestDto.getNewPassword());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "비밀번호가 변경되었습니다.");
+
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "비밀번호 변경 중 오류가 발생했습니다.");
+
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @DeleteMapping("/delete-account")
+    public ResponseEntity<Map<String, Object>> deleteAccount() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+            if (auth == null || !auth.isAuthenticated()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "인증되지 않은 사용자입니다.");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            String loginId = auth.getName();
+            memberService.deleteMember(loginId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "회원탈퇴가 완료되었습니다.");
+
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "회원탈퇴 중 오류가 발생했습니다.");
+
+            return ResponseEntity.badRequest().body(response);
+        }
     }
 }

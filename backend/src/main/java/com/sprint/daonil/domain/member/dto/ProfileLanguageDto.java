@@ -2,6 +2,8 @@ package com.sprint.daonil.domain.member.dto;
 
 import lombok.*;
 
+import java.time.LocalDate;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,7 +15,7 @@ public class ProfileLanguageDto {
     private String languageName;
     private String testName;
     private String score;
-    private String acquiredDate;
-    private String expirationDate;
+    private LocalDate acquiredDate;
+    private LocalDate expirationDate;
 }
 

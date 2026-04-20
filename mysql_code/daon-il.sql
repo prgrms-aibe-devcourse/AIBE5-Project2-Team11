@@ -4,9 +4,6 @@ DEFAULT COLLATE utf8mb4_unicode_ci;
 
 USE daonil;
 
-SELECT * FROM member;
-SELECT * FROM company;
-
 CREATE TABLE member (
     member_id BIGINT NOT NULL AUTO_INCREMENT,
     email VARCHAR(100) NOT NULL,
@@ -50,6 +47,7 @@ CREATE TABLE certificate (
     description VARCHAR(255) NULL,
     PRIMARY KEY (certificate_id)
 ) ENGINE=InnoDB;
+
 
 CREATE TABLE industry_type (
     industry_type_id BIGINT NOT NULL AUTO_INCREMENT,
@@ -131,11 +129,6 @@ CREATE TABLE profile (
     CONSTRAINT FK_profile_member
         FOREIGN KEY (member_id) REFERENCES member (member_id)
 ) ENGINE=InnoDB;
-
-ALTER TABLE profile
-    ADD COLUMN career VARCHAR(100) NULL,
-ADD COLUMN introduction TEXT NULL,
-ADD COLUMN desired_salary VARCHAR(100) NULL;
 
 CREATE TABLE resume (
     resume_id BIGINT NOT NULL AUTO_INCREMENT,
@@ -274,16 +267,23 @@ CREATE TABLE profile_certificate (
         FOREIGN KEY (certificate_id) REFERENCES certificate (certificate_id)
 ) ENGINE=InnoDB;
 
-CREATE TABLE profile_language (
-    profile_language_id BIGINT NOT NULL AUTO_INCREMENT,
+CREATE TABLE field (
+    id VARCHAR(50) NOT NULL,
+    depth1 VARCHAR(255),
+    depth2 VARCHAR(255),
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE profile_lang_qualification (
+    profile_lang_qualification_id BIGINT NOT NULL AUTO_INCREMENT,
     profile_id BIGINT NOT NULL,
     language_name VARCHAR(50) NULL,
     test_name VARCHAR(100) NULL,
     score VARCHAR(50) NULL,
-    acquired_date VARCHAR(50) NULL,
-    expiration_date VARCHAR(50) NULL,
-    PRIMARY KEY (profile_language_id),
-    CONSTRAINT FK_profile_language_profile
+    acquired_date DATE NULL,
+    expiration_date DATE NULL,
+    PRIMARY KEY (profile_lang_qualification_id),
+    CONSTRAINT FK_profile_lang_qualification_profile
         FOREIGN KEY (profile_id) REFERENCES profile (profile_id)
 ) ENGINE=InnoDB;
 
@@ -405,3 +405,78 @@ CREATE TABLE post_like (
     CONSTRAINT FK_post_like_member
         FOREIGN KEY (member_id) REFERENCES member (member_id)
 ) ENGINE=InnoDB;
+
+CREATE TABLE field (
+    id VARCHAR(50) NOT NULL,
+    depth1 VARCHAR(255),
+    depth2 VARCHAR(255),
+    PRIMARY KEY (id)
+);
+select * from member;
+CREATE TABLE qualification (
+    id INT NOT NULL AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    fieldId VARCHAR(50),
+    course TEXT,
+    JMCD VARCHAR(20) UNIQUE,
+
+    PRIMARY KEY (id),
+
+    CONSTRAINT FK_qualification_field
+        FOREIGN KEY (fieldId) REFERENCES field(id)
+);
+
+CREATE TABLE `date` (
+    jmCd VARCHAR(20) NOT NULL,
+    year INT NOT NULL,
+    period INT NOT NULL,
+
+    docRegStart DATETIME NULL,
+    docRegEnd DATETIME NULL,
+    docVacancyStart DATETIME NULL,
+    docVacancyEnd DATETIME NULL,
+    docExamStart DATETIME NULL,
+    docExamEnd DATETIME NULL,
+    docPass DATETIME NULL,
+
+    pracRegStart DATETIME NULL,
+    pracRegEnd DATETIME NULL,
+    pracVacancyStart DATETIME NULL,
+    pracVacancyEnd DATETIME NULL,
+    pracExamStart DATETIME NULL,
+    pracExamEnd DATETIME NULL,
+    pracPass DATETIME NULL,
+
+    PRIMARY KEY (jmCd, year, period),
+
+    CONSTRAINT FK_date_qualification
+        FOREIGN KEY (jmCd) REFERENCES qualification(JMCD)
+);
+
+ALTER TABLE profile_certificate
+DROP FOREIGN KEY FK_profile_certificate_certificate;
+
+ALTER TABLE profile_certificate
+CHANGE certificate_id field_id VARCHAR(50) NOT NULL;
+
+ALTER TABLE profile_certificate
+ADD CONSTRAINT FK_profile_certificate_field
+FOREIGN KEY (field_id) REFERENCES field (id);
+
+ALTER TABLE profile
+    ADD COLUMN career VARCHAR(100) NULL,
+ADD COLUMN introduction TEXT NULL,
+ADD COLUMN desired_salary VARCHAR(100) NULL;
+
+select * from field;
+select * from qualification;
+select * from profile_lang_qualification;
+select * from profile_disability;
+select * from disability;
+select * from profile_certificate;
+INSERT INTO disability (name, description) VALUES
+('지체장애', '절단, 관절, 근육 등의 손상으로 이동이나 신체 활동에 제약이 있는 장애'),
+('시각장애', '시력 저하 또는 실명으로 인해 시각적 정보 인식에 어려움이 있는 장애'),
+('청각장애', '청력 손실로 인해 소리를 듣는 데 어려움이 있는 장애'),
+('언어장애', '발음, 발성, 언어 이해 및 표현에 어려움이 있는 장애'),
+('지적장애', '지적 기능과 적응 행동에 제한이 있는 장애');

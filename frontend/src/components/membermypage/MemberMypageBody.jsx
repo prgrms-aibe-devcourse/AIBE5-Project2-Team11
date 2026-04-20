@@ -7,6 +7,21 @@ export default function MemberMypageBody() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // 비밀번호 변경 상태
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+    });
+    const [passwordChanging, setPasswordChanging] = useState(false);
+    const [passwordMessage, setPasswordMessage] = useState("");
+    const [passwordError, setPasswordError] = useState(false);
+
+    // 회원 탈퇴 상태
+    const [accountDeleting, setAccountDeleting] = useState(false);
+    const [deleteMessage, setDeleteMessage] = useState("");
+    const [deleteError, setDeleteError] = useState(false);
+
     const [profile, setProfile] = useState({
         name: "",
         email: "",
@@ -334,6 +349,135 @@ export default function MemberMypageBody() {
         } catch (err) {
             console.error("프로필 저장 오류:", err);
             alert("네트워크 오류가 발생했습니다.");
+        }
+    };
+
+    // 비밀번호 변경 핸들러
+    const handleChangePassword = async () => {
+        setPasswordMessage("");
+        setPasswordError(false);
+
+        // 유효성 검사
+        if (!passwordData.currentPassword) {
+            setPasswordMessage("현재 비밀번호를 입력해주세요.");
+            setPasswordError(true);
+            return;
+        }
+
+        if (!passwordData.newPassword) {
+            setPasswordMessage("새 비밀번호를 입력해주세요.");
+            setPasswordError(true);
+            return;
+        }
+
+        if (!passwordData.confirmPassword) {
+            setPasswordMessage("새 비밀번호 확인을 입력해주세요.");
+            setPasswordError(true);
+            return;
+        }
+
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            setPasswordMessage("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
+            setPasswordError(true);
+            return;
+        }
+
+        try {
+            setPasswordChanging(true);
+            const token = localStorage.getItem("accessToken");
+
+            if (!token) {
+                setPasswordMessage("로그인이 필요합니다.");
+                setPasswordError(true);
+                return;
+            }
+
+            const response = await fetch("http://localhost:8080/members/change-password", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    currentPassword: passwordData.currentPassword,
+                    newPassword: passwordData.newPassword,
+                    confirmPassword: passwordData.confirmPassword,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setPasswordMessage("비밀번호가 성공적으로 변경되었습니다.");
+                setPasswordError(false);
+                setPasswordData({
+                    currentPassword: "",
+                    newPassword: "",
+                    confirmPassword: "",
+                });
+                // 3초 후 메시지 숨김
+                setTimeout(() => setPasswordMessage(""), 3000);
+            } else {
+                setPasswordMessage(data.message || "비밀번호 변경에 실패했습니다.");
+                setPasswordError(true);
+            }
+        } catch (err) {
+            console.error("비밀번호 변경 오류:", err);
+            setPasswordMessage("네트워크 오류가 발생했습니다.");
+            setPasswordError(true);
+        } finally {
+            setPasswordChanging(false);
+        }
+    };
+
+    // 회원 탈퇴 핸들러
+    const handleDeleteAccount = async () => {
+        const isConfirmed = window.confirm(
+            "정말로 회원탈퇴를 하시겠습니까?\n계정이 삭제되며 복구를 원할 시 운영진에게 연락해주세요."
+        );
+
+        if (!isConfirmed) {
+            return;
+        }
+
+        try {
+            setAccountDeleting(true);
+            const token = localStorage.getItem("accessToken");
+
+            if (!token) {
+                setDeleteMessage("로그인이 필요합니다.");
+                setDeleteError(true);
+                return;
+            }
+
+            const response = await fetch("http://localhost:8080/members/delete-account", {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setDeleteMessage("회원탈퇴가 완료되었습니다. 로그인 페이지로 이동합니다.");
+                setDeleteError(false);
+                // 2초 후 로그아웃 및 페이지 이동
+                setTimeout(() => {
+                    localStorage.removeItem("accessToken");
+                    window.location.href = "/login";
+                }, 2000);
+            } else {
+                setDeleteMessage(data.message || "회원탈퇴에 실패했습니다.");
+                setDeleteError(true);
+            }
+        } catch (err) {
+            console.error("회원 탈퇴 오류:", err);
+            setDeleteMessage("네트워크 오류가 발생했습니다.");
+            setDeleteError(true);
+        } finally {
+            setAccountDeleting(false);
         }
     };
 
@@ -866,32 +1010,71 @@ export default function MemberMypageBody() {
 
             {/* 계정설정 */}
             {activeTab === "account" && (
-                <div className="bg-white shadow rounded-lg p-6 space-y-4">
-                    <input
-                        type="password"
-                        className="w-full border p-2 rounded"
-                        placeholder="현재 비밀번호"
-                    />
+                <div className="bg-white shadow rounded-lg p-6 space-y-6">
+                    {/* 비밀번호 변경 섹션 */}
+                    <div className="border-b pb-6 space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-800">비밀번호 변경</h3>
 
-                    <input
-                        type="password"
-                        className="w-full border p-2 rounded"
-                        placeholder="새 비밀번호"
-                    />
+                        <div className="space-y-3">
+                            <input
+                                type="password"
+                                className="w-full border p-3 rounded"
+                                placeholder="현재 비밀번호"
+                                value={passwordData.currentPassword}
+                                onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                            />
 
-                    <input
-                        type="password"
-                        className="w-full border p-2 rounded"
-                        placeholder="새 비밀번호 확인"
-                    />
+                            <input
+                                type="password"
+                                className="w-full border p-3 rounded"
+                                placeholder="새 비밀번호"
+                                value={passwordData.newPassword}
+                                onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                            />
 
-                    <button className="w-full bg-blue-500 text-white py-2 rounded">
-                        비밀번호 변경
-                    </button>
+                            <input
+                                type="password"
+                                className="w-full border p-3 rounded"
+                                placeholder="새 비밀번호 확인"
+                                value={passwordData.confirmPassword}
+                                onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                            />
 
-                    <button className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 mt-2">
-                        회원 탈퇴
-                    </button>
+                            <button
+                                onClick={handleChangePassword}
+                                disabled={passwordChanging}
+                                className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            >
+                                {passwordChanging ? "처리 중..." : "비밀번호 변경"}
+                            </button>
+
+                            {passwordMessage && (
+                                <div className={`p-3 rounded text-sm ${passwordError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                    {passwordMessage}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 회원 탈퇴 섹션 */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-800">회원 탈퇴</h3>
+                        <p className="text-sm text-gray-600">회원 탈퇴를 하시면 계정이 삭제되며 복구할 수 없습니다.</p>
+
+                        <button
+                            onClick={handleDeleteAccount}
+                            disabled={accountDeleting}
+                            className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold"
+                        >
+                            {accountDeleting ? "처리 중..." : "회원 탈퇴"}
+                        </button>
+
+                        {deleteMessage && (
+                            <div className={`p-3 rounded text-sm ${deleteError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                {deleteMessage}
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
                 </>
