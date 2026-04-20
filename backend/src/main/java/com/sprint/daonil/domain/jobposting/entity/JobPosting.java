@@ -76,22 +76,22 @@ public class JobPosting {
     private String workHours;
 
     @Column(name = "env_both_hands")
-    private Integer envBothHands;
+    private String envBothHands;
 
     @Column(name = "env_eyesight")
-    private Integer envEyesight;
+    private String envEyesight;
 
     @Column(name = "env_hand_work")
-    private Integer envHandWork;
+    private String envHandWork;
 
     @Column(name = "env_lift_power")
-    private Integer envLiftPower;
+    private String envLiftPower;
 
     @Column(name = "env_lstn_talk")
-    private Integer envLstnTalk;
+    private String envLstnTalk;
 
     @Column(name = "env_stnd_walk")
-    private Integer envStndWalk;
+    private String envStndWalk;
 
 
 

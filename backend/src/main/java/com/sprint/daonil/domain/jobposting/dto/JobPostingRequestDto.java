@@ -25,12 +25,12 @@ public class JobPostingRequestDto {
     private LocalDate applicationEndDate;
     private String content;
     private String workHours;
-    private Integer envBothHands;
-    private Integer envEyesight;
-    private Integer envHandWork;
-    private Integer envLiftPower;
-    private Integer envLstnTalk;
-    private Integer envStndWalk;
+    private String envBothHands;
+    private String envEyesight;
+    private String envHandWork;
+    private String envLiftPower;
+    private String envLstnTalk;
+    private String envStndWalk;
 
     // service에서 Company엔티티 전달
     public JobPosting toEntity(Company company) {

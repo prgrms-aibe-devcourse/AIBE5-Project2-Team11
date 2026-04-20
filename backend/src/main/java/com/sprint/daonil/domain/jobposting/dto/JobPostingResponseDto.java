@@ -32,12 +32,12 @@ public class JobPostingResponseDto {
     private LocalDateTime updatedAt;
     private String content;
     private String workHours;
-    private Integer envBothHands;
-    private Integer envEyesight;
-    private Integer envHandWork;
-    private Integer envLiftPower;
-    private Integer envLstnTalk;
-    private Integer envStndWalk;
+    private String envBothHands;
+    private String envEyesight;
+    private String envHandWork;
+    private String envLiftPower;
+    private String envLstnTalk;
+    private String envStndWalk;
 
     public static JobPostingResponseDto fromEntity(JobPosting jobPosting) {
         return JobPostingResponseDto.builder()
