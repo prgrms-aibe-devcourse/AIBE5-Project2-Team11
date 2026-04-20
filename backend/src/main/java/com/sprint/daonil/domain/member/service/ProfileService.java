@@ -26,38 +26,44 @@ public class ProfileService {
 
     @Transactional
     public ProfileResponseDto saveProfile(Long memberId, ProfileRequestDto requestDto) {
-        // 사용자 조회
-        Member member = memberService.getMemberById(memberId);
+        try {
+            // 사용자 조회
+            Member member = memberService.getMemberById(memberId);
 
-        // 기존 프로필이 있는지 확인
-        Profile profile = profileRepository.findByMemberId(memberId)
-                .orElseGet(() -> {
-                    Profile newProfile = Profile.builder()
-                            .member(member)
-                            .createdAt(LocalDateTime.now())
-                            .updatedAt(LocalDateTime.now())
-                            .build();
-                    return newProfile;
-                });
+            // 기존 프로필이 있는지 확인
+            Profile profile = profileRepository.findByMemberId(memberId)
+                    .orElseGet(() -> {
+                        Profile newProfile = Profile.builder()
+                                .member(member)
+                                .createdAt(LocalDateTime.now())
+                                .updatedAt(LocalDateTime.now())
+                                .build();
+                        return newProfile;
+                    });
 
-        // 프로필 정보 업데이트
-        profile.setCareer(requestDto.getCareer());
-        profile.setPreferredJob(requestDto.getPreferredJob());
-        profile.setPreferredRegion(requestDto.getPreferredRegion());
-        profile.setDesiredSalary(requestDto.getDesiredSalary());
-        profile.setIntroduction(requestDto.getIntroduction());
-        profile.setEnvBothHands(requestDto.getEnvBothHands());
-        profile.setEnvEyesight(requestDto.getEnvEyesight());
-        profile.setEnvHandWork(requestDto.getEnvHandWork());
-        profile.setEnvLiftPower(requestDto.getEnvLiftPower());
-        profile.setEnvLstnTalk(requestDto.getEnvLstnTalk());
-        profile.setEnvStndWalk(requestDto.getEnvStndWalk());
-        profile.setUpdatedAt(LocalDateTime.now());
+            // 프로필 정보 업데이트
+            profile.setCareer(requestDto.getCareer());
+            profile.setPreferredJob(requestDto.getPreferredJob());
+            profile.setPreferredRegion(requestDto.getPreferredRegion());
+            profile.setDesiredSalary(requestDto.getDesiredSalary());
+            profile.setIntroduction(requestDto.getIntroduction());
+            profile.setEnvBothHands(requestDto.getEnvBothHands());
+            profile.setEnvEyesight(requestDto.getEnvEyesight());
+            profile.setEnvHandWork(requestDto.getEnvHandWork());
+            profile.setEnvLiftPower(requestDto.getEnvLiftPower());
+            profile.setEnvLstnTalk(requestDto.getEnvLstnTalk());
+            profile.setEnvStndWalk(requestDto.getEnvStndWalk());
+            profile.setUpdatedAt(LocalDateTime.now());
 
         // 언어 정보 업데이트
         if (requestDto.getLanguages() != null) {
             profile.getLanguages().clear();
             for (ProfileLanguageDto langDto : requestDto.getLanguages()) {
+                // 언어명이 비어있으면 스킵
+                if (langDto.getLanguageName() == null || langDto.getLanguageName().trim().isEmpty()) {
+                    continue;
+                }
+
                 ProfileLanguage language = ProfileLanguage.builder()
                         .profile(profile)
                         .languageName(langDto.getLanguageName())
@@ -74,12 +80,18 @@ public class ProfileService {
         if (requestDto.getCertificates() != null) {
             profile.getCertificates().clear();
             for (ProfileCertificateDto certDto : requestDto.getCertificates()) {
+                // 자격증명이 비어있으면 스킵
+                if (certDto.getCertificateName() == null || certDto.getCertificateName().trim().isEmpty()) {
+                    continue;
+                }
+
                 ProfileCertificate certificate = ProfileCertificate.builder()
                         .profile(profile)
                         .certificateName(certDto.getCertificateName())
                         .acquiredDate(certDto.getAcquiredDate())
                         .scoreOrGrade(certDto.getScoreOrGrade())
                         .status(certDto.getStatus())
+                        .fieldId(certDto.getFieldId())
                         .build();
                 profile.getCertificates().add(certificate);
             }
@@ -89,6 +101,11 @@ public class ProfileService {
         if (requestDto.getDisabilities() != null) {
             profile.getDisabilities().clear();
             for (ProfileDisabilityDto disDto : requestDto.getDisabilities()) {
+                // 장애명이 비어있으면 스킵
+                if (disDto.getDisabilityName() == null || disDto.getDisabilityName().trim().isEmpty()) {
+                    continue;
+                }
+
                 // disabilityName으로 Disability 조회
                 var disability = disabilityRepository.findByName(disDto.getDisabilityName())
                         .orElseThrow(() -> new IllegalArgumentException("장애 유형을 찾을 수 없습니다: " + disDto.getDisabilityName()));
@@ -105,6 +122,14 @@ public class ProfileService {
 
         Profile savedProfile = profileRepository.save(profile);
         return convertToResponseDto(savedProfile);
+        } catch (IllegalArgumentException e) {
+            System.err.println("ProfileService - 입력 검증 오류: " + e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            System.err.println("ProfileService - 프로필 저장 오류: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("프로필 저장 중 오류 발생: " + e.getMessage(), e);
+        }
     }
 
     public ProfileResponseDto getProfile(Long memberId) {
@@ -145,6 +170,7 @@ public class ProfileService {
                         .acquiredDate(cert.getAcquiredDate())
                         .scoreOrGrade(cert.getScoreOrGrade())
                         .status(cert.getStatus())
+                        .fieldId(cert.getFieldId())
                         .build())
                 .collect(Collectors.toList());
 

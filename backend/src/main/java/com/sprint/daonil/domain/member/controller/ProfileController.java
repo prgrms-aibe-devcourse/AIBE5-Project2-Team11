@@ -79,11 +79,21 @@ public class ProfileController {
             response.put("data", profileDto);
 
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "입력 오류: " + e.getMessage());
+
+            System.err.println("ProfileController - 입력 오류: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(response);
         } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("message", e.getMessage());
+            response.put("message", "프로필 저장 중 오류가 발생했습니다: " + e.getMessage());
 
+            System.err.println("ProfileController - 오류: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(response);
         }
     }

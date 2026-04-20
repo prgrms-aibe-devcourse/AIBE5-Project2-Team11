@@ -453,6 +453,9 @@ CREATE TABLE `date` (
         FOREIGN KEY (jmCd) REFERENCES qualification(JMCD)
 );
 
+/////////여기부터 실행
+
+
 ALTER TABLE profile_certificate
 DROP FOREIGN KEY FK_profile_certificate_certificate;
 
@@ -468,6 +471,10 @@ ALTER TABLE profile
 ADD COLUMN introduction TEXT NULL,
 ADD COLUMN desired_salary VARCHAR(100) NULL;
 
+ALTER TABLE profile_certificate
+MODIFY COLUMN field_id VARCHAR(50) NULL;
+
+select * from member;
 select * from field;
 select * from qualification;
 select * from profile_lang_qualification;

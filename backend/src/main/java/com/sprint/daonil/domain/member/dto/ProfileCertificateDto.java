@@ -14,5 +14,6 @@ public class ProfileCertificateDto {
     private String acquiredDate;
     private String scoreOrGrade;
     private String status;
+    private String fieldId;
 }
 

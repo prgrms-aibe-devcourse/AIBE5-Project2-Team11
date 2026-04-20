@@ -32,5 +32,10 @@ public class ProfileCertificate {
 
     @Column(name = "status", length = 50)
     private String status;
+
+    @Column(name = "field_id", length = 50, nullable = true)
+    private String fieldId;
 }
+
+
 

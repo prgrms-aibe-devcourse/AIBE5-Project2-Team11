@@ -50,6 +50,11 @@ export default function MemberMypageBody() {
         disabilities: [],
     });
 
+    // 프로필 저장 상태
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileMessage, setProfileMessage] = useState("");
+    const [profileSaveError, setProfileSaveError] = useState(false);
+
     // API에서 사용자 정보 및 프로필 정보 조회
     useEffect(() => {
         const fetchUserInfo = async () => {
@@ -289,9 +294,14 @@ export default function MemberMypageBody() {
 
     const saveProfileInfo = async () => {
         try {
+            setProfileSaving(true);
+            setProfileMessage("");
+            setProfileSaveError(false);
+
             const token = localStorage.getItem("accessToken");
             if (!token) {
-                alert("로그인이 필요합니다.");
+                setProfileMessage("로그인이 필요합니다.");
+                setProfileSaveError(true);
                 return;
             }
 
@@ -307,24 +317,30 @@ export default function MemberMypageBody() {
                 envLiftPower: profileInfo.envLiftPower ? "1" : "0",
                 envLstnTalk: profileInfo.envLstnTalk ? "1" : "0",
                 envStndWalk: profileInfo.envStndWalk ? "1" : "0",
-                languages: profileInfo.languages.map(lang => ({
-                    languageName: lang.languageName,
-                    testName: lang.testName,
-                    score: lang.score,
-                    acquiredDate: lang.acquiredDate,
-                    expirationDate: lang.expirationDate,
-                })),
-                certificates: profileInfo.certificates.map(cert => ({
-                    certificateName: cert.certificateName,
-                    acquiredDate: cert.acquiredDate,
-                    scoreOrGrade: cert.scoreOrGrade,
-                    status: cert.status,
-                })),
-                disabilities: profileInfo.disabilities.map(dis => ({
-                    disabilityName: dis.disabilityName,
-                    severity: dis.severity,
-                    note: dis.note,
-                })),
+                languages: profileInfo.languages
+                    .filter(lang => lang.languageName && lang.languageName.trim() !== "")
+                    .map(lang => ({
+                        languageName: lang.languageName,
+                        testName: lang.testName || "",
+                        score: lang.score || "",
+                        acquiredDate: lang.acquiredDate || "",
+                        expirationDate: lang.expirationDate || "",
+                    })),
+                certificates: profileInfo.certificates
+                    .filter(cert => cert.certificateName && cert.certificateName.trim() !== "")
+                    .map(cert => ({
+                        certificateName: cert.certificateName,
+                        acquiredDate: cert.acquiredDate || "",
+                        scoreOrGrade: cert.scoreOrGrade || "",
+                        status: cert.status || "취득",
+                    })),
+                disabilities: profileInfo.disabilities
+                    .filter(dis => dis.disabilityName && dis.disabilityName.trim() !== "")
+                    .map(dis => ({
+                        disabilityName: dis.disabilityName,
+                        severity: dis.severity || "",
+                        note: dis.note || "",
+                    })),
             };
 
             const response = await fetch("http://localhost:8080/members/profile", {
@@ -339,16 +355,27 @@ export default function MemberMypageBody() {
             if (response.ok) {
                 const data = await response.json();
                 if (data.success) {
-                    alert("프로필이 저장되었습니다.");
+                    setProfileMessage("프로필이 저장되었습니다.");
+                    setProfileSaveError(false);
+                    setIsEditingProfile(false);
+                    // 3초 후 메시지 숨김
+                    setTimeout(() => setProfileMessage(""), 3000);
                 } else {
-                    alert("프로필 저장에 실패했습니다: " + data.message);
+                    setProfileMessage(data.message || "프로필 저장에 실패했습니다.");
+                    setProfileSaveError(true);
                 }
             } else {
-                alert("프로필 저장 중 오류가 발생했습니다.");
+                const errorData = await response.json();
+                console.error("서버 에러 응답:", errorData);
+                setProfileMessage(errorData.message || "프로필 저장 중 오류가 발생했습니다.");
+                setProfileSaveError(true);
             }
         } catch (err) {
             console.error("프로필 저장 오류:", err);
-            alert("네트워크 오류가 발생했습니다.");
+            setProfileMessage("네트워크 오류가 발생했습니다.");
+            setProfileSaveError(true);
+        } finally {
+            setProfileSaving(false);
         }
     };
 
@@ -917,6 +944,7 @@ export default function MemberMypageBody() {
                                     </select>
                                 </div>
 
+
                                 {isEditingProfile && (
                                     <button
                                         onClick={() => handleRemoveCertificate(index)}
@@ -1000,11 +1028,19 @@ export default function MemberMypageBody() {
                     <div className="pt-4 flex justify-end gap-3">
                         <button
                             onClick={handleProfileEditToggle}
-                            className="px-6 py-2 bg-[#4A2E2A] text-white rounded-lg hover:bg-[#3a231f]"
+                            disabled={profileSaving}
+                            className="px-6 py-2 bg-[#4A2E2A] text-white rounded-lg hover:bg-[#3a231f] disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
-                            {isEditingProfile ? "수정 완료" : "내용 수정"}
+                            {profileSaving ? "저장 중..." : (isEditingProfile ? "수정 완료" : "내용 수정")}
                         </button>
                     </div>
+
+                    {/* 저장 메시지 */}
+                    {profileMessage && (
+                        <div className={`p-3 rounded text-sm ${profileSaveError ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-green-100 text-green-700 border border-green-300'}`}>
+                            {profileMessage}
+                        </div>
+                    )}
                 </div>
             )}
 
