@@ -5,6 +5,7 @@ import com.sprint.daonil.domain.company.dto.CompanySignupRequestDto;
 import com.sprint.daonil.domain.member.dto.ChangePasswordRequestDto;
 import com.sprint.daonil.domain.member.dto.LoginRequestDto;
 import com.sprint.daonil.domain.member.dto.SignupRequestDto;
+import com.sprint.daonil.domain.member.dto.UpdateMemberInfoRequestDto;
 import com.sprint.daonil.domain.member.entity.Member;
 import com.sprint.daonil.domain.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
@@ -226,6 +227,44 @@ public class MemberController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", "회원탈퇴 중 오류가 발생했습니다.");
+
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    @PutMapping("/update-info")
+    public ResponseEntity<Map<String, Object>> updateMemberInfo(@RequestBody UpdateMemberInfoRequestDto requestDto) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+            if (auth == null || !auth.isAuthenticated()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "인증되지 않은 사용자입니다.");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            String loginId = auth.getName();
+            Member updatedMember = memberService.updateMemberInfo(loginId, requestDto.getName(), requestDto.getPhoneNumber(), requestDto.getAddress());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "회원 정보가 수정되었습니다.");
+            response.put("name", updatedMember.getName());
+            response.put("phoneNumber", updatedMember.getPhoneNumber());
+            response.put("address", updatedMember.getAddress());
+
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "회원 정보 수정 중 오류가 발생했습니다.");
 
             return ResponseEntity.badRequest().body(response);
         }

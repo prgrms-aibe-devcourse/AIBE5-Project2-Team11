@@ -183,4 +183,27 @@ public class MemberService {
         member.setUpdatedAt(LocalDateTime.now());
         memberRepository.save(member);
     }
+
+    @Transactional
+    public Member updateMemberInfo(String loginId, String name, String phoneNumber, String address) {
+        Member member = memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+
+        // name은 필수 필드
+        if (name == null || name.trim().isEmpty()) {
+            throw new IllegalArgumentException("이름은 필수입니다.");
+        }
+
+        member.setName(name.trim());
+
+        if (phoneNumber != null && !phoneNumber.trim().isEmpty()) {
+            member.setPhoneNumber(phoneNumber.trim());
+        }
+        if (address != null && !address.trim().isEmpty()) {
+            member.setAddress(address.trim());
+        }
+
+        member.setUpdatedAt(LocalDateTime.now());
+        return memberRepository.save(member);
+    }
 }

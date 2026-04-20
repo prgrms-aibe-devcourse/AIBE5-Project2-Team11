@@ -281,7 +281,58 @@ export default function MemberMypageBody() {
     };
 
     const handleEditToggle = () => {
+        if (isEditing) {
+            // 저장 로직
+            saveBasicInfo();
+        }
         setIsEditing((prev) => !prev);
+    };
+
+    const saveBasicInfo = async () => {
+        try {
+            // 유효성 검사
+            if (!profile.name || !profile.name.trim()) {
+                alert("이름은 필수입니다.");
+                return;
+            }
+
+            const token = localStorage.getItem("accessToken");
+            if (!token) {
+                alert("로그인이 필요합니다.");
+                return;
+            }
+
+            const payload = {
+                name: profile.name.trim(),
+                phoneNumber: profile.phone ? profile.phone.trim() : "",
+                address: profile.address ? profile.address.trim() : "",
+            };
+
+            const response = await fetch("http://localhost:8080/members/update-info", {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    alert("기본 정보가 저장되었습니다.");
+                } else {
+                    alert("기본 정보 저장에 실패했습니다: " + data.message);
+                }
+            } else {
+                const errorData = await response.json();
+                console.error("에러 응답:", errorData);
+                alert(errorData.message || "기본 정보 저장 중 오류가 발생했습니다.");
+            }
+        } catch (err) {
+            console.error("기본 정보 저장 오류:", err);
+            alert("네트워크 오류가 발생했습니다.");
+        }
     };
 
     const handleProfileEditToggle = () => {
