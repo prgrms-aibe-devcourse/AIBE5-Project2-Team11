@@ -1,61 +1,162 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function MemberMypageBody() {
     const [activeTab, setActiveTab] = useState("basic");
     const [isEditing, setIsEditing] = useState(false);
     const [isEditingProfile, setIsEditingProfile] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+
+    // 비밀번호 변경 상태
+    const [passwordData, setPasswordData] = useState({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+    });
+    const [passwordChanging, setPasswordChanging] = useState(false);
+    const [passwordMessage, setPasswordMessage] = useState("");
+    const [passwordError, setPasswordError] = useState(false);
+
+    // 회원 탈퇴 상태
+    const [accountDeleting, setAccountDeleting] = useState(false);
+    const [deleteMessage, setDeleteMessage] = useState("");
+    const [deleteError, setDeleteError] = useState(false);
 
     const [profile, setProfile] = useState({
-        name: "김다온",
-        email: "daon.kim@email.com",
-        phone: "010-1234-5678",
-        address: "서울특별시 강남구",
-        desiredJob: "프론트엔드 개발자",
-        desiredSalary: "4000",
-        disabilityType: "지체장애",
-        disabilityGrade: "3급",
-        accommodationNeeds: "휠체어 접근 가능 환경, 재택근무 우선 배정",
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        disabilityType: "",
+        disabilityGrade: "",
+        accommodationNeeds: "",
+        loginId: "",
     });
 
     const [profileInfo, setProfileInfo] = useState({
-        career: "5년",
-        preferredJob: "프론트엔드 개발자",
-        preferredRegion: "서울",
-        introduction: "열정적인 개발자입니다.",
-        envBothHands: 1,
-        envEyesight: 1,
-        envHandWork: 1,
+        career: "",
+        preferredJob: "",
+        preferredRegion: "",
+        desiredSalary: "",
+        introduction: "",
+        envBothHands: 0,
+        envEyesight: 0,
+        envHandWork: 0,
         envLiftPower: 0,
-        envLstnTalk: 1,
+        envLstnTalk: 0,
         envStndWalk: 0,
-        languages: [
-            {
-                id: 1,
-                languageName: "영어",
-                testName: "TOEIC",
-                score: "900",
-                acquiredDate: "2023-01-15",
-                expirationDate: "2026-01-15",
-            },
-        ],
-        certificates: [
-            {
-                id: 1,
-                certificateName: "정보처리기사",
-                acquiredDate: "2022-06-10",
-                scoreOrGrade: "합격",
-                status: "취득",
-            },
-        ],
-        disabilities: [
-            {
-                id: 1,
-                disabilityName: "지체장애",
-                severity: "3급",
-                note: "오른쪽 팔 불편",
-            },
-        ],
+        languages: [],
+        certificates: [],
+        disabilities: [],
     });
+
+    // 프로필 저장 상태
+    const [profileSaving, setProfileSaving] = useState(false);
+    const [profileMessage, setProfileMessage] = useState("");
+    const [profileSaveError, setProfileSaveError] = useState(false);
+
+    // API에서 사용자 정보 및 프로필 정보 조회
+    useEffect(() => {
+        const fetchUserInfo = async () => {
+            try {
+                setLoading(true);
+                const token = localStorage.getItem("accessToken");
+
+                if (!token) {
+                    setError("로그인이 필요합니다.");
+                    setLoading(false);
+                    return;
+                }
+
+                const response = await fetch("http://localhost:8080/members/me", {
+                    method: "GET",
+                    headers: {
+                        "Authorization": `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                });
+
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        localStorage.removeItem("accessToken");
+                        setError("세션이 만료되었습니다. 다시 로그인해주세요.");
+                    } else {
+                        setError("사용자 정보를 불러올 수 없습니다.");
+                    }
+                    setLoading(false);
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // API 응답 데이터로 프로필 업데이트
+                    setProfile({
+                        name: data.name || "",
+                        email: data.email || "",
+                        phone: data.phoneNumber || "",
+                        address: data.address || "",
+                        desiredJob: "",
+                        desiredSalary: "",
+                        disabilityType: "",
+                        disabilityGrade: "",
+                        accommodationNeeds: "",
+                        loginId: data.loginId || "",
+                    });
+
+                    // 프로필 정보 조회
+                    await fetchProfileInfo(token);
+                } else {
+                    setError(data.message || "사용자 정보를 불러올 수 없습니다.");
+                }
+            } catch (err) {
+                console.error("사용자 정보 조회 오류:", err);
+                setError("네트워크 오류가 발생했습니다.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserInfo();
+    }, []);
+
+    // 프로필 정보 조회 함수
+    const fetchProfileInfo = async (token) => {
+        try {
+            const response = await fetch("http://localhost:8080/members/profile", {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success && data.data) {
+                    const profileData = data.data;
+                    setProfileInfo({
+                        career: profileData.career || "",
+                        preferredJob: profileData.preferredJob || "",
+                        preferredRegion: profileData.preferredRegion || "",
+                        desiredSalary: profileData.desiredSalary || "",
+                        introduction: profileData.introduction || "",
+                        envBothHands: profileData.envBothHands === "1" ? 1 : 0,
+                        envEyesight: profileData.envEyesight === "1" ? 1 : 0,
+                        envHandWork: profileData.envHandWork === "1" ? 1 : 0,
+                        envLiftPower: profileData.envLiftPower === "1" ? 1 : 0,
+                        envLstnTalk: profileData.envLstnTalk === "1" ? 1 : 0,
+                        envStndWalk: profileData.envStndWalk === "1" ? 1 : 0,
+                        languages: profileData.languages || [],
+                        certificates: profileData.certificates || [],
+                        disabilities: profileData.disabilities || [],
+                    });
+                }
+            }
+        } catch (err) {
+            console.error("프로필 정보 조회 오류:", err);
+        }
+    };
 
     const handleChange = (field, value) => {
         setProfile({
@@ -180,15 +281,305 @@ export default function MemberMypageBody() {
     };
 
     const handleEditToggle = () => {
+        if (isEditing) {
+            // 저장 로직
+            saveBasicInfo();
+        }
         setIsEditing((prev) => !prev);
     };
 
+    const saveBasicInfo = async () => {
+        try {
+            // 유효성 검사
+            if (!profile.name || !profile.name.trim()) {
+                alert("이름은 필수입니다.");
+                return;
+            }
+
+            const token = localStorage.getItem("accessToken");
+            if (!token) {
+                alert("로그인이 필요합니다.");
+                return;
+            }
+
+            const payload = {
+                name: profile.name.trim(),
+                phoneNumber: profile.phone ? profile.phone.trim() : "",
+                address: profile.address ? profile.address.trim() : "",
+            };
+
+            const response = await fetch("http://localhost:8080/members/update-info", {
+                method: "PUT",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    alert("기본 정보가 저장되었습니다.");
+                } else {
+                    alert("기본 정보 저장에 실패했습니다: " + data.message);
+                }
+            } else {
+                const errorData = await response.json();
+                console.error("에러 응답:", errorData);
+                alert(errorData.message || "기본 정보 저장 중 오류가 발생했습니다.");
+            }
+        } catch (err) {
+            console.error("기본 정보 저장 오류:", err);
+            alert("네트워크 오류가 발생했습니다.");
+        }
+    };
+
     const handleProfileEditToggle = () => {
+        if (isEditingProfile) {
+            // 저장 로직
+            saveProfileInfo();
+        }
         setIsEditingProfile((prev) => !prev);
+    };
+
+    const saveProfileInfo = async () => {
+        try {
+            setProfileSaving(true);
+            setProfileMessage("");
+            setProfileSaveError(false);
+
+            const token = localStorage.getItem("accessToken");
+            if (!token) {
+                setProfileMessage("로그인이 필요합니다.");
+                setProfileSaveError(true);
+                return;
+            }
+
+            const payload = {
+                career: profileInfo.career,
+                preferredJob: profileInfo.preferredJob,
+                preferredRegion: profileInfo.preferredRegion,
+                desiredSalary: profileInfo.desiredSalary,
+                introduction: profileInfo.introduction,
+                envBothHands: profileInfo.envBothHands ? "1" : "0",
+                envEyesight: profileInfo.envEyesight ? "1" : "0",
+                envHandWork: profileInfo.envHandWork ? "1" : "0",
+                envLiftPower: profileInfo.envLiftPower ? "1" : "0",
+                envLstnTalk: profileInfo.envLstnTalk ? "1" : "0",
+                envStndWalk: profileInfo.envStndWalk ? "1" : "0",
+                languages: profileInfo.languages
+                    .filter(lang => lang.languageName && lang.languageName.trim() !== "")
+                    .map(lang => ({
+                        languageName: lang.languageName,
+                        testName: lang.testName || "",
+                        score: lang.score || "",
+                        acquiredDate: lang.acquiredDate || "",
+                        expirationDate: lang.expirationDate || "",
+                    })),
+                certificates: profileInfo.certificates
+                    .filter(cert => cert.certificateName && cert.certificateName.trim() !== "")
+                    .map(cert => ({
+                        certificateName: cert.certificateName,
+                        acquiredDate: cert.acquiredDate || "",
+                        scoreOrGrade: cert.scoreOrGrade || "",
+                        status: cert.status || "취득",
+                    })),
+                disabilities: profileInfo.disabilities
+                    .filter(dis => dis.disabilityName && dis.disabilityName.trim() !== "")
+                    .map(dis => ({
+                        disabilityName: dis.disabilityName,
+                        severity: dis.severity || "",
+                        note: dis.note || "",
+                    })),
+            };
+
+            const response = await fetch("http://localhost:8080/members/profile", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.success) {
+                    setProfileMessage("프로필이 저장되었습니다.");
+                    setProfileSaveError(false);
+                    setIsEditingProfile(false);
+                    // 3초 후 메시지 숨김
+                    setTimeout(() => setProfileMessage(""), 3000);
+                } else {
+                    setProfileMessage(data.message || "프로필 저장에 실패했습니다.");
+                    setProfileSaveError(true);
+                }
+            } else {
+                const errorData = await response.json();
+                console.error("서버 에러 응답:", errorData);
+                setProfileMessage(errorData.message || "프로필 저장 중 오류가 발생했습니다.");
+                setProfileSaveError(true);
+            }
+        } catch (err) {
+            console.error("프로필 저장 오류:", err);
+            setProfileMessage("네트워크 오류가 발생했습니다.");
+            setProfileSaveError(true);
+        } finally {
+            setProfileSaving(false);
+        }
+    };
+
+    // 비밀번호 변경 핸들러
+    const handleChangePassword = async () => {
+        setPasswordMessage("");
+        setPasswordError(false);
+
+        // 유효성 검사
+        if (!passwordData.currentPassword) {
+            setPasswordMessage("현재 비밀번호를 입력해주세요.");
+            setPasswordError(true);
+            return;
+        }
+
+        if (!passwordData.newPassword) {
+            setPasswordMessage("새 비밀번호를 입력해주세요.");
+            setPasswordError(true);
+            return;
+        }
+
+        if (!passwordData.confirmPassword) {
+            setPasswordMessage("새 비밀번호 확인을 입력해주세요.");
+            setPasswordError(true);
+            return;
+        }
+
+        if (passwordData.newPassword !== passwordData.confirmPassword) {
+            setPasswordMessage("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
+            setPasswordError(true);
+            return;
+        }
+
+        try {
+            setPasswordChanging(true);
+            const token = localStorage.getItem("accessToken");
+
+            if (!token) {
+                setPasswordMessage("로그인이 필요합니다.");
+                setPasswordError(true);
+                return;
+            }
+
+            const response = await fetch("http://localhost:8080/members/change-password", {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    currentPassword: passwordData.currentPassword,
+                    newPassword: passwordData.newPassword,
+                    confirmPassword: passwordData.confirmPassword,
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setPasswordMessage("비밀번호가 성공적으로 변경되었습니다.");
+                setPasswordError(false);
+                setPasswordData({
+                    currentPassword: "",
+                    newPassword: "",
+                    confirmPassword: "",
+                });
+                // 3초 후 메시지 숨김
+                setTimeout(() => setPasswordMessage(""), 3000);
+            } else {
+                setPasswordMessage(data.message || "비밀번호 변경에 실패했습니다.");
+                setPasswordError(true);
+            }
+        } catch (err) {
+            console.error("비밀번호 변경 오류:", err);
+            setPasswordMessage("네트워크 오류가 발생했습니다.");
+            setPasswordError(true);
+        } finally {
+            setPasswordChanging(false);
+        }
+    };
+
+    // 회원 탈퇴 핸들러
+    const handleDeleteAccount = async () => {
+        const isConfirmed = window.confirm(
+            "정말로 회원탈퇴를 하시겠습니까?\n계정이 삭제되며 복구를 원할 시 운영진에게 연락해주세요."
+        );
+
+        if (!isConfirmed) {
+            return;
+        }
+
+        try {
+            setAccountDeleting(true);
+            const token = localStorage.getItem("accessToken");
+
+            if (!token) {
+                setDeleteMessage("로그인이 필요합니다.");
+                setDeleteError(true);
+                return;
+            }
+
+            const response = await fetch("http://localhost:8080/members/delete-account", {
+                method: "DELETE",
+                headers: {
+                    "Authorization": `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                setDeleteMessage("회원탈퇴가 완료되었습니다. 로그인 페이지로 이동합니다.");
+                setDeleteError(false);
+                // 2초 후 로그아웃 및 페이지 이동
+                setTimeout(() => {
+                    localStorage.removeItem("accessToken");
+                    window.location.href = "/login";
+                }, 2000);
+            } else {
+                setDeleteMessage(data.message || "회원탈퇴에 실패했습니다.");
+                setDeleteError(true);
+            }
+        } catch (err) {
+            console.error("회원 탈퇴 오류:", err);
+            setDeleteMessage("네트워크 오류가 발생했습니다.");
+            setDeleteError(true);
+        } finally {
+            setAccountDeleting(false);
+        }
     };
 
     return (
         <div className="max-w-4xl mx-auto py-10 px-4 space-y-6">
+            {/* 로딩 상태 */}
+            {loading && (
+                <div className="bg-white shadow rounded-lg p-6 text-center">
+                    <p className="text-gray-500">사용자 정보를 불러오는 중입니다...</p>
+                </div>
+            )}
+
+            {/* 에러 상태 */}
+            {error && !loading && (
+                <div className="bg-white shadow rounded-lg p-6">
+                    <div className="text-red-600 text-center">
+                        <p className="font-semibold">{error}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* 정상 상태 */}
+            {!loading && !error && (
+                <>
             {/* 상단 프로필 */}
             <div className="bg-white shadow rounded-lg p-6 flex items-center gap-4">
                 <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center text-2xl">
@@ -285,29 +676,6 @@ export default function MemberMypageBody() {
                         />
                     </div>
 
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <label className="font-medium text-gray-700">희망 직무</label>
-                        <input
-                            className={`col-span-3 border p-2 rounded ${
-                                !isEditing ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
-                            }`}
-                            value={profile.desiredJob}
-                            onChange={(e) => handleChange("desiredJob", e.target.value)}
-                            disabled={!isEditing}
-                        />
-                    </div>
-
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <label className="font-medium text-gray-700">희망 연봉</label>
-                        <input
-                            className={`col-span-3 border p-2 rounded ${
-                                !isEditing ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
-                            }`}
-                            value={profile.desiredSalary}
-                            onChange={(e) => handleChange("desiredSalary", e.target.value)}
-                            disabled={!isEditing}
-                        />
-                    </div>
 
                     <div className="pt-4 flex justify-end gap-3">
                         <button
@@ -364,6 +732,19 @@ export default function MemberMypageBody() {
                                 onChange={(e) => handleProfileChange("preferredRegion", e.target.value)}
                                 disabled={!isEditingProfile}
                                 placeholder="예: 서울"
+                            />
+                        </div>
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <label className="font-medium text-gray-700">희망 연봉</label>
+                            <input
+                                className={`col-span-3 border p-2 rounded ${
+                                    !isEditingProfile ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+                                }`}
+                                value={profileInfo.desiredSalary}
+                                onChange={(e) => handleProfileChange("desiredSalary", e.target.value)}
+                                disabled={!isEditingProfile}
+                                placeholder="예: 4000만원"
                             />
                         </div>
 
@@ -614,6 +995,7 @@ export default function MemberMypageBody() {
                                     </select>
                                 </div>
 
+
                                 {isEditingProfile && (
                                     <button
                                         onClick={() => handleRemoveCertificate(index)}
@@ -697,43 +1079,92 @@ export default function MemberMypageBody() {
                     <div className="pt-4 flex justify-end gap-3">
                         <button
                             onClick={handleProfileEditToggle}
-                            className="px-6 py-2 bg-[#4A2E2A] text-white rounded-lg hover:bg-[#3a231f]"
+                            disabled={profileSaving}
+                            className="px-6 py-2 bg-[#4A2E2A] text-white rounded-lg hover:bg-[#3a231f] disabled:opacity-50 disabled:cursor-not-allowed transition"
                         >
-                            {isEditingProfile ? "수정 완료" : "내용 수정"}
+                            {profileSaving ? "저장 중..." : (isEditingProfile ? "수정 완료" : "내용 수정")}
                         </button>
                     </div>
+
+                    {/* 저장 메시지 */}
+                    {profileMessage && (
+                        <div className={`p-3 rounded text-sm ${profileSaveError ? 'bg-red-100 text-red-700 border border-red-300' : 'bg-green-100 text-green-700 border border-green-300'}`}>
+                            {profileMessage}
+                        </div>
+                    )}
                 </div>
             )}
 
             {/* 계정설정 */}
             {activeTab === "account" && (
-                <div className="bg-white shadow rounded-lg p-6 space-y-4">
-                    <input
-                        type="password"
-                        className="w-full border p-2 rounded"
-                        placeholder="현재 비밀번호"
-                    />
+                <div className="bg-white shadow rounded-lg p-6 space-y-6">
+                    {/* 비밀번호 변경 섹션 */}
+                    <div className="border-b pb-6 space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-800">비밀번호 변경</h3>
 
-                    <input
-                        type="password"
-                        className="w-full border p-2 rounded"
-                        placeholder="새 비밀번호"
-                    />
+                        <div className="space-y-3">
+                            <input
+                                type="password"
+                                className="w-full border p-3 rounded"
+                                placeholder="현재 비밀번호"
+                                value={passwordData.currentPassword}
+                                onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                            />
 
-                    <input
-                        type="password"
-                        className="w-full border p-2 rounded"
-                        placeholder="새 비밀번호 확인"
-                    />
+                            <input
+                                type="password"
+                                className="w-full border p-3 rounded"
+                                placeholder="새 비밀번호"
+                                value={passwordData.newPassword}
+                                onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                            />
 
-                    <button className="w-full bg-blue-500 text-white py-2 rounded">
-                        비밀번호 변경
-                    </button>
+                            <input
+                                type="password"
+                                className="w-full border p-3 rounded"
+                                placeholder="새 비밀번호 확인"
+                                value={passwordData.confirmPassword}
+                                onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                            />
 
-                    <button className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 mt-2">
-                        회원 탈퇴
-                    </button>
+                            <button
+                                onClick={handleChangePassword}
+                                disabled={passwordChanging}
+                                className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                            >
+                                {passwordChanging ? "처리 중..." : "비밀번호 변경"}
+                            </button>
+
+                            {passwordMessage && (
+                                <div className={`p-3 rounded text-sm ${passwordError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                    {passwordMessage}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* 회원 탈퇴 섹션 */}
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-gray-800">회원 탈퇴</h3>
+                        <p className="text-sm text-gray-600">회원 탈퇴를 하시면 계정이 삭제되며 복구할 수 없습니다.</p>
+
+                        <button
+                            onClick={handleDeleteAccount}
+                            disabled={accountDeleting}
+                            className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold"
+                        >
+                            {accountDeleting ? "처리 중..." : "회원 탈퇴"}
+                        </button>
+
+                        {deleteMessage && (
+                            <div className={`p-3 rounded text-sm ${deleteError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                                {deleteMessage}
+                            </div>
+                        )}
+                    </div>
                 </div>
+            )}
+                </>
             )}
         </div>
     );
