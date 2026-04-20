@@ -23,8 +23,21 @@ public class JobPostingService {
     // 채용공고 목록 조회 (다중 필터 + 페이징)
     @Transactional(readOnly = true)
     public Page<JobPostingResponseDto> getJobPostings(String keyword, String jobCategory,
-                                                      String workRegion, Pageable pageable) {
-        return jobPostingRepository.findByFilters(keyword, jobCategory, workRegion, false, pageable)
+                                                      String workRegion,
+                                                      String envBothHands, String envEyesight, 
+                                                      String envHandWork, String envLiftPower, 
+                                                      String envLstnTalk, String envStndWalk,
+                                                      Pageable pageable) {
+        return jobPostingRepository.findByFilters(keyword, jobCategory, workRegion, 
+                envBothHands, envEyesight, envHandWork, envLiftPower, envLstnTalk, envStndWalk,
+                false, pageable)
+                .map(JobPostingResponseDto::fromEntity);
+    }
+
+    // 특정 회사 채용공고 목록 조회
+    @Transactional(readOnly = true)
+    public Page<JobPostingResponseDto> getJobPostingsByCompanyId(Long companyId, Pageable pageable) {
+        return jobPostingRepository.findByCompany_CompanyId(companyId, pageable)
                 .map(JobPostingResponseDto::fromEntity);
     }
 

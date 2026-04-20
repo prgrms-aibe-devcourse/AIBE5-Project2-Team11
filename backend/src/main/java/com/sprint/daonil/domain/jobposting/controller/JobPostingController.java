@@ -24,9 +24,30 @@ public class JobPostingController {
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String jobCategory,
             @RequestParam(required = false) String workRegion,
+            @RequestParam(required = false) String envBothHands,
+            @RequestParam(required = false) String envEyesight,
+            @RequestParam(required = false) String envHandWork,
+            @RequestParam(required = false) String envLiftPower,
+            @RequestParam(required = false) String envLstnTalk,
+            @RequestParam(required = false) String envStndWalk,
             @PageableDefault(size = 10) Pageable pageable) {
 
-        Page<JobPostingResponseDto> result = jobPostingService.getJobPostings(keyword, jobCategory, workRegion, pageable);
+        Page<JobPostingResponseDto> result = jobPostingService.getJobPostings(
+            keyword, jobCategory, workRegion,
+            envBothHands, envEyesight, envHandWork, envLiftPower, envLstnTalk, envStndWalk,
+            pageable);
+        return ResponseEntity.ok(result);
+    }
+
+    /**
+     * 특정 회사 채용공고 전체 조회
+     */
+    @GetMapping("/company")
+    public ResponseEntity<Page<JobPostingResponseDto>> getJobPostingsByCompany(
+            @RequestParam Long companyId,
+            @PageableDefault(size = 10) Pageable pageable) {
+
+        Page<JobPostingResponseDto> result = jobPostingService.getJobPostingsByCompanyId(companyId, pageable);
         return ResponseEntity.ok(result);
     }
 

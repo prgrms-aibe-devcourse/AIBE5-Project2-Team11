@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { sampleJobs } from '../../data/sampleJobs';
+import { jobPostingApi } from '../../api/jobPostingApi';
 
 // ==========================================
 // 1. 필터 데이터 정의 (지역 + 6개 근로환경)
@@ -42,6 +42,127 @@ export default function JobsPage() {
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
+  };
+
+  const [jobs, setJobs] = useState([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+
+  const fetchJobs = async (currentPage) => {
+    try {
+      const data = await jobPostingApi.getJobPostings({
+        keyword: searchTerm || undefined,
+        workRegion: filters.region && filters.region !== '전국' ? filters.region : undefined,
+        envBothHands: filters.envBothHands || undefined,
+        envEyesight: filters.envEyesight || undefined,
+        envHandWork: filters.envHandWork || undefined,
+        envLiftPower: filters.envLiftPower || undefined,
+        envLstnTalk: filters.envLstnTalk || undefined,
+        envStndWalk: filters.envStndWalk || undefined,
+        page: currentPage,
+        size: 12
+      });
+      if (data && data.content) {
+        const transformedJobs = data.content.map(apiJob => ({
+          id: apiJob.jobPostingId,
+          company: apiJob.companyName || '미상',
+          title: apiJob.title || '제목 없음',
+          location: apiJob.workRegion || '전국',
+          date: apiJob.applicationEndDate ? apiJob.applicationEndDate.toString() : '상시',
+          workEnv: [apiJob.envBothHands, apiJob.envEyesight, apiJob.envHandWork, apiJob.envLiftPower, apiJob.envLstnTalk, apiJob.envStndWalk].filter(Boolean),
+          badges: [apiJob.employmentType].filter(Boolean),
+          tags: [apiJob.jobCategory].filter(Boolean),
+          tech: [],
+          original: apiJob,
+          ...apiJob
+        }));
+        setJobs(transformedJobs);
+        setTotalPages(data.totalPages);
+        setTotalElements(data.totalElements);
+      }
+    } catch (err) {
+      console.error('Failed to fetch jobs', err);
+    }
+  };
+
+  useEffect(() => {
+    setPage(0);
+    const timeoutId = setTimeout(() => {
+      fetchJobs(0);
+    }, 300);
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filters]);
+
+  const handlePageChange = (pageNum) => {
+    if (pageNum >= 0 && pageNum < totalPages) {
+      setPage(pageNum);
+      fetchJobs(pageNum);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    let startPage = Math.max(0, page - 2);
+    let endPage = Math.min(totalPages - 1, page + 2);
+    
+    if (endPage - startPage < 4) {
+      if (startPage === 0) {
+        endPage = Math.min(totalPages - 1, 4);
+      } else if (endPage === totalPages - 1) {
+        startPage = Math.max(0, totalPages - 5);
+      }
+    }
+
+    return (
+      <div className="mt-12 flex items-center justify-center gap-2">
+        <button 
+          onClick={() => handlePageChange(page - 1)}
+          disabled={page === 0}
+          className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          <i className="ri-arrow-left-s-line"></i>
+        </button>
+        {startPage > 0 && (
+          <>
+            <button onClick={() => handlePageChange(0)} className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-all">1</button>
+            {startPage > 1 && <span className="text-gray-400">...</span>}
+          </>
+        )}
+        
+        {Array.from({ length: endPage - startPage + 1 }).map((_, i) => {
+          const p = startPage + i;
+          return (
+            <button
+              key={p}
+              onClick={() => handlePageChange(p)}
+              className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold transition-all ${
+                page === p 
+                  ? 'bg-[#E66235] text-white shadow-md' 
+                  : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+              }`}
+            >
+              {p + 1}
+            </button>
+          );
+        })}
+
+        {endPage < totalPages - 1 && (
+          <>
+            {endPage < totalPages - 2 && <span className="text-gray-400">...</span>}
+            <button onClick={() => handlePageChange(totalPages - 1)} className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-all">{totalPages}</button>
+          </>
+        )}
+        <button 
+          onClick={() => handlePageChange(page + 1)}
+          disabled={page === totalPages - 1}
+          className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        >
+          <i className="ri-arrow-right-s-line"></i>
+        </button>
+      </div>
+    );
   };
 
   // 필터 초기화
@@ -97,34 +218,8 @@ export default function JobsPage() {
     );
   };
 
-  // 4. 필터링 로직
-  const filteredJobs = sampleJobs.filter((job) => {
-    // A. 검색어 매칭
-    const q = (searchTerm || '').toLowerCase();
-    const matchesSearch = !q || job.title.toLowerCase().includes(q) || job.company.toLowerCase().includes(q);
-
-    // B. 지역 매칭
-    const loc = job.location || job.original?.compAddr || '';
-    const matchesRegion = !filters.region || filters.region === '전국' || loc.includes(filters.region);
-
-    // C. 6개 환경 매칭 (sampleJobs의 DB구조가 배열(workEnv)이거나 객체 속성일 경우 모두 대응)
-    const checkEnv = (key, filterVal) => {
-      if (!filterVal) return true;
-      if (job[key] === filterVal || job.original?.[key] === filterVal) return true;
-      if (job.workEnv && job.workEnv.some(e => e.includes(filterVal) || filterVal.includes(e))) return true;
-      return false;
-    };
-
-    const matchesEnv =
-        checkEnv('envBothHands', filters.envBothHands) &&
-        checkEnv('envEyesight', filters.envEyesight) &&
-        checkEnv('envHandWork', filters.envHandWork) &&
-        checkEnv('envLiftPower', filters.envLiftPower) &&
-        checkEnv('envLstnTalk', filters.envLstnTalk) &&
-        checkEnv('envStndWalk', filters.envStndWalk);
-
-    return matchesSearch && matchesRegion && matchesEnv;
-  });
+  // 4. 필터링 로직 (프론트엔드 추가 필터링 제거하고 서버 결과를 그대로 사용)
+  const filteredJobs = jobs;
 
   return (
       <div className="min-h-screen bg-gray-50 pb-20">
@@ -261,7 +356,7 @@ export default function JobsPage() {
 
           {/* 검색 결과 카운트 */}
           <div className="mb-6 text-gray-600 font-medium">
-            총 <span className="text-[#E66235] font-bold">{filteredJobs.length}</span>건의 공고가 있습니다.
+            총 <span className="text-[#E66235] font-bold">{totalElements}</span>건의 공고가 있습니다.
           </div>
 
           {filteredJobs.length > 0 ? (
@@ -330,6 +425,9 @@ export default function JobsPage() {
                 </button>
               </div>
           )}
+
+          {/* 페이지네이션 */}
+          {renderPagination()}
         </div>
       </div>
   );

@@ -7,5 +7,6 @@
 out
 gen
 
+node_modules
 
 /backend/src/main/resources/application.properties

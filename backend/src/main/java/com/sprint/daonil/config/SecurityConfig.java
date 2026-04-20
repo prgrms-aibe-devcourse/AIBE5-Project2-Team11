@@ -53,6 +53,8 @@ public class SecurityConfig {
                 .requestMatchers("/members/check-loginId/**", "/members/check-email/**").permitAll()
                 .requestMatchers("/api/notices/**").permitAll()
                 .requestMatchers("/api/notices").permitAll()
+                .requestMatchers("/jobs/**").permitAll()
+                .requestMatchers("/jobs").permitAll()
                 .requestMatchers("/members/me").authenticated()
                 .anyRequest().permitAll()
             )
