@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { job_posting as initialData } from "../../mockData/job_posting";
 import CompanyJobpostCloseModal from './CompanyJobpostCloseModal';
 import CompanyJobpostFormModal from './CompanyJobpostFormModal';
-import CompanyJobpostDetailModal from './CompanyJobpostDetailModal'; // 상세 모달 임포트
+import CompanyJobpostDetailModal from './CompanyJobpostDetailModal';
+import { jobPostingApi } from '../../api/jobPostingApi';
 
 export default function CompanyJobpostManageContent() {
   const navigate = useNavigate();
-  const [postings, setPostings] = useState(initialData);
+  const [postings, setPostings] = useState([]);
   
   // 모달 상태 관리
   const [isCloseModalOpen, setIsCloseModalOpen] = useState(false); // 마감 모달
@@ -19,6 +19,33 @@ export default function CompanyJobpostManageContent() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
   const [activeTab, setActiveTab] = useState('전체');
+
+  useEffect(() => {
+    const fetchPostings = async () => {
+      try {
+        const data = await jobPostingApi.getJobPostingsByCompanyId(1, { size: 100 });
+        if (data && data.content) {
+          // 회사별 조회가 아직 백엔드에 없으므로 일단 전체 공고를 가져와서 UI에 맞춰 매핑합니다 
+          // -> 백엔드 회사별 조회 API 구현 완료, companyId=1 로 호출
+          const myJobs = data.content.map(apiJob => ({
+            job_posting_id: apiJob.jobPostingId,
+            title: apiJob.title || '제목 없음',
+            job_category: apiJob.jobCategory || '카테고리',
+            created_at: apiJob.createdAt ? apiJob.createdAt.toString() : '2023-01-01',
+            updated_at: apiJob.updatedAt ? apiJob.updatedAt.toString() : '2023-01-01',
+            application_end_date: apiJob.applicationEndDate ? apiJob.applicationEndDate.toString() : '2099-12-31',
+            is_closed: apiJob.isClosed || false,
+            view_count: apiJob.viewCount || 0,
+            ...apiJob
+          }));
+          setPostings(myJobs);
+        }
+      } catch (err) {
+        console.error('Failed to fetch job postings', err);
+      }
+    };
+    fetchPostings();
+  }, []);
 
   // 데이터 요약 계산
   const totalCount = postings.length;
@@ -87,10 +114,17 @@ export default function CompanyJobpostManageContent() {
     setOpenMenuId(null);
   };
 
-  const handleConfirmClose = () => {
-    setPostings(prev => prev.map(job => 
-      job.job_posting_id === selectedJob.job_posting_id ? { ...job, is_closed: true } : job
-    ));
+  const handleConfirmClose = async () => {
+    try {
+      // API call to close job posting (임시로 companyId = 1 전달)
+      await jobPostingApi.closeJobPosting(1, selectedJob.job_posting_id);
+      setPostings(prev => prev.map(job => 
+        job.job_posting_id === selectedJob.job_posting_id ? { ...job, is_closed: true } : job
+      ));
+    } catch (err) {
+      console.error('Failed to close job posting', err);
+      alert('마감 처리에 실패했습니다.');
+    }
     setIsCloseModalOpen(false);
   };
 
