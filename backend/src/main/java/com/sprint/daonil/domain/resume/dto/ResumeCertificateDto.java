@@ -1,5 +1,8 @@
 package com.sprint.daonil.domain.resume.dto;
 
+import com.sprint.daonil.domain.Certificate.Entity.Qualification;
+import com.sprint.daonil.domain.resume.entity.Resume;
+import com.sprint.daonil.domain.resume.entity.ResumeCertificate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,7 +17,14 @@ import java.time.LocalDate;
 public class ResumeCertificateDto {
 
     private String certificateName;
-    private String description;
-    private String issuingOrganization;
     private LocalDate acquiredDate;
+
+    public ResumeCertificate toEntity(Resume resume, Qualification qualification) {
+        ResumeCertificate entity = new ResumeCertificate();
+        entity.setResume(resume);
+        entity.setQualification(qualification);
+        entity.setAcquiredDate(acquiredDate);
+
+        return entity;
+    }
 }

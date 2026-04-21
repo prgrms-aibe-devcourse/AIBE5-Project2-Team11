@@ -1,6 +1,7 @@
 package com.sprint.daonil.domain.resume.dto;
 
 import com.sprint.daonil.domain.member.entity.Member;
+import com.sprint.daonil.domain.member.entity.Profile;
 import com.sprint.daonil.domain.resume.entity.Resume;
 import lombok.*;
 
@@ -18,7 +19,7 @@ public class ResumeDetailResponseDto {
     private String email;
     private String phoneNumber;
     private String address;
-    private LocalDate birthDate;
+    private String birthDate;
 
     // 이력서 정보
     private String title;
@@ -36,7 +37,8 @@ public class ResumeDetailResponseDto {
     private List<ResumeLangQualificationDto> langQualifications;
 
 
-    public static ResumeDetailResponseDto from(Resume resume) {
+    // Entity -> DTO
+    public static ResumeDetailResponseDto from(Resume resume, Profile profile) {
         ResumeDetailResponseDto dto = new ResumeDetailResponseDto();
 
         Member member = resume.getMember();
@@ -45,6 +47,7 @@ public class ResumeDetailResponseDto {
         dto.setEmail(member.getEmail());
         dto.setPhoneNumber(member.getPhoneNumber());
         dto.setAddress(member.getAddress());
+         dto.setBirthDate(profile.getBirthDate());
 
         dto.setTitle(resume.getTitle());
         dto.setSelfIntroduction(resume.getSelfIntroduction());
@@ -101,9 +104,7 @@ public class ResumeDetailResponseDto {
         return resume.getCertificates().stream()
                 .map(c -> {
                     ResumeCertificateDto dto = new ResumeCertificateDto();
-                    dto.setCertificateName(c.getCertificate().getCertificateName());
-                    dto.setDescription(c.getCertificate().getDescription());
-                    dto.setIssuingOrganization(c.getCertificate().getIssuingOrganization());
+                    dto.setCertificateName(c.getQualification().getName());
                     dto.setAcquiredDate(c.getAcquiredDate());
                     return dto;
                 }).toList();

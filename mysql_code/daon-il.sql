@@ -487,3 +487,16 @@ INSERT INTO disability (name, description) VALUES
 ('청각장애', '청력 손실로 인해 소리를 듣는 데 어려움이 있는 장애'),
 ('언어장애', '발음, 발성, 언어 이해 및 표현에 어려움이 있는 장애'),
 ('지적장애', '지적 기능과 적응 행동에 제한이 있는 장애');
+
+
+
+-- [0421] 이력서 관련 수정사항 ---------------------------------------
+-- 필드명 수정 
+ALTER TABLE qualification CHANGE fieldId field_id VARCHAR(50); 
+-- 기존 FK 버리기
+ALTER TABLE resume_certificate DROP FOREIGN KEY FK_resume_certificate_certificate;
+ALTER TABLE resume_certificate DROP COLUMN certificate_id;
+-- 새 FK 연결 
+ALTER TABLE resume_certificate ADD COLUMN qualification_id INT NOT NULL;
+ALTER TABLE resume_certificate
+ADD CONSTRAINT FK_resume_certificate_qualification FOREIGN KEY (qualification_id) REFERENCES qualification(id);

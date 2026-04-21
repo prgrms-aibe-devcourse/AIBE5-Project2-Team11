@@ -2,7 +2,6 @@ package com.sprint.daonil.domain.resume.dto;
 
 import com.sprint.daonil.domain.member.entity.Member;
 import com.sprint.daonil.domain.resume.entity.Resume;
-import com.sprint.daonil.domain.resume.entity.test.Disability;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -63,8 +62,6 @@ public class ResumeWriteRequestDto {
                     .toList());
         }
 
-        // 장애 유형 엔티티 변환 추가 예정
-        // 자격증 엔티티 변환 추가 예정
 
         return resume;
     }

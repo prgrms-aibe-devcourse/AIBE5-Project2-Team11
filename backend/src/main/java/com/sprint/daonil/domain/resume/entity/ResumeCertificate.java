@@ -1,6 +1,6 @@
 package com.sprint.daonil.domain.resume.entity;
 
-import com.sprint.daonil.domain.resume.entity.test.Certificate; // 임시 테스트 용
+import com.sprint.daonil.domain.Certificate.Entity.Qualification;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -24,8 +24,8 @@ public class ResumeCertificate {
     private Resume resume;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "certificate_id", nullable = false)
-    private Certificate certificate; // 테스트 후, import 경로 변경 필요
+    @JoinColumn(name = "qualification_id", nullable = false)
+    private Qualification qualification;
 
     @Column(name = "acquired_date", nullable = false)
     private LocalDate acquiredDate;

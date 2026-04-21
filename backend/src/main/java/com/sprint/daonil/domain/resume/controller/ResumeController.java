@@ -29,11 +29,6 @@ public class ResumeController {
 
         Page<ResumeListResponseDto> resumeList =   resumeService.getResumeList(userId,pageable);
 
-        if (resumeList == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "존재하지 않는 회원입니다."));
-        }
-
         return ResponseEntity.ok(resumeList);
     }
 
@@ -46,10 +41,6 @@ public class ResumeController {
 
         ResumeDetailResponseDto resumeDetail = resumeService.getResumeDetail(userId, resumeId);
 
-        if (resumeDetail == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("message", "이력서를 찾을 수 없습니다."));
-        }
         return ResponseEntity.ok(resumeDetail);
     }
 
@@ -64,29 +55,20 @@ public class ResumeController {
         Long createdResumeId = resumeService.createResume(userId, dto, image);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
-                Map.of(
-                "message", "이력서 생성 완료",
-                "data", createdResumeId
-                ));
+                Map.of("message", "이력서 생성 완료", "resumeId", createdResumeId));
     }
 
      // 이력서 수정
      @PatchMapping("/{resumeId}")
-     public ResponseEntity<Map<String, Object>> updateResume(
-             @PathVariable Long resumeId,
-             @RequestPart("data") ResumeWriteRequestDto dto,
-             @RequestPart(value = "image", required = false) MultipartFile image) {
-
+     public ResponseEntity<Map<String, Object>> updateResume( @PathVariable Long resumeId,
+                                            @RequestPart("data") ResumeWriteRequestDto dto,
+                                            @RequestPart(value = "image", required = false) MultipartFile image) {
          // 로그인 사용자의 정보 [임시 사용]
          Long userId = 2L;
 
          Long updatedResumeId = resumeService.updateResume(userId, resumeId, dto, image);
 
-         return ResponseEntity.ok(
-                 Map.of(
-                         "message", "이력서 수정 완료",
-                         "data", updatedResumeId
-                 ));
+         return ResponseEntity.ok(Map.of("message", "이력서 수정 완료", "resumeId", updatedResumeId));
      }
 
 
@@ -97,9 +79,8 @@ public class ResumeController {
         Long userId = 2L;
 
         Long resultResumeId = resumeService.deleteResume(userId, resumeId);
-        return ResponseEntity.ok(
-                Map.of("message", "이력서 삭제 완료",
-                "resumeId", resultResumeId) );
+
+        return ResponseEntity.ok( Map.of("message", "이력서 삭제 완료","resumeId", resultResumeId) );
     }
 
 
@@ -110,9 +91,8 @@ public class ResumeController {
         Long userId = 2L;
 
         Long resultResumeId = resumeService.updatePublicStatus(userId, resumeId);
-        return ResponseEntity.ok(
-                Map.of("message", "대표 이력서 설정 완료",
-                        "resumeId", resultResumeId) );
+
+        return ResponseEntity.ok( Map.of("message", "대표 이력서 설정 완료", "resumeId", resultResumeId) );
     }
 
 
