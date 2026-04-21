@@ -9,7 +9,7 @@ import api from "../api/axios";
 function ResumeSection() {
     const navigate = useNavigate();
     const [resumes, setResumes] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [page, setPage] = useState(() => {
         // localStorage에서 페이지 상태 복원
@@ -61,6 +61,26 @@ function ResumeSection() {
         } catch (err) {
             console.error('대표 이력서 설정 실패:', err);
             alert('대표 이력서 설정에 실패했습니다.');
+        }
+    };
+
+    const handleDeleteResume = async (resumeId) => {
+        const isConfirmed = window.confirm('이력서를 삭제하시겠습니까?');
+        if (!isConfirmed) return;
+
+        try {
+            await api.patch(`/resumes/${resumeId}/status`);
+            setResumes((prev) => prev.filter((resume) => resume.resumeId !== resumeId));
+            setTotalElements((prev) => Math.max(0, prev - 1));
+            alert('이력서가 삭제되었습니다.');
+            // 성공 시 이력서 관리 탭의 첫 페이지로 이동
+            setLoading(true);
+            localStorage.setItem('memberMypage_activeMenu', 'resume');
+            localStorage.setItem('memberMypage_resumePage', '0');
+            window.location.reload();
+        } catch (err) {
+            console.error('이력서 삭제 실패:', err);
+            alert('이력서 삭제에 실패했습니다.');
         }
     };
 
@@ -169,6 +189,12 @@ function ResumeSection() {
                                 className="flex-1 text-sm text-gray-700 border border-gray-200 rounded-lg py-2 hover:bg-gray-50 transition-colors font-medium"
                             >
                                 수정
+                            </button>
+                            <button
+                                onClick={() => handleDeleteResume(resume.resumeId)}
+                                className="flex-1 text-sm text-red-600 border border-red-200 rounded-lg py-2 hover:bg-red-50 transition-colors font-medium"
+                            >
+                                삭제
                             </button>
                         </div>
                     </div>
