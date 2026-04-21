@@ -42,6 +42,19 @@ public class SecurityConfig {
         return source;
     }
 
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+//        http
+//            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+//            .csrf(csrf -> csrf.disable())
+//            .authorizeHttpRequests(authz -> authz
+//                .requestMatchers("/members/**").permitAll()
+//                .anyRequest().authenticated()
+//            );
+//
+//        return http.build();
+//    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
