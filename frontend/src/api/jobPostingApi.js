@@ -3,37 +3,37 @@ import api from './axios';
 export const jobPostingApi = {
   // get job postings list matching filters
   getJobPostings: async (params) => {
-    const response = await api.get('/jobs', { params });
+    const response = await api.get('/api/jobs', { params });
     return response.data;
   },
-  
+
   // get job posting detail
   getJobPostingDetail: async (jobPostingId) => {
-    const response = await api.get(`/jobs/${jobPostingId}`);
+    const response = await api.get(`/api/jobs/${jobPostingId}`);
     return response.data;
   },
 
   // get job postings by company id
-  getJobPostingsByCompanyId: async (companyId, params) => {
-    const response = await api.get('/jobs/company', { params: { companyId, ...params } });
+  getJobPostingsByCompanyId: async (params) => {
+    const response = await api.get('/api/jobs/company', { params: { ...params } });
     return response.data;
   },
 
   // create job posting
-  createJobPosting: async (companyId, data) => {
-    const response = await api.post('/jobs', data, { params: { companyId } });
+  createJobPosting: async (data) => {
+    const response = await api.post('/api/jobs', data);
     return response.data;
   },
 
   // update job posting
-  updateJobPosting: async (companyId, jobPostingId, data) => {
-    const response = await api.put(`/jobs/${jobPostingId}`, data, { params: { companyId } });
+  updateJobPosting: async (jobPostingId, data) => {
+    const response = await api.put(`/api/jobs/${jobPostingId}`, data);
     return response.data;
   },
 
   // close job posting
-  closeJobPosting: async (companyId, jobPostingId) => {
-    const response = await api.patch(`/jobs/${jobPostingId}/close`, null, { params: { companyId } });
+  closeJobPosting: async (jobPostingId) => {
+    const response = await api.patch(`/api/jobs/${jobPostingId}/close`);
     return response.data;
   }
 };
