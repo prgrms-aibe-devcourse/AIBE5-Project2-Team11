@@ -177,10 +177,14 @@ export default function AiChat() {
     setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
     setCharLoading(true);
 
-    try {
-      const isSearchQuery = /공고|직무|일자리|추천|찾아|알려/.test(userMsg);
+     try {
+       // 공고 추천 의도가 명확한 키워드만 필터링
+       // "공고", "직무", "일자리", "추천" + 공고/지역/직무 관련 키워드
+       const isJobRecommendationQuery =
+         /공고|직무|일자리/.test(userMsg) ||
+         (/추천/.test(userMsg) && /공고|직무|지역|일자리|직무|근무/.test(userMsg));
 
-      if (isSearchQuery && sampleJobs.length > 0) {
+       if (isJobRecommendationQuery && sampleJobs.length > 0) {
         // 필터링된 공고로 추천 요청
         let filteredJobs = sampleJobs;
 
