@@ -23,7 +23,7 @@ public class ResumeController {
 
     // 이력서 목록 조회
     @GetMapping
-    public ResponseEntity<Object> getResumeList(@PageableDefault(size = 10) Pageable pageable) {
+    public ResponseEntity<Object> getResumeList(@PageableDefault(size = 5) Pageable pageable) {
         // 로그인 사용자의 정보 [임시 사용]
         Long userId = 2L;
 

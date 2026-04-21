@@ -136,7 +136,7 @@ export default function ResumeForm() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate("/memberMypage/resumes")}
+              onClick={() => navigate("/memberMypage")}
               className="text-[#8D6E63] hover:text-[#5D4037] text-sm flex items-center gap-1"
             >
               <i className="ri-arrow-left-line"></i> 목록
