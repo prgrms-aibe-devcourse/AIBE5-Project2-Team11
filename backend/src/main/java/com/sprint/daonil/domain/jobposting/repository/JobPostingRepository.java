@@ -61,7 +61,7 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
     /**
      * 특정 회사가 작성한 채용공고 목록 조회 (기업 마이페이지용)
      */
-    Page<JobPosting> findByCompany_CompanyId(Long companyId, Pageable pageable);
+    Page<JobPosting> findByCompany_Member_LoginId(String loginId, Pageable pageable);
 
     /**
      * 마감일이 지난 채용공고 일괄 마감 처리 (스케줄러용 벌크 연산)

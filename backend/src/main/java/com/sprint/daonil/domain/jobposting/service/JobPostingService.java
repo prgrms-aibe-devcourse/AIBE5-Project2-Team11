@@ -36,8 +36,8 @@ public class JobPostingService {
 
     // 특정 회사 채용공고 목록 조회
     @Transactional(readOnly = true)
-    public Page<JobPostingResponseDto> getJobPostingsByCompanyId(Long companyId, Pageable pageable) {
-        return jobPostingRepository.findByCompany_CompanyId(companyId, pageable)
+    public Page<JobPostingResponseDto> getJobPostingsByCompanyId(String loginId, Pageable pageable) {
+        return jobPostingRepository.findByCompany_Member_LoginId(loginId, pageable)
                 .map(JobPostingResponseDto::fromEntity);
     }
 
@@ -54,9 +54,9 @@ public class JobPostingService {
     }
 
     // 채용공고 등록 (Builder 패턴 적용)
-    public JobPostingResponseDto createJobPosting(Long companyId, JobPostingRequestDto requestDto) {
-        Company company = companyRepository.findById(companyId)
-                .orElseThrow(() -> new IllegalArgumentException("회사를 찾을 수 없습니다."));
+    public JobPostingResponseDto createJobPosting(String loginId, JobPostingRequestDto requestDto) {
+        Company company = companyRepository.findByMember_LoginId(loginId)
+                .orElseThrow(() -> new IllegalArgumentException("기업 정보를 찾을 수 없습니다."));
 
         JobPosting jobPosting = requestDto.toEntity(company);
 
@@ -66,11 +66,11 @@ public class JobPostingService {
     }
 
     // 채용공고 수정 (Dirty Checking 및 권한 검증)
-    public JobPostingResponseDto updateJobPosting(Long companyId, Long jobPostingId, JobPostingRequestDto requestDto) {
+    public JobPostingResponseDto updateJobPosting(String loginId, Long jobPostingId, JobPostingRequestDto requestDto) {
         JobPosting jobPosting = jobPostingRepository.findById(jobPostingId)
                 .orElseThrow(() -> new IllegalArgumentException("채용공고를 찾을 수 없습니다."));
 
-        validateCompanyAccess(jobPosting, companyId);
+        validateCompanyAccess(jobPosting, loginId);
 
         // 엔티티의 비즈니스 메서드 호출. 트랜잭션 종료 시 알아서 UPDATE 쿼리 발생
         jobPosting.update(requestDto);
@@ -79,11 +79,11 @@ public class JobPostingService {
     }
 
     // 채용공고 마감 (Dirty Checking 및 권한 검증)
-    public JobPostingResponseDto closeJobPosting(Long companyId, Long jobPostingId) {
+    public JobPostingResponseDto closeJobPosting(String loginId, Long jobPostingId) {
         JobPosting jobPosting = jobPostingRepository.findById(jobPostingId)
                 .orElseThrow(() -> new IllegalArgumentException("채용공고를 찾을 수 없습니다."));
 
-        validateCompanyAccess(jobPosting, companyId);
+        validateCompanyAccess(jobPosting, loginId);
 
         // 엔티티 상태 변경
         jobPosting.close();
@@ -92,8 +92,8 @@ public class JobPostingService {
     }
 
     // 작성 기업 권한 검증 공통 로직
-    private void validateCompanyAccess(JobPosting jobPosting, Long companyId) {
-        if (!jobPosting.getCompany().getCompanyId().equals(companyId)) {
+    private void validateCompanyAccess(JobPosting jobPosting, String loginId) {
+        if (!jobPosting.getCompany().getMember().getLoginId().equals(loginId)) {
             throw new IllegalArgumentException("해당 채용공고에 대한 권한이 없습니다.");
         }
     }

@@ -21,6 +21,8 @@ const ENV_OPTIONS = {
 
 export default function JobsPage() {
   const navigate = useNavigate();
+  const memberType = localStorage.getItem("memberType") || "UNAUTHENTICATED";
+  const isCompany = memberType.toUpperCase() === "COMPANY";
 
   // 2. 상태 관리 (검색어, 상세 필터 객체, 필터창 열림 여부)
   const [searchTerm, setSearchTerm] = useState('');
@@ -242,13 +244,15 @@ export default function JobsPage() {
                 </p>
               </div>
 
-              <Link
-                  to="/jobs/write"
-                  className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#E66235] hover:bg-[#D45326] text-white text-sm font-bold rounded-md transition-all shadow-sm shrink-0"
-              >
-                <i className="ri-pencil-fill"></i>
-                공고 등록
-              </Link>
+              {isCompany && (
+                <Link
+                    to="/company-jobpost-manage"
+                    className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#E66235] hover:bg-[#D45326] text-white text-sm font-bold rounded-md transition-all shadow-sm shrink-0"
+                >
+                  <i className="ri-pencil-fill"></i>
+                  공고 관리
+                </Link>
+              )}
             </div>
 
             {/* 검색창 및 필터 토글 영역 */}
