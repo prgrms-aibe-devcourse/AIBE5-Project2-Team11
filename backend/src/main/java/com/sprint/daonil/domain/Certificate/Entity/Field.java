@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,5 +24,6 @@ public class Field {
     private String depth2;
 
     @OneToMany(mappedBy = "field")
+    @JsonIgnore  // 순환 참조 방지
     private List<Qualification> qualifications = new ArrayList<>();
 }

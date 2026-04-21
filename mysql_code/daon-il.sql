@@ -406,6 +406,8 @@ CREATE TABLE post_like (
         FOREIGN KEY (member_id) REFERENCES member (member_id)
 ) ENGINE=InnoDB;
 
+/////////여기부터 실행
+
 CREATE TABLE field (
     id VARCHAR(50) NOT NULL,
     depth1 VARCHAR(255),
@@ -453,8 +455,6 @@ CREATE TABLE `date` (
         FOREIGN KEY (jmCd) REFERENCES qualification(JMCD)
 );
 
-/////////여기부터 실행
-
 
 ALTER TABLE profile_certificate
 DROP FOREIGN KEY FK_profile_certificate_certificate;
@@ -481,6 +481,9 @@ select * from profile_lang_qualification;
 select * from profile_disability;
 select * from disability;
 select * from profile_certificate;
+select * from date;
+select * from company;
+select * from job_posting where title = '공영주차장 관리원';
 INSERT INTO disability (name, description) VALUES
 ('지체장애', '절단, 관절, 근육 등의 손상으로 이동이나 신체 활동에 제약이 있는 장애'),
 ('시각장애', '시력 저하 또는 실명으로 인해 시각적 정보 인식에 어려움이 있는 장애'),
@@ -489,14 +492,16 @@ INSERT INTO disability (name, description) VALUES
 ('지적장애', '지적 기능과 적응 행동에 제한이 있는 장애');
 
 
+CREATE TABLE IF NOT EXISTS job_embedding (
+    job_embedding_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '임베딩 ID',
+    job_id BIGINT NOT NULL UNIQUE COMMENT '공고 ID (job_posting.job_posting_id 참조)',
+    embedding JSON NOT NULL COMMENT '임베딩 벡터 (1536개 숫자를 JSON으로 저장)',
+    embedding_dimension INT DEFAULT 1536 COMMENT '임베딩 차원 수',
+    job_title VARCHAR(150) COMMENT '공고 제목 (검색용)',
+    job_content TEXT COMMENT '공고 내용 (검색용)',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL COMMENT '생성 시간',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NOT NULL COMMENT '수정 시간',
 
--- [0421] 이력서 관련 수정사항 ---------------------------------------
--- 필드명 수정 
-ALTER TABLE qualification CHANGE fieldId field_id VARCHAR(50); 
--- 기존 FK 버리기
-ALTER TABLE resume_certificate DROP FOREIGN KEY FK_resume_certificate_certificate;
-ALTER TABLE resume_certificate DROP COLUMN certificate_id;
--- 새 FK 연결 
-ALTER TABLE resume_certificate ADD COLUMN qualification_id INT NOT NULL;
-ALTER TABLE resume_certificate
-ADD CONSTRAINT FK_resume_certificate_qualification FOREIGN KEY (qualification_id) REFERENCES qualification(id);
+    INDEX idx_job_id (job_id) COMMENT '공고 조회 인덱스',
+    FOREIGN KEY (job_id) REFERENCES job_posting(job_posting_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='채용공고 임베딩 저장소';

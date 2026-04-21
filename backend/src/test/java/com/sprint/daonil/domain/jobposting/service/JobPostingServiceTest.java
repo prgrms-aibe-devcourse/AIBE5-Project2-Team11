@@ -68,11 +68,12 @@ class JobPostingServiceTest {
         Pageable pageable = PageRequest.of(0, 10);
         Page<JobPosting> mockPage = new PageImpl<>(List.of(jobPosting));
 
-        given(jobPostingRepository.findByFilters(null, null, null, false, pageable))
+        // 올바른 파라미터 9개로 수정
+        given(jobPostingRepository.findByFilters(null, null, null, null, null, null, null, null, null, false, pageable))
                 .willReturn(mockPage);
 
         // When
-        Page<JobPostingResponseDto> result = jobPostingService.getJobPostings(null, null, null, pageable);
+        Page<JobPostingResponseDto> result = jobPostingService.getJobPostings(null, null, null, null, null, null, null, null, null, pageable);
 
         // Then
         assertThat(result.getContent()).isNotEmpty();

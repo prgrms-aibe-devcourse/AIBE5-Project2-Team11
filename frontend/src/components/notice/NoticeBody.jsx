@@ -15,10 +15,10 @@ export default function NoticeBody() {
     const fetchNotices = async (page = 1, keyword = "") => {
         setLoading(true);
         try {
-            let url = `http://localhost:8080/api/notices?page=${page}&size=${itemsPerPage}`;
+            let url = `/api/notices?page=${page}&size=${itemsPerPage}`;
 
             if (keyword) {
-                url = `http://localhost:8080/api/notices/search?keyword=${keyword}&page=${page}&size=${itemsPerPage}`;
+                url = `/api/notices/search?keyword=${keyword}&page=${page}&size=${itemsPerPage}`;
             }
 
             const response = await fetch(url);

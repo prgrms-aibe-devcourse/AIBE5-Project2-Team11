@@ -13,7 +13,7 @@ export default function NoticeDetailBody() {
         const fetchNotices = async () => {
             try {
                 // 현재 공지사항 조회
-                const noticeResponse = await fetch(`http://localhost:8080/api/notices/${id}`);
+                const noticeResponse = await fetch(`/api/notices/${id}`);
                 if (!noticeResponse.ok) {
                     throw new Error(`공지사항 조회 실패: ${noticeResponse.status}`);
                 }
@@ -21,7 +21,7 @@ export default function NoticeDetailBody() {
                 setNotice(noticeData);
 
                 // 모든 공지사항 조회 (이전글/다음글을 위해)
-                const allResponse = await fetch("http://localhost:8080/api/notices?page=1&size=1000");
+                const allResponse = await fetch("/api/notices?page=1&size=1000");
                 if (!allResponse.ok) {
                     throw new Error(`공지사항 목록 조회 실패: ${allResponse.status}`);
                 }
