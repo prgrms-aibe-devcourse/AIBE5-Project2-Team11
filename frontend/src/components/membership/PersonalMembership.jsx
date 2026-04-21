@@ -77,7 +77,7 @@ export default function PersonalMembership() {
         try {
             setLoading(true);
 
-            const response = await fetch("http://localhost:8080/members/signup", {
+            const response = await fetch("/members/signup", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

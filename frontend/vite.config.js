@@ -10,7 +10,9 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/jobs': 'http://localhost:8080'
+      '/jobs': 'http://localhost:8080',
+      '/api': 'http://localhost:8080',
+      '/members': 'http://localhost:8080'
     }
   }
 })
