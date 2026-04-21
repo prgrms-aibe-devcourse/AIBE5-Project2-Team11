@@ -22,7 +22,7 @@ export default function CompanyLoginForm( {setMemberType}) {
         e.preventDefault();
 
         try {
-            const response = await fetch("http://localhost:8080/members/login", {
+            const response = await fetch("/members/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -33,7 +33,24 @@ export default function CompanyLoginForm( {setMemberType}) {
                 }),
             });
 
+            console.log("Response status:", response.status);
+
+            // 응답이 JSON인지 확인
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                const text = await response.text();
+                console.error("Non-JSON response:", text);
+                alert("서버 응답 오류: 유효한 데이터를 받을 수 없습니다.");
+                return;
+            }
+
             const data = await response.json();
+            console.log("Login response:", data);
+
+            if (!response.ok) {
+                alert(data.message || "로그인에 실패했습니다.");
+                return;
+            }
 
             if (data.success) {
                 // 로그인 성공
@@ -50,7 +67,7 @@ export default function CompanyLoginForm( {setMemberType}) {
             }
         } catch (error) {
             console.error("로그인 오류:", error);
-            alert("로그인 중 오류가 발생했습니다.");
+            alert("로그인 중 오류가 발생했습니다. 백엔드 서버를 확인해주세요.");
         }
     };
 

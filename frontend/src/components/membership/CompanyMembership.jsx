@@ -87,7 +87,7 @@ export default function CompanyMembership() {
         try {
             setLoading(true);
 
-            const response = await fetch("http://localhost:8080/members/signup/company", {
+            const response = await fetch("/members/signup/company", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

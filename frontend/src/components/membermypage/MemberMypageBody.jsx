@@ -68,7 +68,7 @@ export default function MemberMypageBody() {
                     return;
                 }
 
-                const response = await fetch("http://localhost:8080/members/me", {
+                const response = await fetch("/members/me", {
                     method: "GET",
                     headers: {
                         "Authorization": `Bearer ${token}`,
@@ -123,7 +123,7 @@ export default function MemberMypageBody() {
     // 프로필 정보 조회 함수
     const fetchProfileInfo = async (token) => {
         try {
-            const response = await fetch("http://localhost:8080/members/profile", {
+            const response = await fetch("/members/profile", {
                 method: "GET",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -308,7 +308,7 @@ export default function MemberMypageBody() {
                 address: profile.address ? profile.address.trim() : "",
             };
 
-            const response = await fetch("http://localhost:8080/members/update-info", {
+            const response = await fetch("/members/update-info", {
                 method: "PUT",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -394,7 +394,7 @@ export default function MemberMypageBody() {
                     })),
             };
 
-            const response = await fetch("http://localhost:8080/members/profile", {
+            const response = await fetch("/members/profile", {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -470,7 +470,7 @@ export default function MemberMypageBody() {
                 return;
             }
 
-            const response = await fetch("http://localhost:8080/members/change-password", {
+            const response = await fetch("/members/change-password", {
                 method: "POST",
                 headers: {
                     "Authorization": `Bearer ${token}`,
@@ -528,7 +528,7 @@ export default function MemberMypageBody() {
                 return;
             }
 
-            const response = await fetch("http://localhost:8080/members/delete-account", {
+            const response = await fetch("/members/delete-account", {
                 method: "DELETE",
                 headers: {
                     "Authorization": `Bearer ${token}`,
