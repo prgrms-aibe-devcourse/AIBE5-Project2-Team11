@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { sampleJobs } from "../../data/sampleJobs";
 import { chatWithAi, getAiRecommendation } from "../../api/aiApi";
-import { getQualificationsByCategory, getAllQualifications, getExamSchedules } from "../../api/qualificationApi";
+import { getQualificationsByCategory, getAllQualifications, getExamSchedules, searchQualifications, getQualificationDetail } from "../../api/qualificationApi";
 
 export default function AiChat() {
   const navigate = useNavigate();
@@ -27,7 +27,11 @@ export default function AiChat() {
   const [recommendations, setRecommendations] = useState([]);
   const [qualifications, setQualifications] = useState([]);
   const [recLoading, setRecLoading] = useState(false);
-  const [error, setError] = useState(null);
+
+  // 자격증 상세 정보 관련 상태
+  const [qualificationSearchInput, setQualificationSearchInput] = useState("");
+  const [qualificationSearchResults, setQualificationSearchResults] = useState([]);
+  const [selectedQualification, setSelectedQualification] = useState(null);
 
   // 지역 목록
   const regions = [
@@ -98,6 +102,12 @@ export default function AiChat() {
       requiredFilters: ["jobCategory"],
       type: "qualification",
       template: (_, jobCategory) => `${jobCategory}에 필요한 자격증 추천해줘`
+    },
+    {
+      text: "OO자격증 상세 정보 알려줘",
+      requiredFilters: [],
+      type: "qualificationDetail",
+      template: () => `자격증 상세 정보`
     },
   ];
 
@@ -300,6 +310,10 @@ ${tempFilters.jobCategory}에 필요한 자격증들입니다. 각 자격증의 
         } else {
           setMessages((prev) => [...prev, { role: "bot", text: "해당 직무분야의 자격증을 찾을 수 없습니다." }]);
         }
+      } else if (selectedQuestion.type === "qualificationDetail") {
+        // 자격증 상세 정보 검색 모드
+        setMessages((prev) => [...prev, { role: "bot", text: "자격증 이름을 입력하세요. 예: 정보처리, 리눅스" }]);
+        setSelectedQuestion(null);
       } else {
         // 공고 추천
         let filteredJobs = sampleJobs;
@@ -413,20 +427,118 @@ ${response.explanation}`;
             </div>
           </div>
         ) : (
-          // 필터 선택 모드
-          <div className="space-y-4 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-gray-800">필터 선택</h3>
-              <button
-                onClick={() => setSelectedQuestion(null)}
-                className="text-sm text-gray-600 hover:text-gray-800"
-              >
-                ✕
-              </button>
-            </div>
+          // 필터 선택 모드 또는 자격증 상세 검색 모드
+          <>
+            {selectedQuestion.type === "qualificationDetail" ? (
+              // 자격증 상세 정보 검색 모드
+              <div className="space-y-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-gray-800">자격증 검색</h3>
+                  <button
+                    onClick={() => setSelectedQuestion(null)}
+                    className="text-sm text-gray-600 hover:text-gray-800"
+                  >
+                    ✕
+                  </button>
+                </div>
 
-            {/* 지역 필터 */}
-            {selectedQuestion.requiredFilters.includes("region") && (
+                {/* 자격증 검색 입력 */}
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 mb-2 block">자격증 이름 검색</label>
+                  <input
+                    type="text"
+                    value={qualificationSearchInput}
+                    onChange={async (e) => {
+                      const keyword = e.target.value;
+                      setQualificationSearchInput(keyword);
+                      
+                      if (keyword.trim().length > 0) {
+                        const results = await searchQualifications(keyword);
+                        setQualificationSearchResults(results);
+                      } else {
+                        setQualificationSearchResults([]);
+                      }
+                    }}
+                    placeholder="예: 정보처리, 리눅스..."
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* 검색 결과 */}
+                {qualificationSearchResults.length > 0 && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-semibold text-gray-700 block">검색 결과</label>
+                    <div className="max-h-[300px] overflow-y-auto space-y-2">
+                      {qualificationSearchResults.map((qual, idx) => (
+                        <button
+                          key={idx}
+                          onClick={async () => {
+                            const detail = await getQualificationDetail(qual.name);
+                            if (detail) {
+                              // 모든 시험 일정 포맷팅
+                              const examSchedulesText = detail.allExams && detail.allExams.length > 0
+                                ? detail.allExams.map((exam) => {
+                                    return `
+【${exam.year}년 ${exam.period}회】
+┌ 필기시험
+│ • 접수: ${new Date(exam.docRegStart).toLocaleDateString()} ~ ${new Date(exam.docRegEnd).toLocaleDateString()}
+│ • 시험: ${new Date(exam.docExamStart).toLocaleDateString()} ~ ${new Date(exam.docExamEnd).toLocaleDateString()}
+│ • 합격공고: ${new Date(exam.docPass).toLocaleDateString()}
+${exam.pracRegStart ? `└ 실기시험
+  • 접수: ${new Date(exam.pracRegStart).toLocaleDateString()} ~ ${new Date(exam.pracRegEnd).toLocaleDateString()}
+  • 시험: ${new Date(exam.pracExamStart).toLocaleDateString()} ~ ${new Date(exam.pracExamEnd).toLocaleDateString()}
+  • 합격공고: ${new Date(exam.pracPass).toLocaleDateString()}` : ""}`;
+                                  }).join("\n")
+                                : "시험일정 정보 없음";
+
+                              const detailText = `
+📚 자격증 상세 정보
+
+자격증명: ${detail.name}
+자격증 코드: ${detail.jmcd}
+직무분야: ${detail.fieldId}
+교육과정: ${detail.course || "정보 없음"}
+
+📅 시험 일정 (모든 회차)
+${examSchedulesText}
+
+이 자격증에 대해 더 알고 싶은 점이 있으신가요?`;
+                              
+                              setMessages((prev) => [
+                                ...prev,
+                                { role: "user", text: `${detail.name} 상세 정보 알려줘` },
+                                { role: "bot", text: detailText }
+                              ]);
+                              setSelectedQuestion(null);
+                              setQualificationSearchInput("");
+                              setQualificationSearchResults([]);
+                            }
+                          }}
+                          className="w-full text-left px-3 py-2 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition text-sm text-gray-800"
+                        >
+                          <div className="font-semibold">{qual.name}</div>
+                          <div className="text-xs text-gray-600">{qual.jmcd}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              // 기본 필터 선택 모드
+              <div className="space-y-4 bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-bold text-gray-800">필터 선택</h3>
+                  <button
+                    onClick={() => setSelectedQuestion(null)}
+                    className="text-sm text-gray-600 hover:text-gray-800"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                {/* 지역 필터 */}
+                {selectedQuestion.requiredFilters.includes("region") && (
               <div>
                 <label className="text-sm font-semibold text-gray-700 mb-2 block">지역 선택</label>
                 <select
@@ -487,7 +599,9 @@ ${response.explanation}`;
             >
               {recLoading ? "처리 중..." : "질문 전송"}
             </button>
-          </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* 추천 결과 미리보기 */}

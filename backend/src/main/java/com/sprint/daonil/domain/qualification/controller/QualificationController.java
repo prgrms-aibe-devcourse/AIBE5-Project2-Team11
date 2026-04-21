@@ -124,5 +124,58 @@ public class QualificationController {
             return ResponseEntity.badRequest().body(errorResponse);
         }
     }
+
+    /**
+     * 자격증 이름으로 검색
+     * GET /api/qualifications/search?keyword={keyword}
+     */
+    @GetMapping("/search")
+    public ResponseEntity<Map<String, Object>> searchQualifications(@RequestParam String keyword) {
+        try {
+            log.info("검색 요청: keyword='{}'", keyword);
+            List<QualificationResponseDto> qualifications = qualificationService.searchByName(keyword);
+            log.info("검색 결과: {} 개", qualifications.size());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", qualifications);
+            response.put("count", qualifications.size());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("자격증 검색 실패: ", e);
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "자격증 검색에 실패했습니다: " + e.getMessage());
+
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
+     * 자격증 상세 정보 조회
+     * GET /api/qualifications/detail?name={name}
+     */
+    @GetMapping("/detail")
+    public ResponseEntity<Map<String, Object>> getQualificationDetail(@RequestParam String name) {
+        try {
+            QualificationResponseDto qualification = qualificationService.getQualificationByName(name);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", qualification);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("자격증 상세정보 조회 실패: {}", e.getMessage());
+
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "자격증 정보를 찾을 수 없습니다.");
+
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
 }
 

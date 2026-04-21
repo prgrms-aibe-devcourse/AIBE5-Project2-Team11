@@ -44,5 +44,14 @@ public interface QualificationRepository extends JpaRepository<Qualification, Lo
                    "OR q.name LIKE CONCAT('%', :category, '%')",
            nativeQuery = true)
     List<Qualification> findByFieldIdOrNameContaining(@Param("category") String category);
-}
 
+    // 자격증 이름으로 검색 (부분 검색)
+    @Query(value = "SELECT q.* FROM qualification q " +
+                   "WHERE q.name LIKE CONCAT('%', :keyword, '%') " +
+                   "ORDER BY q.name",
+           nativeQuery = true)
+    List<Qualification> searchByName(@Param("keyword") String keyword);
+
+     // 자격증 이름으로 정확히 조회
+    Optional<Qualification> findByName(String name);
+}

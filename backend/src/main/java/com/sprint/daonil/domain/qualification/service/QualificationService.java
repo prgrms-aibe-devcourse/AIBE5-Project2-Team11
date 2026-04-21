@@ -121,9 +121,9 @@ public class QualificationService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Qualification 엔티티를 DTO로 변환
-     */
+     /**
+      * Qualification 엔티티를 DTO로 변환
+      */
     private QualificationResponseDto convertToDto(Qualification qualification) {
         // 현재 연도의 최신 시험일정 조회
         List<ExamDate> currentExams = examDateRepository.findByIdJmcdAndIdYear(
@@ -136,6 +136,20 @@ public class QualificationService {
             currentExam = convertExamDateToDto(currentExams.get(0));
         }
 
+        // 모든 시험일정 조회
+        List<ExamDate> allExams = examDateRepository.findByIdJmcd(qualification.getJmcd());
+        List<ExamScheduleDto> allExamDtos = allExams.stream()
+                .map(this::convertExamDateToDto)
+                .sorted((a, b) -> {
+                    // 연도로 정렬 (최신순)
+                    if (!a.getYear().equals(b.getYear())) {
+                        return b.getYear().compareTo(a.getYear());
+                    }
+                    // 같은 연도면 회차로 정렬 (역순)
+                    return b.getPeriod().compareTo(a.getPeriod());
+                })
+                .collect(Collectors.toList());
+
         return QualificationResponseDto.builder()
                 .id(qualification.getId())
                 .name(qualification.getName())
@@ -143,6 +157,7 @@ public class QualificationService {
                 .course(qualification.getCourse())
                 .jmcd(qualification.getJmcd())
                 .currentExam(currentExam)
+                .allExams(allExamDtos)
                 .build();
     }
 
@@ -166,6 +181,36 @@ public class QualificationService {
                 .pracPass(examDate.getPracPass())
                 .build();
     }
+
+    /**
+     * 자격증 이름으로 검색
+     */
+    public List<QualificationResponseDto> searchByName(String keyword) {
+        log.info("자격증 검색: keyword='{}'", keyword);
+        List<Qualification> qualifications = qualificationRepository.searchByName(keyword);
+
+        return qualifications.stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 자격증 이름으로 정확히 조회
+     */
+    public QualificationResponseDto getQualificationByName(String name) {
+        log.info("자격증 상세정보 조회: name='{}'", name);
+        return qualificationRepository.findByName(name)
+                .map(qual -> {
+                    log.info("조회된 자격증: name={}, jmcd={}, fieldId={}, course={}",
+                        qual.getName(), qual.getJmcd(), qual.getFieldId(), qual.getCourse());
+
+                    QualificationResponseDto dto = convertToDto(qual);
+
+                    log.info("시험 일정 개수: {} 개",
+                        dto.getAllExams() != null ? dto.getAllExams().size() : 0);
+
+                    return dto;
+                })
+                .orElse(null);
+    }
 }
-
-
