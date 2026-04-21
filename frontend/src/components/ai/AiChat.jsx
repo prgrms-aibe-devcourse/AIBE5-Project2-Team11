@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { sampleJobs } from "../../data/sampleJobs";
 import { chatWithAi, getAiRecommendation } from "../../api/aiApi";
-import { getQualificationsByCategory, getAllQualifications, getExamSchedules, searchQualifications, getQualificationDetail } from "../../api/qualificationApi";
+import { getQualificationsByCategory, getAllQualifications, getExamSchedules, searchQualifications, getQualificationDetail, getAiQualificationRecommendation } from "../../api/qualificationApi";
 
 export default function AiChat() {
   const navigate = useNavigate();
@@ -104,10 +104,10 @@ export default function AiChat() {
       template: (_, jobCategory) => `${jobCategory}에 필요한 자격증 추천해줘`
     },
     {
-      text: "OO자격증 상세 정보 알려줘",
+      text: "OO자격증 상세 일정 알려줘",
       requiredFilters: [],
       type: "qualificationDetail",
-      template: () => `자격증 상세 정보`
+      template: () => `자격증 상세 일정`
     },
   ];
 
@@ -289,12 +289,16 @@ ${response.explanation}`;
     try {
       // 자격증 추천
       if (selectedQuestion.type === "qualification") {
-        const qualiList = await getQualificationsByCategory(tempFilters.jobCategory);
-        
-        if (qualiList.length > 0) {
-          const qualiText = qualiList
-            .slice(0, 5)
-            .map((q, i) => `${i + 1}. ${q.name} (${q.jmcd})`)
+        // AI 기반 자격증 추천 (depth2 필터링으로 자동 조회)
+        const aiRecommendation = await getAiQualificationRecommendation(tempFilters.jobCategory);
+
+        if (aiRecommendation && aiRecommendation.success) {
+          const qualifications = aiRecommendation.qualifications || [];
+          const explanation = aiRecommendation.explanation || "";
+
+          const qualiText = qualifications
+            .slice(0, 10)
+            .map((name, i) => `${i + 1}. ${name}`)
             .join("\n");
 
           const fullResponse = `
@@ -303,12 +307,22 @@ ${response.explanation}`;
 ${qualiText}
 
 📝 설명:
-${tempFilters.jobCategory}에 필요한 자격증들입니다. 각 자격증의 상세 정보는 클릭하여 확인할 수 있습니다.`;
+${explanation}
+
+각 자격증의 상세 정보를 알고 싶으시면 자격증 이름을 입력하여 검색하실 수 있습니다.`;
 
           setMessages((prev) => [...prev, { role: "bot", text: fullResponse }]);
+
+          // 기존 자격증 리스트로도 저장 (하위 호환성)
+          const qualiList = qualifications.map((name, i) => ({
+            id: i,
+            name: name,
+            jmcd: ""
+          }));
           setQualifications(qualiList);
         } else {
-          setMessages((prev) => [...prev, { role: "bot", text: "해당 직무분야의 자격증을 찾을 수 없습니다." }]);
+          const errorMsg = aiRecommendation?.error || "자격증을 불러올 수 없습니다";
+          setMessages((prev) => [...prev, { role: "bot", text: `죄송합니다. ${errorMsg}` }]);
         }
       } else if (selectedQuestion.type === "qualificationDetail") {
         // 자격증 상세 정보 검색 모드
@@ -469,57 +483,129 @@ ${response.explanation}`;
                   <div className="space-y-2">
                     <label className="text-sm font-semibold text-gray-700 block">검색 결과</label>
                     <div className="max-h-[300px] overflow-y-auto space-y-2">
-                      {qualificationSearchResults.map((qual, idx) => (
-                        <button
-                          key={idx}
-                          onClick={async () => {
-                            const detail = await getQualificationDetail(qual.name);
-                            if (detail) {
-                              // 모든 시험 일정 포맷팅
-                              const examSchedulesText = detail.allExams && detail.allExams.length > 0
-                                ? detail.allExams.map((exam) => {
-                                    return `
-【${exam.year}년 ${exam.period}회】
-┌ 필기시험
-│ • 접수: ${new Date(exam.docRegStart).toLocaleDateString()} ~ ${new Date(exam.docRegEnd).toLocaleDateString()}
-│ • 시험: ${new Date(exam.docExamStart).toLocaleDateString()} ~ ${new Date(exam.docExamEnd).toLocaleDateString()}
-│ • 합격공고: ${new Date(exam.docPass).toLocaleDateString()}
-${exam.pracRegStart ? `└ 실기시험
-  • 접수: ${new Date(exam.pracRegStart).toLocaleDateString()} ~ ${new Date(exam.pracRegEnd).toLocaleDateString()}
-  • 시험: ${new Date(exam.pracExamStart).toLocaleDateString()} ~ ${new Date(exam.pracExamEnd).toLocaleDateString()}
-  • 합격공고: ${new Date(exam.pracPass).toLocaleDateString()}` : ""}`;
-                                  }).join("\n")
-                                : "시험일정 정보 없음";
+                       {qualificationSearchResults.map((qual, idx) => (
+                         <button
+                           key={idx}
+                           type="button"
+                           onClick={async (e) => {
+                             e.preventDefault();
+                             e.stopPropagation();
+                             
+                             try {
+                               console.log(`검색 결과 클릭: ${qual.name}`);
+                               const detail = await getQualificationDetail(qual.name);
+                               console.log("상세 정보 응답:", detail);
+                               
+                               if (!detail) {
+                                 console.error("응답이 없습니다");
+                                 alert("자격증 정보를 불러올 수 없습니다");
+                                 return;
+                               }
+                               
+                               if (detail.success === false) {
+                                 console.error("API 오류:", detail.error);
+                                 alert(detail.error || "자격증 정보를 불러올 수 없습니다");
+                                 return;
+                               }
+                               
+                               // 시험 일정 포맷팅
+                               const formatSchedule = (schedule) => {
+                                 const formatDate = (dateStr) => {
+                                   if (!dateStr) return null;
+                                   try {
+                                     return new Date(dateStr).toLocaleDateString('ko-KR');
+                                   } catch (e) {
+                                     return null;
+                                   }
+                                 };
+                                 
+                                 let text = `【${schedule.year}년 ${schedule.period}회】\n`;
+                                 
+                                 // 필기시험
+                                 if (schedule.docExam) {
+                                   text += `┌ 필기시험\n`;
+                                   if (schedule.docExam.regStart && schedule.docExam.regEnd) {
+                                     const regStart = formatDate(schedule.docExam.regStart);
+                                     const regEnd = formatDate(schedule.docExam.regEnd);
+                                     if (regStart && regEnd) text += `│ • 접수: ${regStart} ~ ${regEnd}\n`;
+                                   }
+                                   if (schedule.docExam.examStart && schedule.docExam.examEnd) {
+                                     const examStart = formatDate(schedule.docExam.examStart);
+                                     const examEnd = formatDate(schedule.docExam.examEnd);
+                                     if (examStart && examEnd) text += `│ • 시험: ${examStart} ~ ${examEnd}\n`;
+                                   }
+                                   if (schedule.docExam.passAnnounce) {
+                                     const passAnnounce = formatDate(schedule.docExam.passAnnounce);
+                                     if (passAnnounce) text += `│ • 합격공고: ${passAnnounce}\n`;
+                                   }
+                                 }
+                                 
+                                 // 실기시험
+                                 if (schedule.pracExam && (schedule.pracExam.regStart || schedule.pracExam.examStart)) {
+                                   text += `└ 실기시험\n`;
+                                   if (schedule.pracExam.regStart && schedule.pracExam.regEnd) {
+                                     const regStart = formatDate(schedule.pracExam.regStart);
+                                     const regEnd = formatDate(schedule.pracExam.regEnd);
+                                     if (regStart && regEnd) text += `  • 접수: ${regStart} ~ ${regEnd}\n`;
+                                   }
+                                   if (schedule.pracExam.examStart && schedule.pracExam.examEnd) {
+                                     const examStart = formatDate(schedule.pracExam.examStart);
+                                     const examEnd = formatDate(schedule.pracExam.examEnd);
+                                     if (examStart && examEnd) text += `  • 시험: ${examStart} ~ ${examEnd}\n`;
+                                   }
+                                   if (schedule.pracExam.passAnnounce) {
+                                     const passAnnounce = formatDate(schedule.pracExam.passAnnounce);
+                                     if (passAnnounce) text += `  • 합격공고: ${passAnnounce}\n`;
+                                   }
+                                 }
+                                 
+                                 return text;
+                               };
 
-                              const detailText = `
-📚 자격증 상세 정보
+                               const examSchedulesText = detail.examSchedules && detail.examSchedules.length > 0
+                                 ? detail.examSchedules.map(formatSchedule).join("\n")
+                                 : "시험일정 정보 없음";
+
+                               const detailText = `
+📚 자격증 상세 일정
 
 자격증명: ${detail.name}
 자격증 코드: ${detail.jmcd}
-직무분야: ${detail.fieldId}
-교육과정: ${detail.course || "정보 없음"}
+${detail.depth1 ? `직무분야: ${detail.depth1} > ${detail.depth2}` : ''}
+${detail.course ? `교육과정: ${detail.course}` : ''}
 
-📅 시험 일정 (모든 회차)
+📅 시험 일정 정보
 ${examSchedulesText}
 
+총 ${detail.scheduleCount || 0}개 회차의 일정이 있습니다.
 이 자격증에 대해 더 알고 싶은 점이 있으신가요?`;
-                              
-                              setMessages((prev) => [
-                                ...prev,
-                                { role: "user", text: `${detail.name} 상세 정보 알려줘` },
-                                { role: "bot", text: detailText }
-                              ]);
-                              setSelectedQuestion(null);
-                              setQualificationSearchInput("");
-                              setQualificationSearchResults([]);
-                            }
-                          }}
-                          className="w-full text-left px-3 py-2 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition text-sm text-gray-800"
-                        >
-                          <div className="font-semibold">{qual.name}</div>
-                          <div className="text-xs text-gray-600">{qual.jmcd}</div>
-                        </button>
-                      ))}
+                                 
+                                 console.log("메시지 추가 전:", detailText);
+                                 
+                                 // 메시지 추가 (먼저 사용자 질문, 그 다음 봇 답변)
+                                 setMessages((prev) => [
+                                   ...prev,
+                                   { role: "user", text: `${detail.name} 상세 일정 알려줘` },
+                                   { role: "bot", text: detailText }
+                                 ]);
+                                 
+                                 // 그 다음 상태 정리 (선택 사항 초기화)
+                                 setTimeout(() => {
+                                   setSelectedQuestion(null);
+                                   setQualificationSearchInput("");
+                                   setQualificationSearchResults([]);
+                                 }, 100);
+                             } catch (error) {
+                               console.error("검색 결과 클릭 오류:", error);
+                               alert("오류가 발생했습니다: " + error.message);
+                             }
+                           }}
+                           className="w-full text-left px-3 py-2 bg-white border border-blue-200 rounded-lg hover:bg-blue-50 transition text-sm text-gray-800 cursor-pointer active:bg-blue-100"
+                         >
+                           <div className="font-semibold">{qual.name}</div>
+                           <div className="text-xs text-gray-600">{qual.jmcd}</div>
+                         </button>
+                       ))}
                     </div>
                   </div>
                 )}

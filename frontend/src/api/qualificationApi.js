@@ -61,12 +61,18 @@ export const getExamSchedules = async (jmcd) => {
  */
 export const searchQualifications = async (keyword) => {
   try {
+    console.log("자격증 검색: keyword=" + keyword);
     const response = await axios.get(`${API_BASE_URL}/search`, {
       params: { keyword }
     });
+    // 백엔드 응답 구조: { success, data: [...], count, keyword }
+    console.log("검색 결과:", response.data);
     return response.data.data || [];
   } catch (err) {
     console.error("자격증 검색 오류:", err);
+    console.error("검색 요청 URL:", err.config?.url);
+    console.error("에러 상태:", err.response?.status);
+    console.error("에러 메시지:", err.response?.data);
     return [];
   }
 };
@@ -76,12 +82,32 @@ export const searchQualifications = async (keyword) => {
  */
 export const getQualificationDetail = async (name) => {
   try {
-    const response = await axios.get(`${API_BASE_URL}/detail`, {
-      params: { name }
-    });
-    return response.data.data || null;
+    console.log("API 호출: /api/qualifications/detail?name=" + encodeURIComponent(name));
+    const response = await axios.get(`/api/qualifications/detail?name=${encodeURIComponent(name)}`);
+    // 백엔드 응답 구조: { success, name, jmcd, examSchedules, ... }
+    return response.data || null;
   } catch (err) {
     console.error("자격증 상세정보 조회 오류:", err);
+    console.error("요청 URL:", err.config?.url);
+    console.error("에러 상태:", err.response?.status);
+    console.error("에러 메시지:", err.response?.data);
     return null;
   }
 };
+
+/**
+ * AI 기반 자격증 추천 (depth2 필터링)
+ * 직무 카테고리를 기반으로 field table의 depth2와 비교하여 자격증 추천
+ */
+export const getAiQualificationRecommendation = async (category) => {
+  try {
+    const response = await axios.post("/api/ai/recommend/qualifications", {
+      category
+    });
+    return response.data || null;
+  } catch (err) {
+    console.error("AI 자격증 추천 오류:", err);
+    return null;
+  }
+};
+

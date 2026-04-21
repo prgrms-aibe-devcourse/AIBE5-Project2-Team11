@@ -142,5 +142,46 @@ public class AiController {
                     .body(Map.of("error", "오류가 발생했습니다"));
         }
     }
+
+    /**
+     * 자격증 추천 엔드포인트
+     *
+     * 직무 카테고리(depth2)에 따른 자격증 추천
+     *
+     * Request:
+     * {
+     *   "category": "정보기술" 또는 "건축" 등 직무명
+     * }
+     *
+     * Response:
+     * {
+     *   "success": true,
+     *   "category": "정보기술",
+     *   "qualifications": ["정보처리기사", "리눅스마스터", ...],
+     *   "count": 5,
+     *   "explanation": "AI가 생성한 자격증 추천 설명"
+     * }
+     */
+    @PostMapping("/recommend/qualifications")
+    public ResponseEntity<Map<String, Object>> recommendQualifications(@RequestBody Map<String, String> request) {
+        try {
+            String category = request.get("category");
+
+            if (category == null || category.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "직무 카테고리를 입력해주세요"));
+            }
+
+            log.info("Qualification recommendation request: category={}", category);
+
+            Map<String, Object> result = aiService.generateQualificationRecommendation(category);
+
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            log.error("Error in qualification recommendation endpoint", e);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "오류가 발생했습니다: " + e.getMessage()));
+        }
+    }
 }
 

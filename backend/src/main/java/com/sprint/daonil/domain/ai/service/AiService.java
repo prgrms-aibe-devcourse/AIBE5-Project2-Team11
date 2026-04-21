@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sprint.daonil.domain.ai.entity.JobEmbedding;
 import com.sprint.daonil.domain.ai.repository.JobEmbeddingRepository;
+import com.sprint.daonil.domain.Certificate.Service.QualificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -25,6 +26,7 @@ public class AiService {
     private String openAiApiKey;
 
     private final JobEmbeddingRepository jobEmbeddingRepository;
+    private final QualificationService qualificationService;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final String OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
@@ -65,6 +67,24 @@ public class AiService {
         - 추천 이유를 명확하게 작성
         - 각 공고별 특징 구분
         - 사용자 맞춤형 내용 강조
+        """;
+
+    private static final String QUALIFICATION_SYSTEM_PROMPT = """
+        당신은 자격증 추천 전문가입니다.
+        
+        주어진 직무분야에 필요한 자격증들을 사용자에게 친절하게 설명해주세요.
+        
+        작업:
+        1. 자격증 이름 명확히 안내
+        2. 각 자격증의 특징과 필요성 설명
+        3. 시험 난도나 준비 기간 안내
+        4. 취업 시 유리한 점 강조
+        5. 추가 정보 제시
+        
+        출력 형식:
+        - 자격증을 번호와 함께 나열
+        - 각 자격증별로 필요한 이유 설명
+        - 사용자 맞춤형 정보 포함
         """;
 
     private final HttpClient httpClient = HttpClient.newHttpClient();
@@ -366,6 +386,123 @@ public class AiService {
             log.error("Error calling OpenAI Recommendation API", e);
         }
         return "죄송하지만 요청을 처리할 수 없습니다.";
+    }
+
+    // ===== 7️⃣ 자격증 추천 (NEW) =====
+    /**
+     * 직무 카테고리(depth2)에 따른 자격증 추천
+     * @param category 직무 카테고리 (예: "정보기술", "건축")
+     * @return 자격증 추천 설명 및 목록
+     */
+    public Map<String, Object> generateQualificationRecommendation(String category) {
+        try {
+            log.info("========================================");
+            log.info("📌 자격증 추천 요청 시작");
+            log.info("📥 입력된 category: '{}'", category);
+            log.info("========================================");
+
+            // 1단계: 해당 카테고리의 자격증 목록 조회 (depth2 기반)
+            List<String> qualificationNames = qualificationService.getQualificationNamesByCategory(category);
+
+            log.info("📊 조회 결과: {}개의 자격증", qualificationNames.size());
+
+            if (qualificationNames.isEmpty()) {
+                log.warn("❌ 해당 카테고리의 자격증을 찾을 수 없습니다: {}", category);
+                log.warn("💡 확인사항:");
+                log.warn("   1. Field 테이블에 depth2='{}' 값이 있는지 확인", category);
+                log.warn("   2. Qualification 테이블의 fieldId가 NULL이 아닌지 확인");
+                log.warn("   3. 프론트의 jobCategories와 DB의 depth2 값이 정확히 일치하는지 확인");
+                log.warn("   4. 다음 SQL로 확인하세요:");
+                log.warn("      SELECT f.id, f.depth1, f.depth2, COUNT(q.id) as qual_count");
+                log.warn("      FROM field f LEFT JOIN qualification q ON f.id = q.fieldId");
+                log.warn("      WHERE f.depth2 = '{}' GROUP BY f.id;", category);
+
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("error", "해당 직무분야의 자격증을 찾을 수 없습니다. category='" + category + "'");
+                response.put("debug_info", "다음 URL에서 모든 직무분야 확인: /api/qualifications/debug/all-with-fields");
+                return response;
+            }
+
+            log.info("✅ 조회된 자격증 목록:");
+            for (int i = 0; i < qualificationNames.size(); i++) {
+                log.info("   {}. {}", i + 1, qualificationNames.get(i));
+            }
+
+            // 2단계: GPT를 이용해 자격증 추천 설명 생성
+            log.info("🤖 AI 설명 생성 중...");
+            String explanation = generateQualificationExplanation(category, qualificationNames);
+
+            // 3단계: 결과 반환
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("category", category);
+            result.put("qualifications", qualificationNames);
+            result.put("count", qualificationNames.size());
+            result.put("explanation", explanation);
+
+            log.info("✅ 자격증 추천 완료!");
+            log.info("========================================");
+            return result;
+
+        } catch (Exception e) {
+            log.error("❌ 자격증 추천 중 오류 발생", e);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("error", "자격증 추천 중 오류가 발생했습니다: " + e.getMessage());
+            return response;
+        }
+    }
+
+    /**
+     * GPT를 이용한 자격증 추천 설명 생성
+     */
+    private String generateQualificationExplanation(String category, List<String> qualifications) {
+        try {
+            String qualificationList = String.join(", ", qualifications);
+
+            String contextMessage = String.format("""
+                직무분야: %s
+                
+                추천 자격증: %s
+                
+                위의 자격증들이 '%s' 직무에 왜 필요한지, 각 자격증의 특징과 중요성을 설명해주세요.
+                자격증 이름, 필요성, 취업 시 유리한 점 등을 포함해서 설명해주세요.
+                """, category, qualificationList, category);
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", GPT_MODEL);
+            requestBody.put("messages", List.of(
+                Map.of("role", "system", "content", QUALIFICATION_SYSTEM_PROMPT),
+                Map.of("role", "user", "content", contextMessage)
+            ));
+            requestBody.put("temperature", 0.7);
+            requestBody.put("max_tokens", 1500);
+
+            String jsonBody = objectMapper.writeValueAsString(requestBody);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(OPENAI_API_URL))
+                    .header("Authorization", "Bearer " + openAiApiKey)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                Map<String, Object> responseBody = objectMapper.readValue(response.body(), Map.class);
+                List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
+                if (!choices.isEmpty()) {
+                    Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+                    return (String) message.get("content");
+                }
+            } else {
+                log.error("OpenAI API Error: " + response.statusCode());
+            }
+        } catch (Exception e) {
+            log.error("자격증 설명 생성 중 오류", e);
+        }
+        return "죄송하지만 자격증 추천 설명을 생성할 수 없습니다.";
     }
 
     // ===== 헬퍼 메서드 =====
