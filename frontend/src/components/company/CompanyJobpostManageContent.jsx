@@ -23,10 +23,10 @@ export default function CompanyJobpostManageContent() {
   useEffect(() => {
     const fetchPostings = async () => {
       try {
-        const data = await jobPostingApi.getJobPostingsByCompanyId(1, { size: 100 });
+        const data = await jobPostingApi.getJobPostingsByCompanyId({ size: 100 });
         if (data && data.content) {
           // 회사별 조회가 아직 백엔드에 없으므로 일단 전체 공고를 가져와서 UI에 맞춰 매핑합니다 
-          // -> 백엔드 회사별 조회 API 구현 완료, companyId=1 로 호출
+          // -> 백엔드 회사별 조회 API 구현 완료, JWT 기반으로 동작
           const myJobs = data.content.map(apiJob => ({
             job_posting_id: apiJob.jobPostingId,
             title: apiJob.title || '제목 없음',
@@ -116,8 +116,8 @@ export default function CompanyJobpostManageContent() {
 
   const handleConfirmClose = async () => {
     try {
-      // API call to close job posting (임시로 companyId = 1 전달)
-      await jobPostingApi.closeJobPosting(1, selectedJob.job_posting_id);
+      // API call to close job posting
+      await jobPostingApi.closeJobPosting(selectedJob.job_posting_id);
       setPostings(prev => prev.map(job => 
         job.job_posting_id === selectedJob.job_posting_id ? { ...job, is_closed: true } : job
       ));

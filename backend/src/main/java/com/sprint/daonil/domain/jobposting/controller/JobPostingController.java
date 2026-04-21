@@ -9,10 +9,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/jobs") // API 관례상 /api 경로 추가 권장
+@RequestMapping("/api/jobs") // API 관례상 /api 경로 추가 권장
 @RequiredArgsConstructor
 public class JobPostingController {
 
@@ -44,10 +46,10 @@ public class JobPostingController {
      */
     @GetMapping("/company")
     public ResponseEntity<Page<JobPostingResponseDto>> getJobPostingsByCompany(
-            @RequestParam Long companyId,
+            @AuthenticationPrincipal UserDetails userDetails,
             @PageableDefault(size = 10) Pageable pageable) {
 
-        Page<JobPostingResponseDto> result = jobPostingService.getJobPostingsByCompanyId(companyId, pageable);
+        Page<JobPostingResponseDto> result = jobPostingService.getJobPostingsByCompanyId(userDetails.getUsername(), pageable);
         return ResponseEntity.ok(result);
     }
 
@@ -64,14 +66,13 @@ public class JobPostingController {
 
     /**
      * 채용공고 등록
-     * 현재는 @RequestParam으로 companyId를 받지만, 이후 시큐리티 도입 시 인증 객체에서 추출하도록 변경 필요
      */
     @PostMapping
     public ResponseEntity<JobPostingResponseDto> createJobPosting(
-            @RequestParam Long companyId,
+            @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody JobPostingRequestDto requestDto) {
 
-        JobPostingResponseDto result = jobPostingService.createJobPosting(companyId, requestDto);
+        JobPostingResponseDto result = jobPostingService.createJobPosting(userDetails.getUsername(), requestDto);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
@@ -80,11 +81,11 @@ public class JobPostingController {
      */
     @PutMapping("/{jobPostingId}")
     public ResponseEntity<JobPostingResponseDto> updateJobPosting(
-            @RequestParam Long companyId,
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long jobPostingId,
             @RequestBody JobPostingRequestDto requestDto) {
 
-        JobPostingResponseDto result = jobPostingService.updateJobPosting(companyId, jobPostingId, requestDto);
+        JobPostingResponseDto result = jobPostingService.updateJobPosting(userDetails.getUsername(), jobPostingId, requestDto);
         return ResponseEntity.ok(result);
     }
 
@@ -93,10 +94,10 @@ public class JobPostingController {
      */
     @PatchMapping("/{jobPostingId}/close")
     public ResponseEntity<JobPostingResponseDto> closeJobPosting(
-            @RequestParam Long companyId,
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable Long jobPostingId) {
 
-        JobPostingResponseDto result = jobPostingService.closeJobPosting(companyId, jobPostingId);
+        JobPostingResponseDto result = jobPostingService.closeJobPosting(userDetails.getUsername(), jobPostingId);
         return ResponseEntity.ok(result);
     }
 }

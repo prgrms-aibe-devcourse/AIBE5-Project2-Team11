@@ -42,6 +42,19 @@ public class SecurityConfig {
         return source;
     }
 
+//    @Bean
+//    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+//        http
+//            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+//            .csrf(csrf -> csrf.disable())
+//            .authorizeHttpRequests(authz -> authz
+//                .requestMatchers("/members/**").permitAll()
+//                .anyRequest().authenticated()
+//            );
+//
+//        return http.build();
+//    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -53,8 +66,13 @@ public class SecurityConfig {
                 .requestMatchers("/members/check-loginId/**", "/members/check-email/**").permitAll()
                 .requestMatchers("/api/notices/**").permitAll()
                 .requestMatchers("/api/notices").permitAll()
-                .requestMatchers("/jobs/**").permitAll()
-                .requestMatchers("/jobs").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/jobs").hasRole("COMPANY")
+                .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/jobs/**").hasRole("COMPANY")
+                .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/jobs/**").hasRole("COMPANY")
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/jobs/company").hasRole("COMPANY")
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/jobs/**").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/jobs").permitAll()
                 .requestMatchers("/members/me").authenticated()
                 .anyRequest().permitAll()
             )
