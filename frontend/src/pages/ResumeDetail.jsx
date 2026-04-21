@@ -13,7 +13,7 @@ export default function ResumeDetail() {
   useEffect(() => {
     const fetchResumeDetail = async () => {
       try {
-        const response = await api.get(`/api/resumes/${id}`);
+        const response = await api.get(`/resumes/${id}`);
         console.log('Resume data:', response.data); // 디버깅용 로그 추가
         setResume(response.data);
       } catch (err) {
@@ -47,7 +47,7 @@ export default function ResumeDetail() {
         <div className="text-center py-8">
           <p className="text-red-500">{error || '이력서를 찾을 수 없습니다.'}</p>
           <button
-            onClick={() => navigate("/memberMypage/resumes")}
+            onClick={() => navigate("/memberMypage")}
             className="mt-4 text-sm bg-yellow-500 text-white px-4 py-2 rounded-lg hover:opacity-90"
           >
             목록으로 돌아가기

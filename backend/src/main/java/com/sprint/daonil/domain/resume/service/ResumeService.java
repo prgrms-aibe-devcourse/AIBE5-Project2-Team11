@@ -41,7 +41,7 @@ public class ResumeService {
     public Page<ResumeListResponseDto> getResumeList(Long userId, Pageable pageable) {
         // 페이지네이션 적용한 리스트 조회
         Page<Resume> resumePage =
-                resumeRepository.findByMember_MemberIdAndIsDeletedFalse(userId, pageable);
+                resumeRepository.findByMemberIdOrderByPublicFirst(userId, pageable);
 
         return resumePage.map(ResumeListResponseDto::from);
     }

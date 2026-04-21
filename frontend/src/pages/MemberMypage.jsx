@@ -11,7 +11,11 @@ function ResumeSection() {
     const [resumes, setResumes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [page, setPage] = useState(0);
+    const [page, setPage] = useState(() => {
+        // localStorage에서 페이지 상태 복원
+        const savedPage = localStorage.getItem('memberMypage_resumePage');
+        return savedPage ? parseInt(savedPage, 10) : 0;
+    });
     const [totalPages, setTotalPages] = useState(0);
     const [totalElements, setTotalElements] = useState(0);
 
@@ -19,7 +23,7 @@ function ResumeSection() {
         const fetchResumes = async () => {
             try {
                 setLoading(true);
-                const response = await api.get('/api/resumes', {
+                const response = await api.get('/resumes', {
                     params: {
                         page: page,
                         size: 5
@@ -40,6 +44,25 @@ function ResumeSection() {
 
         fetchResumes();
     }, [page]);
+
+    // 컴포넌트 마운트 후 localStorage 정리
+    useEffect(() => {
+        localStorage.removeItem('memberMypage_resumePage');
+    }, []);
+
+    const handleSetAsMainResume = async (resumeId) => {
+        try {
+            // 백엔드 요청
+            await api.patch(`/resumes/${resumeId}/public`);
+            // 성공 시 이력서 관리 탭의 첫 페이지로 이동
+            localStorage.setItem('memberMypage_activeMenu', 'resume');
+            localStorage.setItem('memberMypage_resumePage', '0');
+            window.location.reload();
+        } catch (err) {
+            console.error('대표 이력서 설정 실패:', err);
+            alert('대표 이력서 설정에 실패했습니다.');
+        }
+    };
 
     if (loading) {
         return (
@@ -109,9 +132,19 @@ function ResumeSection() {
                         key={resume.resumeId}
                         className="bg-white border border-[#E8DCCB] rounded-xl p-5 hover:shadow-md transition-shadow"
                     >
-                        <div className="flex items-center gap-2 mb-1">
+                        <div className="flex items-center justify-between mb-1">
                             <h4 className="font-bold text-[#5D4037] text-base">{resume.title}</h4>
-                            {/* 기본 이력서 표시 로직이 필요하면 추가 */}
+                            <button
+                                onClick={() => handleSetAsMainResume(resume.resumeId)}
+                                className="text-xl text-yellow-500 hover:scale-110 transition-transform"
+                                title={resume.isPublic ? '대표 이력서' : '일반 이력서'}
+                            >
+                                {resume.isPublic ? (
+                                    <i className="ri-pushpin-fill"></i>
+                                ) : (
+                                    <i className="ri-pushpin-line"></i>
+                                )}
+                            </button>
                         </div>
                         <p className="text-xs text-gray-400 mb-3">최종 수정일: {new Date(resume.updatedAt).toLocaleDateString()}</p>
                         <div className="flex flex-wrap gap-1.5 mb-4">
@@ -273,7 +306,16 @@ export default function MemberMypage() {
         location.pathname !== "/memberMypage/";
 
     // 중첩 라우트가 아닐 때만 탭 상태 관리
-    const [activeMenu, setActiveMenu] = useState("profile");
+    const [activeMenu, setActiveMenu] = useState(() => {
+        // localStorage에서 탭 상태 복원
+        return localStorage.getItem('memberMypage_activeMenu') || "profile";
+    });
+
+    // 컴포넌트 마운트 후 localStorage 정리
+    useEffect(() => {
+        localStorage.removeItem('memberMypage_activeMenu');
+        localStorage.removeItem('memberMypage_resumePage');
+    }, []);
 
     const handleChangeMenu = (menu) => {
         setActiveMenu(menu);
