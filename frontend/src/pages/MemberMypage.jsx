@@ -182,7 +182,7 @@ function ResumeSection() {
                                 onClick={() => navigate(`/memberMypage/resumes/${resume.resumeId}`)}
                                 className="flex-1 text-sm text-[#8D6E63] border border-[#D7B89C] rounded-lg py-2 hover:bg-[#FFF3E0] transition-colors font-medium"
                             >
-                                미리보기
+                                상세보기
                             </button>
                             <button
                                 onClick={() => navigate(`/memberMypage/resumes/${resume.resumeId}/edit`)}
