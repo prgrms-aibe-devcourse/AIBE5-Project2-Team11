@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import OAuth2LoginButtons from "./OAuth2LoginButtons";
 
 export default function LoginForm({ setMemberType}) {
     const navigate = useNavigate();
@@ -57,7 +58,11 @@ export default function LoginForm({ setMemberType}) {
             }
 
             if (data.success) {
-                // 로그인 성공
+                // ✅ 로그인 성공: 이전 소셜 로그인 정보 제거 (일반 로그인으로 변경)
+                localStorage.removeItem("authToken");
+                sessionStorage.removeItem("accessToken");
+                
+                // 새로운 일반 로그인 정보 저장
                 localStorage.setItem("isLogin", "true");
                 localStorage.setItem("memberType", data.role === "JOB_SEEKER" ? "JOB_SEEKER" : "COMPANY");
                 localStorage.setItem("memberId", data.memberId);
@@ -191,27 +196,7 @@ export default function LoginForm({ setMemberType}) {
                         <div className="flex-grow border-t border-amber-200"></div>
                     </div>
 
-                    <div className="flex flex-col gap-4">
-                        <button
-                            type="button"
-                            className="w-full h-14 bg-[#FEE500] text-[#3C1E1E] rounded-xl flex items-center justify-center gap-3 font-bold hover:opacity-90 transition-opacity"
-                        >
-                            <span className="text-lg">💬</span>
-                            카카오로 3초만에 시작하기
-                        </button>
-
-                        <button
-                            type="button"
-                            className="w-full h-14 bg-white border border-amber-200 text-[#451a03] rounded-xl flex items-center justify-center gap-3 font-bold hover:bg-amber-50 transition-colors"
-                        >
-                            <img
-                                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-                                alt="Google Logo"
-                                className="w-5 h-5"
-                            />
-                            Google 계정으로 로그인
-                        </button>
-                    </div>
+                    <OAuth2LoginButtons />
 
                     <div className="flex justify-center items-center gap-6 mt-10 text-sm text-[#78350f] flex-wrap">
                         <a href="#" className="hover:text-amber-700 transition-colors">

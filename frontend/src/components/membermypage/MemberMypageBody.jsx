@@ -60,7 +60,8 @@ export default function MemberMypageBody() {
         const fetchUserInfo = async () => {
             try {
                 setLoading(true);
-                const token = localStorage.getItem("accessToken");
+                // OAuth2 로그인 시 'authToken'으로 저장되므로 우선 확인
+                const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
 
                 if (!token) {
                     setError("로그인이 필요합니다.");
@@ -296,7 +297,7 @@ export default function MemberMypageBody() {
                 return;
             }
 
-            const token = localStorage.getItem("accessToken");
+            const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
             if (!token) {
                 alert("로그인이 필요합니다.");
                 return;
@@ -349,7 +350,7 @@ export default function MemberMypageBody() {
             setProfileMessage("");
             setProfileSaveError(false);
 
-            const token = localStorage.getItem("accessToken");
+            const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
             if (!token) {
                 setProfileMessage("로그인이 필요합니다.");
                 setProfileSaveError(true);
@@ -462,7 +463,7 @@ export default function MemberMypageBody() {
 
         try {
             setPasswordChanging(true);
-            const token = localStorage.getItem("accessToken");
+            const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
 
             if (!token) {
                 setPasswordMessage("로그인이 필요합니다.");
@@ -520,7 +521,7 @@ export default function MemberMypageBody() {
 
         try {
             setAccountDeleting(true);
-            const token = localStorage.getItem("accessToken");
+            const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
 
             if (!token) {
                 setDeleteMessage("로그인이 필요합니다.");
