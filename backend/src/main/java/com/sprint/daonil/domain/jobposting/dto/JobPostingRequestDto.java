@@ -14,7 +14,8 @@ import java.time.LocalDate;
 public class JobPostingRequestDto {
 
     private String title;
-    private String jobCategory;
+    private String mainCategory;
+    private String subCategory;
     private String employmentType;
     private String workRegion;
     private Integer salary;
@@ -37,7 +38,8 @@ public class JobPostingRequestDto {
         return JobPosting.builder()
                 .company(company)
                 .title(this.title)
-                .jobCategory(this.jobCategory)
+                .mainCategory(this.mainCategory)
+                .subCategory(this.subCategory)
                 .employmentType(this.employmentType)
                 .workRegion(this.workRegion)
                 .salary(this.salary)
