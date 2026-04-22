@@ -3,6 +3,7 @@ package com.sprint.daonil.domain.jobposting.repository;
 import com.sprint.daonil.domain.jobposting.entity.JobPosting;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying; // 추가
 import org.springframework.data.jpa.repository.Query;
@@ -20,6 +21,7 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
      * - 컨트롤러에서 파라미터가 안 넘어오면(null) 해당 조건은 무시하고 전체 검색으로 동작
      * - 키워드(keyword)는 제목(title)과 내용(content)에서 모두 검색
      */
+    @EntityGraph(attributePaths = {"company"})
     @Query("SELECT jp FROM JobPosting jp WHERE jp.isClosed = :isClosed " +
             "AND (:keyword IS NULL OR jp.title LIKE %:keyword% OR jp.content LIKE %:keyword%) " +
             "AND (:jobCategory IS NULL OR jp.jobCategory = :jobCategory) " +
@@ -54,14 +56,17 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
 
 
 
-
-    // ----------추후 구현 --------------
-    // 기업 아이디별 공고 조회 / 일괄 마감 처리 / 검색 성능 최적화용 N+1 문제 해결 (@EntityGraph)
-
     /**
      * 특정 회사가 작성한 채용공고 목록 조회 (기업 마이페이지용)
      */
+    @EntityGraph(attributePaths = {"company"})
     Page<JobPosting> findByCompany_Member_LoginId(String loginId, Pageable pageable);
+
+
+
+
+    // ----------추후 구현 --------------
+    // 기업 아이디별 공고 조회 / 일괄 마감 처리 / 검색 성능 최적화용 N+1 문제 해결 (@EntityGraph)
 
     /**
      * 마감일이 지난 채용공고 일괄 마감 처리 (스케줄러용 벌크 연산)
