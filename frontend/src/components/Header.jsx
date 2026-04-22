@@ -133,7 +133,7 @@ export default function Header() {
               <img
                 src={daonilLogo}
                 alt="다온일"
-                className="h-10 w-auto object-contain"
+                className="h-14 w-auto object-contain mt-2"
               />
             </Link>
 
