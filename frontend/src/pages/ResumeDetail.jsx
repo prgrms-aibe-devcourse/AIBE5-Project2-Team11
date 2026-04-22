@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../api/axios";
 import defaultUserPhoto from "../assets/images/resume/defalut_userPhoto.jpeg";
 
 export default function ResumeDetail() {
@@ -11,14 +10,46 @@ export default function ResumeDetail() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    const extractErrorMessage = async (response) => {
+      try {
+        const errorBody = await response.json();
+        return (
+          errorBody?.message ||
+          errorBody?.detail ||
+          errorBody?.error ||
+          "이력서 상세 조회에 실패했습니다."
+        );
+      } catch {
+        return "이력서 상세 조회에 실패했습니다.";
+      }
+    };
+
     const fetchResumeDetail = async () => {
       try {
-        const response = await api.get(`/resumes/${id}`);
-        console.log('Resume data:', response.data); // 디버깅용 로그 추가
-        setResume(response.data);
+        const token = localStorage.getItem("accessToken");
+        if (!token) {
+          setError("로그인이 필요합니다.");
+          return;
+        }
+
+        const response = await fetch(`/resumes/${id}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          const serverMessage = await extractErrorMessage(response);
+          throw new Error(serverMessage);
+        }
+
+        const data = await response.json();
+        setResume(data);
       } catch (err) {
         console.error('이력서 상세 조회에 실패했습니다:', err);
-        setError('이력서 상세 조회에 실패했습니다.');
+        setError(err.message || '이력서 상세 조회에 실패했습니다.');
       } finally {
         setLoading(false);
       }

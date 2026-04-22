@@ -32,6 +32,20 @@ function formatDateForInput(value) {
   return s.includes("T") ? s.split("T")[0] : s;
 }
 
+async function extractErrorMessage(response, fallbackMessage) {
+  try {
+    const errorBody = await response.json();
+    return (
+      errorBody?.message ||
+      errorBody?.detail ||
+      errorBody?.error ||
+      fallbackMessage
+    );
+  } catch {
+    return fallbackMessage;
+  }
+}
+
 /** GET /resumes/:id 상세 응답 → 폼 상태 */
 function mapResumeDetailApiToForm(data) {
   return {
@@ -440,7 +454,19 @@ export default function ResumeForm() {
       (item) => !item.disabilityType?.trim()
     );
     if (hasInvalidDisability) {
-      alert("장애 정보의 장애 유형은 필수입니다.");
+      alert("장애 정보를 추가하신 경우, 장애 유형은 필수로 선택해주세요.");
+      return;
+    }
+
+    const hasInvalidExperience = resume.experiences.some(
+      (exp) =>
+        !exp.company?.trim() ||
+        !exp.position?.trim() ||
+        !exp.startDate?.trim() ||
+        !exp.endDate?.trim()
+    );
+    if (hasInvalidExperience) {
+      alert("경력을 추가하신 경우, 회사명/직책/재직기간(시작·종료일)은 필수로 입력해주세요. (주요 업무/성과는 선택)");
       return;
     }
 
@@ -448,7 +474,7 @@ export default function ResumeForm() {
       (edu) => !edu.school?.trim() || !edu.major?.trim() || !edu.startDate?.trim() || !edu.endDate?.trim() || !edu.degree?.trim()
     );
     if (hasInvalidEducation) {
-      alert("추가된 학력 항목의 모든 필드를 입력해주세요.");
+      alert("학력을 추가하신 경우, 학교명/전공/재학기간(시작·종료일)/학위는 모두 필수로 입력해주세요.");
       return;
     }
 
@@ -460,12 +486,12 @@ export default function ResumeForm() {
 
     const hasUnselectedCertificate = resume.certificates.some((cert) => cert.isSearchMode || !cert.name);
     if (hasUnselectedCertificate) {
-      alert("자격증명은 검색 후 선택 버튼으로 확정해주세요.");
+      alert("자격증을 추가하신 경우, 돋보기로 검색 후 체크(선택) 버튼으로 자격증명을 확정해주세요.");
       return;
     }
     const hasInvalidCertificate = resume.certificates.some((cert) => !cert.name?.trim() || !cert.date?.trim());
     if (hasInvalidCertificate) {
-      alert("추가된 자격증 항목의 모든 필드를 입력해주세요.");
+      alert("자격증을 추가하신 경우, 자격증명과 취득일은 필수로 입력해주세요.");
       return;
     }
 
@@ -478,7 +504,7 @@ export default function ResumeForm() {
         !lang.expirationDate?.trim()
     );
     if (hasInvalidLanguage) {
-      alert("추가된 어학 항목의 모든 필드를 입력해주세요.");
+      alert("어학을 추가하신 경우, 언어명/시험명/점수/취득일/만료일은 모두 필수로 입력해주세요.");
       return;
     }
 
@@ -539,13 +565,17 @@ export default function ResumeForm() {
       });
 
       if (!response.ok) {
-        throw new Error("이력서 저장 요청 실패");
+        const serverMessage = await extractErrorMessage(
+          response,
+          "이력서 저장에 실패했습니다."
+        );
+        throw new Error(serverMessage);
       }
 
       navigate("/memberMypage");
     } catch (err) {
       console.error("이력서 저장 실패:", err);
-      alert("이력서 저장에 실패했습니다.");
+      alert(err.message || "이력서 저장에 실패했습니다.");
       setSaved(false);
     }
   };
@@ -730,7 +760,9 @@ export default function ResumeForm() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs text-gray-500 mb-1">장애 유형</label>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            장애 유형 <span className="text-red-500">*</span>
+                          </label>
                           <select
                             value={item.disabilityType}
                             onChange={(e) => updateDisability(idx, "disabilityType", e.target.value)}
@@ -800,13 +832,15 @@ export default function ResumeForm() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
-                        { label: "회사명", field: "company", placeholder: "(주)회사명" },
-                        { label: "직책/직위", field: "position", placeholder: "프론트엔드 개발자" },
-                        { label: "재직 시작일", field: "startDate", type: "date" },
-                        { label: "재직 종료일", field: "endDate", type: "date" },
-                      ].map(({ label, field, placeholder }) => (
+                        { label: "회사명", field: "company", placeholder: "(주)회사명", required: true },
+                        { label: "직책/직위", field: "position", placeholder: "프론트엔드 개발자", required: true },
+                        { label: "재직 시작일", field: "startDate", type: "date", required: true },
+                        { label: "재직 종료일", field: "endDate", type: "date", required: true },
+                      ].map(({ label, field, placeholder, required }) => (
                         <div key={field}>
-                          <label className="block text-xs text-gray-500 mb-1">{label}</label>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            {label} {required && <span className="text-red-500">*</span>}
+                          </label>
                           <input
                             type={field.includes("Date") ? "date" : "text"}
                             value={exp[field]}
@@ -869,21 +903,39 @@ export default function ResumeForm() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {[
-                        { label: "학교명", field: "school", placeholder: "○○대학교" },
-                        { label: "전공", field: "major", placeholder: "컴퓨터공학과" },
-                        { label: "재학 시작일", field: "startDate", type: "date" },
-                        { label: "재학 종료일", field: "endDate", type: "date" },
-                        { label: "학위", field: "degree", placeholder: "학사" },
-                      ].map(({ label, field, placeholder }) => (
+                        { label: "학교명", field: "school", placeholder: "○○대학교", required: true },
+                        { label: "전공", field: "major", placeholder: "컴퓨터공학과", required: true },
+                        { label: "재학 시작일", field: "startDate", type: "date", required: true },
+                        { label: "재학 종료일", field: "endDate", type: "date", required: true },
+                        { label: "학위", field: "degree", placeholder: "학사", required: true },
+                      ].map(({ label, field, placeholder, required }) => (
                         <div key={field}>
-                          <label className="block text-xs text-gray-500 mb-1">{label}</label>
-                          <input
-                            type={field.includes("Date") ? "date" : "text"}
-                            value={edu[field]}
-                            onChange={(e) => updateEducation(idx, field, e.target.value)}
-                            placeholder={placeholder}
-                            className={inputClass}
-                          />
+                          <label className="block text-xs text-gray-500 mb-1">
+                            {label} {required && <span className="text-red-500">*</span>}
+                          </label>
+                          {field === "degree" ? (
+                            <select
+                              value={edu[field]}
+                              onChange={(e) => updateEducation(idx, field, e.target.value)}
+                              className={inputClass}
+                            >
+                              <option value="">선택해주세요</option>
+                              <option value="고등학교">고등학교</option>
+                              <option value="전문학사">전문학사</option>
+                              <option value="학사">학사</option>
+                              <option value="석사">석사</option>
+                              <option value="박사">박사</option>
+                              <option value="기타">기타</option>
+                            </select>
+                          ) : (
+                            <input
+                              type={field.includes("Date") ? "date" : "text"}
+                              value={edu[field]}
+                              onChange={(e) => updateEducation(idx, field, e.target.value)}
+                              placeholder={placeholder}
+                              className={inputClass}
+                            />
+                          )}
                         </div>
                       ))}
                     </div>
@@ -970,7 +1022,9 @@ export default function ResumeForm() {
                       </div>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div className="relative">
-                          <label className="block text-xs text-gray-500 mb-1">자격증명</label>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            자격증명 <span className="text-red-500">*</span>
+                          </label>
                           <div className="flex gap-2">
                             <input
                               type="text"
@@ -1017,7 +1071,9 @@ export default function ResumeForm() {
                         </div>
                         {[{ label: "취득일", field: "date", type: "date" }].map(({ label, field, placeholder }) => (
                           <div key={field}>
-                            <label className="block text-xs text-gray-500 mb-1">{label}</label>
+                            <label className="block text-xs text-gray-500 mb-1">
+                              {label} <span className="text-red-500">*</span>
+                            </label>
                             <input
                               type={field === "date" ? "date" : "text"}
                               value={cert[field]}
@@ -1070,14 +1126,16 @@ export default function ResumeForm() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                       {[
-                        { label: "언어명", field: "languageName", placeholder: "영어" },
-                        { label: "시험명", field: "testName", placeholder: "TOEFL" },
-                        { label: "점수", field: "score", placeholder: "95" },
-                        { label: "취득일", field: "acquiredDate", type: "date" },
-                        { label: "만료일", field: "expirationDate", type: "date" },
-                      ].map(({ label, field, placeholder }) => (
+                        { label: "언어명", field: "languageName", placeholder: "영어", required: true },
+                        { label: "시험명", field: "testName", placeholder: "TOEFL", required: true },
+                        { label: "점수", field: "score", placeholder: "95", required: true },
+                        { label: "취득일", field: "acquiredDate", type: "date", required: true },
+                        { label: "만료일", field: "expirationDate", type: "date", required: true },
+                      ].map(({ label, field, placeholder, required }) => (
                         <div key={field}>
-                          <label className="block text-xs text-gray-500 mb-1">{label}</label>
+                          <label className="block text-xs text-gray-500 mb-1">
+                            {label} {required && <span className="text-red-500">*</span>}
+                          </label>
                           <input
                             type={field.includes("Date") ? "date" : "text"}
                             value={language[field]}

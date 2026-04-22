@@ -3,7 +3,24 @@ import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import Header from "../components/Header";
 import MemberSidebar from "../components/membermypage/MemberSidebar";
 import MemberMypageBody from "../components/membermypage/MemberMypageBody";
-import api from "../api/axios";
+
+async function extractErrorMessage(response, fallbackMessage) {
+    try {
+        const errorBody = await response.json();
+        return (
+            errorBody?.message ||
+            errorBody?.detail ||
+            errorBody?.error ||
+            fallbackMessage
+        );
+    } catch {
+        return fallbackMessage;
+    }
+}
+
+function getAccessToken() {
+    return localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
+}
 
 // 이력서 관리 섹션 - ResumeList 페이지로 이동하는 런처패드
 function ResumeSection() {
@@ -23,20 +40,36 @@ function ResumeSection() {
         const fetchResumes = async () => {
             try {
                 setLoading(true);
-                const response = await api.get('/resumes', {
-                    params: {
-                        page: page,
-                        size: 5
-                    }
+                const token = getAccessToken();
+                if (!token) {
+                    setError("로그인이 필요합니다.");
+                    return;
+                }
+
+                const params = new URLSearchParams({ page: String(page), size: "5" });
+                const response = await fetch(`/resumes?${params.toString()}`, {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
                 });
-                console.log('API 응답:', response.data);
-                console.log('이력서 목록:', response.data.content);
-                setResumes(response.data.content || []);
-                setTotalPages(response.data.totalPages || 0);
-                setTotalElements(response.data.totalElements || 0);
+
+                if (!response.ok) {
+                    const serverMessage = await extractErrorMessage(
+                        response,
+                        "이력서 목록을 불러오는데 실패했습니다."
+                    );
+                    throw new Error(serverMessage);
+                }
+
+                const data = await response.json();
+                setResumes(data.content || []);
+                setTotalPages(data.totalPages || 0);
+                setTotalElements(data.totalElements || 0);
             } catch (err) {
                 console.error('이력서 목록을 불러오는데 실패했습니다:', err);
-                setError('이력서 목록을 불러오는데 실패했습니다.');
+                setError(err.message || '이력서 목록을 불러오는데 실패했습니다.');
             } finally {
                 setLoading(false);
             }
@@ -52,15 +85,35 @@ function ResumeSection() {
 
     const handleSetAsMainResume = async (resumeId) => {
         try {
-            // 백엔드 요청
-            await api.patch(`/resumes/${resumeId}/public`);
+            const token = getAccessToken();
+            if (!token) {
+                alert("로그인이 필요합니다.");
+                return;
+            }
+
+            const response = await fetch(`/resumes/${resumeId}/public`, {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (!response.ok) {
+                const serverMessage = await extractErrorMessage(
+                    response,
+                    "대표 이력서 설정에 실패했습니다."
+                );
+                throw new Error(serverMessage);
+            }
+
             // 성공 시 이력서 관리 탭의 첫 페이지로 이동
             localStorage.setItem('memberMypage_activeMenu', 'resume');
             localStorage.setItem('memberMypage_resumePage', '0');
             window.location.reload();
         } catch (err) {
             console.error('대표 이력서 설정 실패:', err);
-            alert('대표 이력서 설정에 실패했습니다.');
+            alert(err.message || '대표 이력서 설정에 실패했습니다.');
         }
     };
 
@@ -69,7 +122,28 @@ function ResumeSection() {
         if (!isConfirmed) return;
 
         try {
-            await api.patch(`/resumes/${resumeId}/status`);
+            const token = getAccessToken();
+            if (!token) {
+                alert("로그인이 필요합니다.");
+                return;
+            }
+
+            const response = await fetch(`/resumes/${resumeId}/status`, {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (!response.ok) {
+                const serverMessage = await extractErrorMessage(
+                    response,
+                    "이력서 삭제에 실패했습니다."
+                );
+                throw new Error(serverMessage);
+            }
+
             setResumes((prev) => prev.filter((resume) => resume.resumeId !== resumeId));
             setTotalElements((prev) => Math.max(0, prev - 1));
             alert('이력서가 삭제되었습니다.');
@@ -80,7 +154,7 @@ function ResumeSection() {
             window.location.reload();
         } catch (err) {
             console.error('이력서 삭제 실패:', err);
-            alert('이력서 삭제에 실패했습니다.');
+            alert(err.message || '이력서 삭제에 실패했습니다.');
         }
     };
 
