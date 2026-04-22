@@ -26,7 +26,7 @@ public class Member {
     @Column(name = "login_id", nullable = false, length = 50)
     private String loginId;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = true, length = 255)
     private String password;
 
     @Column(nullable = false, length = 30)
@@ -39,7 +39,7 @@ public class Member {
     private String address;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)  // ✅ length 20으로 설정 (JOB_SEEKER 10글자 + 여유)
     private Role role;
 
     @Column(name = "is_deleted", nullable = false)

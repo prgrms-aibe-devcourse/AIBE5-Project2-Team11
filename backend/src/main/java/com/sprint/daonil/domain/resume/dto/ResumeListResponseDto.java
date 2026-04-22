@@ -16,22 +16,20 @@ public class ResumeListResponseDto {
     private String title;
     private String memberName;
     private LocalDateTime updatedAt;
+    private Boolean isPublic;
     private List<ResumeSkillDto> skills;
 
 
+    // Entity -> DTO
     public static ResumeListResponseDto from(Resume resume) {
         ResumeListResponseDto dto = new ResumeListResponseDto();
         dto.setResumeId(resume.getResumeId());
         dto.setTitle(resume.getTitle());
-        dto.setMemberName(
-                resume.getMember() != null ? resume.getMember().getName() : null
-        );
+        dto.setMemberName( resume.getMember() != null ? resume.getMember().getName() : null);
         dto.setUpdatedAt(resume.getUpdatedAt());
-        dto.setSkills(
-                resume.getSkills().stream()
-                        .map(s -> new ResumeSkillDto(s.getSkillKeyword()))
-                        .toList()
-        );
+        dto.setIsPublic(resume.getIsPublic());
+        dto.setSkills( resume.getSkills().stream()
+                        .map(s -> new ResumeSkillDto(s.getSkillKeyword())).toList());
 
         return dto;
     }

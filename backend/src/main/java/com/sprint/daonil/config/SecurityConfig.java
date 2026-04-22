@@ -22,6 +22,8 @@ import java.util.Arrays;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler;
+    private final OAuth2AuthenticationFailureHandler oauth2AuthenticationFailureHandler;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -62,21 +64,40 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(authz -> authz
+                // 정적 리소스 허용
+                .requestMatchers("/favicon.ico").permitAll()
+                .requestMatchers("/static/**").permitAll()
+                .requestMatchers("/public/**").permitAll()
+                // 공개 회원 관련 엔드포인트
                 .requestMatchers("/members/signup", "/members/signup/company", "/members/login").permitAll()
                 .requestMatchers("/members/check-loginId/**", "/members/check-email/**").permitAll()
+                // OAuth2 엔드포인트
+                .requestMatchers("/oauth2/**").permitAll()
+                .requestMatchers("/login/oauth2/**").permitAll()
+                // 공개 API
                 .requestMatchers("/api/notices/**").permitAll()
                 .requestMatchers("/api/notices").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
+                // 기업회원 전용
                 .requestMatchers(org.springframework.http.HttpMethod.POST, "/api/jobs").hasRole("COMPANY")
                 .requestMatchers(org.springframework.http.HttpMethod.PUT, "/api/jobs/**").hasRole("COMPANY")
                 .requestMatchers(org.springframework.http.HttpMethod.PATCH, "/api/jobs/**").hasRole("COMPANY")
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/jobs/company").hasRole("COMPANY")
+                // 공개 채용공고
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/jobs/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/jobs").permitAll()
-                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/bookmarks/*/status").permitAll()
+                // 인증 필수
                 .requestMatchers("/api/bookmarks/**").authenticated()
                 .requestMatchers("/members/me").authenticated()
+                .requestMatchers("/members/complete-registration").authenticated()
+                .requestMatchers("/members/social-account/**").authenticated()
+                .requestMatchers("/members/unlink-social-account/**").authenticated()
+                // 나머지는 모두 허용
                 .anyRequest().permitAll()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .successHandler(oauth2AuthenticationSuccessHandler)
+                .failureHandler(oauth2AuthenticationFailureHandler)
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 

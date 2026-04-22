@@ -23,6 +23,7 @@ public class ProfileCertificate {
 
 //    @Column(name = "certificate_name", length = 150)
 //    private String certificateName;
+//    DB에 존재하지 않는 필드
 
     @Column(name = "acquired_date")
     private String acquiredDate;

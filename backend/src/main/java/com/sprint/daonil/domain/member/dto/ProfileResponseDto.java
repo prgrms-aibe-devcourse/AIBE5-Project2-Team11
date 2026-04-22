@@ -2,6 +2,7 @@ package com.sprint.daonil.domain.member.dto;
 
 import lombok.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Getter
@@ -12,6 +13,7 @@ import java.util.List;
 public class ProfileResponseDto {
 
     private Long profileId;
+    private String birthDate;
     private String career;
     private String preferredJob;
     private String preferredRegion;
