@@ -53,7 +53,11 @@ export default function CompanyLoginForm( {setMemberType}) {
             }
 
             if (data.success) {
-                // 로그인 성공
+                // ✅ 로그인 성공: 이전 소셜 로그인 정보 제거 (일반 로그인으로 변경)
+                localStorage.removeItem("authToken");
+                sessionStorage.removeItem("accessToken");
+
+                // 새로운 일반 로그인 정보 저장
                 localStorage.setItem("isLogin", "true");
                 localStorage.setItem("memberType", data.role === "JOB_SEEKER" ? "JOB_SEEKER" : "COMPANY");
                 localStorage.setItem("memberId", data.memberId);

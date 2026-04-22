@@ -25,7 +25,7 @@ public class CustomUserDetailsService implements UserDetailsService {
 
         return User.builder()
                 .username(member.getLoginId())
-                .password(member.getPassword())
+                .password(member.getPassword() != null ? member.getPassword() : "")  // ✅ NULL이면 빈 문자열
                 .authorities(Collections.singleton(new SimpleGrantedAuthority("ROLE_" + member.getRole().toString())))
                 .build();
     }

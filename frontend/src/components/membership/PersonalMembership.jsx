@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import OAuth2LoginButtons from "../login/OAuth2LoginButtons";
 
 const initialForm = {
     loginId: "",
@@ -202,7 +203,19 @@ export default function PersonalMembership() {
                 </button>
             </form>
 
-            <div className="text-center mt-10">
+            <div className="relative my-8 flex items-center">
+                <div className="flex-grow border-t border-[#cca499]"></div>
+                <span className="flex-shrink mx-4 text-sm md:text-base text-[#74544a]">
+                    또는 소셜 계정으로 가입하기
+                </span>
+                <div className="flex-grow border-t border-[#cca499]"></div>
+            </div>
+
+            <div className="mb-8">
+                <OAuth2LoginButtons mode="signup" />
+            </div>
+
+            <div className="text-center">
         <span className="text-base md:text-lg text-[#74544a]">
           이미 계정이 있으신가요?
         </span>{" "}

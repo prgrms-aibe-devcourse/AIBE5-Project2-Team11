@@ -1,0 +1,103 @@
+/* OAuth2 로그인 버튼 스타일 */
+
+.oauth2-login-container {
+  margin-top: 2rem;
+}
+
+.oauth2-divider {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  font-size: 0.875rem;
+  color: #999;
+}
+
+.oauth2-divider::before,
+.oauth2-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background-color: #ddd;
+}
+
+.oauth2-divider::before {
+  margin-right: 1rem;
+}
+
+.oauth2-divider::after {
+  margin-left: 1rem;
+}
+
+.oauth2-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+.oauth2-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  color: #333;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.oauth2-btn:hover {
+  background-color: #f9f9f9;
+  border-color: #999;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.oauth2-btn:active {
+  transform: translateY(0);
+}
+
+.oauth2-google-btn {
+  border-color: #dadce0;
+}
+
+.oauth2-google-btn:hover {
+  background-color: #f8f9fa;
+  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.2);
+}
+
+.oauth2-naver-btn {
+  background-color: #00c73c;
+  color: white;
+  border-color: #00c73c;
+}
+
+.oauth2-naver-btn:hover {
+  background-color: #00b833;
+  border-color: #00b833;
+  box-shadow: 0 2px 8px rgba(0, 199, 60, 0.3);
+}
+
+.oauth2-naver-btn svg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+  .oauth2-buttons {
+    gap: 0.75rem;
+  }
+
+  .oauth2-btn {
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
