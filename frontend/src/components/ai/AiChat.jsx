@@ -19,7 +19,7 @@ export default function AiChat() {
   // 필터링 상태
   const [filters, setFilters] = useState({
     region: "",
-    jobCategory: "",
+    jobMinor: "",
     workEnvironments: [],
   });
 
@@ -181,7 +181,7 @@ export default function AiChat() {
 
             setFilters({
               region: profile.preferredRegion || "",
-              jobCategory: profile.preferredJob || "",
+              jobMinor: profile.preferredJob || "",
               workEnvironments: defaultEnvs,
             });
           }
@@ -212,40 +212,75 @@ export default function AiChat() {
     const userMsg = inputMessage;
     setInputMessage("");
     setMessages((prev) => [...prev, { role: "user", text: userMsg }]);
+    setRecommendations([]);  // 새 추천 시작 전 초기화
+    setQualifications([]);   // 새 추천 시작 전 초기화
     setCharLoading(true);
 
-    try {
-      const isSearchQuery = /공고|직무|일자리|추천|찾아|알려/.test(userMsg);
+     try {
+       const isSearchQuery = /공고|직무|일자리|추천|찾아|알려/.test(userMsg);
 
-      if (isSearchQuery && sampleJobs.length > 0) {
-        // 필터링된 공고로 추천 요청
-        let filteredJobs = sampleJobs;
+       if (isSearchQuery) {
+         // 백엔드에서 실제 job_posting 데이터 조회
+         let jobs = [];
+         try {
+           const response = await fetch("/api/jobs?size=1000", {
+             method: "GET",
+             headers: { "Content-Type": "application/json" }
+           });
+           if (response.ok) {
+             const data = await response.json();
+             // Page 객체에서 content 추출
+             jobs = data.content || data.data || data || [];
+           }
+         } catch (err) {
+           console.log("API 조회 실패, 샘플 데이터 사용:", err);
+         }
 
-        // 지역 필터링 (work_region에서 광역시/도 추출하여 비교)
-        if (filters.region && filters.region !== "전체") {
-          filteredJobs = filteredJobs.filter((job) => {
-            const jobRegion = extractRegionFromAddress(job.work_region || job.location || job.compAddr || "");
-            return jobRegion === filters.region;
-          });
-        }
+         if (jobs.length === 0) jobs = sampleJobs;
 
-        // 소분류 필터링 (job_category 직접 비교)
-        if (filters.jobCategory) {
-          filteredJobs = filteredJobs.filter((job) =>
-            job.job_category === filters.jobCategory
-          );
-        }
+         // 필터링된 공고로 추천 요청
+         let filteredJobs = jobs;
 
-        if (filteredJobs.length === 0) filteredJobs = sampleJobs;
+         // 지역 필터링 (work_region에서 광역시/도 추출하여 비교)
+         if (filters.region && filters.region !== "전체") {
+           filteredJobs = filteredJobs.filter((job) => {
+             const jobRegion = extractRegionFromAddress(job.work_region || job.location || job.compAddr || "");
+             return jobRegion === filters.region;
+           });
+         }
 
-        const response = await getAiRecommendation(userMsg, filteredJobs);
+         // 소분류 필터링 (job_category 정확히 매칭)
+         if (filters.jobMinor) {
+           filteredJobs = filteredJobs.filter((job) => {
+             // job_category 또는 jobCategory (스네이크케이스, 카멜케이스 모두 지원)
+             const jobCat = job.job_category || job.jobCategory || "";
+             return jobCat === filters.jobMinor;
+           });
+         }
 
-        if (response && response.explanation) {
-          const topJobsText = response.topJobs
-            ?.map((j, i) => `${i + 1}. ${j.title || j.jobNm} @ ${j.company || j.busplaName}`)
-            .join("\n") || "";
+         console.log("=== 필터링 결과 ===");
+         console.log("필터 조건 - 지역:", filters.region, "소분류:", filters.jobMinor);
+         console.log("필터링된 공고 개수:", filteredJobs.length);
+         console.log("필터링된 공고:", filteredJobs.map(j => ({
+           title: j.jobNm || j.jobTitle,
+           company: j.busplaName || j.companyName,
+           jobCat: j.job_category || j.jobCategory,
+           region: j.work_region
+         })));
 
-          const fullResponse = `
+         if (filteredJobs.length === 0) {
+           filteredJobs = jobs;
+           console.log("필터링 결과 없음. 전체 공고로 대체됨");
+         }
+
+         const response = await getAiRecommendation(userMsg, filteredJobs);
+
+         if (response && response.explanation) {
+           const topJobsText = response.topJobs
+             ?.map((j, i) => `${i + 1}. ${j.title || j.jobNm || j.jobTitle} @ ${j.company || j.busplaName || j.companyName || "미정"}`)
+             .join("\n") || "";
+
+           const fullResponse = `
 ✨ AI 추천 결과:
 
 ${topJobsText}
@@ -254,7 +289,22 @@ ${topJobsText}
 ${response.explanation}`;
 
           setMessages((prev) => [...prev, { role: "bot", text: fullResponse }]);
-          setRecommendations(response.topJobs || []);
+
+          // AI 응답 후 다시 한번 필터링된 공고만 저장
+          const reFilteredJobs = (response.topJobs || []).filter((job) => {
+            // 지역 필터 재확인
+            if (filters.region && filters.region !== "전체") {
+              const jobRegion = extractRegionFromAddress(job.work_region || job.location || job.compAddr || "");
+              if (jobRegion !== filters.region) return false;
+            }
+            // 소분류 필터 재확인
+            if (filters.jobMinor) {
+              const jobCat = job.job_category || job.jobCategory || "";
+              if (jobCat !== filters.jobMinor) return false;
+            }
+            return true;
+          });
+          setRecommendations(reFilteredJobs);
         }
       } else {
         // 일반 채팅
@@ -272,6 +322,8 @@ ${response.explanation}`;
   // 질문 선택 (필터 입력 페이지 표시)
   const handleSelectQuestion = (question) => {
     setSelectedQuestion(question);
+    setRecommendations([]);  // 이전 추천 결과 초기화
+    setQualifications([]);   // 이전 자격증 추천 초기화
     setTempFilters({
       region: "",
       jobMajor: "",
@@ -331,6 +383,8 @@ ${response.explanation}`;
 
     setMessages((prev) => [...prev, { role: "user", text: finalQuestion }]);
     setSelectedQuestion(null);
+    setRecommendations([]);  // 새 추천 전 초기화
+    setQualifications([]);   // 새 추천 전 초기화
     setRecLoading(true);
 
     try {
@@ -376,8 +430,25 @@ ${explanation}
         setMessages((prev) => [...prev, { role: "bot", text: "자격증 이름을 입력하세요. 예: 정보처리, 리눅스" }]);
         setSelectedQuestion(null);
       } else {
-        // 공고 추천
-        let filteredJobs = sampleJobs;
+        // 공고 추천 - 백엔드에서 실제 데이터 조회
+        let jobs = [];
+        try {
+          const response = await fetch("/api/jobs?size=1000", {
+            method: "GET",
+            headers: { "Content-Type": "application/json" }
+          });
+          if (response.ok) {
+            const data = await response.json();
+            // Page 객체에서 content 추출
+            jobs = data.content || data.data || data || [];
+          }
+        } catch (err) {
+          console.log("API 조회 실패, 샘플 데이터 사용:", err);
+        }
+
+        if (jobs.length === 0) jobs = sampleJobs;
+
+        let filteredJobs = jobs;
 
         // 지역 필터링 (광역시/도 수준)
         if (tempFilters.region && tempFilters.region !== "전체") {
@@ -389,18 +460,20 @@ ${explanation}
 
         // 소분류 필터링 (job_category 정확히 매칭)
         if (tempFilters.jobMinor) {
-          filteredJobs = filteredJobs.filter((job) =>
-            job.job_category === tempFilters.jobMinor
-          );
+          filteredJobs = filteredJobs.filter((job) => {
+            // job_category 또는 jobCategory (스네이크케이스, 카멜케이스 모두 지원)
+            const jobCat = job.job_category || job.jobCategory || "";
+            return jobCat === tempFilters.jobMinor;
+          });
         }
 
-        if (filteredJobs.length === 0) filteredJobs = sampleJobs;
+        if (filteredJobs.length === 0) filteredJobs = jobs;
 
         const response = await getAiRecommendation(finalQuestion, filteredJobs);
 
         if (response && response.explanation) {
           const topJobsText = response.topJobs
-            ?.map((j, i) => `${i + 1}. ${j.title || j.jobNm} @ ${j.company || j.busplaName}`)
+            ?.map((j, i) => `${i + 1}. ${j.title || j.jobNm || j.jobTitle} @ ${j.company || j.busplaName || j.companyName || "미정"}`)
             .join("\n") || "";
 
           const fullResponse = `
@@ -412,7 +485,22 @@ ${topJobsText}
 ${response.explanation}`;
 
           setMessages((prev) => [...prev, { role: "bot", text: fullResponse }]);
-          setRecommendations(response.topJobs || []);
+          
+          // AI 응답 후 다시 한번 필터링된 공고만 저장
+          const reFilteredJobs = (response.topJobs || []).filter((job) => {
+            // 지역 필터 재확인
+            if (tempFilters.region && tempFilters.region !== "전체") {
+              const jobRegion = extractRegionFromAddress(job.work_region || job.location || job.compAddr || "");
+              if (jobRegion !== tempFilters.region) return false;
+            }
+            // 소분류 필터 재확인
+            if (tempFilters.jobMinor) {
+              const jobCat = job.job_category || job.jobCategory || "";
+              if (jobCat !== tempFilters.jobMinor) return false;
+            }
+            return true;
+          });
+          setRecommendations(reFilteredJobs);
         }
       }
     } catch (err) {
