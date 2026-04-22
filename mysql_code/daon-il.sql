@@ -528,3 +528,31 @@ CREATE TABLE IF NOT EXISTS social_account (
 
 -- member 테이블의 password 컬럼을 NULL 허용으로 변경 (소셜 로그인 계정을 위해)
 ALTER TABLE member MODIFY password VARCHAR(255) NULL;
+
+-- ouath 회원가입 완료 전 role을 PENDING으로 설정하기 위해 추가
+ALTER TABLE member 
+MODIFY role ENUM(
+  'PENDING',
+  'JOB_SEEKER',
+  'COMPANY',
+  'ADMIN'
+) NOT NULL;
+
+-- Bookmark DB 구조 변경 26.04.22
+    -- 1. 기존에 설정되어 있던 외래키(제약조건)를 먼저 삭제합니다.
+    -- (CASCADE 옵션을 넣어서 새로 만들기 위해 기존 것을 삭제)
+ALTER TABLE bookmark DROP FOREIGN KEY FK_bookmark_member;
+ALTER TABLE bookmark DROP FOREIGN KEY FK_bookmark_job_posting;
+
+    -- 2. 필요한 인덱스와 CASCADE 옵션이 적용된 외래키를 한 번에 추가합니다.
+ALTER TABLE bookmark
+        -- 중복 북마크 방지 및 회원 기준 조회를 위한 복합 유니크 인덱스
+    ADD UNIQUE INDEX uk_member_job (member_id, job_posting_id),
+        -- 특정 공고 기준 조회를 위한 단일 인덱스
+    ADD INDEX idx_job_posting (job_posting_id),
+        -- 회원이 탈퇴하면 북마크도 자동 삭제되도록 설정
+    ADD CONSTRAINT FK_bookmark_member 
+        FOREIGN KEY (member_id) REFERENCES member (member_id) ON DELETE CASCADE,
+        -- 공고가 삭제되면 북마크도 자동 삭제되도록 설정
+    ADD CONSTRAINT FK_bookmark_job_posting 
+        FOREIGN KEY (job_posting_id) REFERENCES job_posting (job_posting_id) ON DELETE CASCADE;

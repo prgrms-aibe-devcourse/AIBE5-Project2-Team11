@@ -87,6 +87,7 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/jobs/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/jobs").permitAll()
                 // 인증 필수
+                .requestMatchers("/api/bookmarks/**").authenticated()
                 .requestMatchers("/members/me").authenticated()
                 .requestMatchers("/members/complete-registration").authenticated()
                 .requestMatchers("/members/social-account/**").authenticated()
