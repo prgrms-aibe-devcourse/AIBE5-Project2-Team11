@@ -1,29 +1,200 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import Header from "../components/Header";
 import MemberSidebar from "../components/membermypage/MemberSidebar";
 import MemberMypageBody from "../components/membermypage/MemberMypageBody";
 
+async function extractErrorMessage(response, fallbackMessage) {
+    try {
+        const errorBody = await response.json();
+        return (
+            errorBody?.message ||
+            errorBody?.detail ||
+            errorBody?.error ||
+            fallbackMessage
+        );
+    } catch {
+        return fallbackMessage;
+    }
+}
+
+function getAccessToken() {
+    return localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
+}
+
 // 이력서 관리 섹션 - ResumeList 페이지로 이동하는 런처패드
 function ResumeSection() {
     const navigate = useNavigate();
+    const [resumes, setResumes] = useState([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [page, setPage] = useState(() => {
+        // localStorage에서 페이지 상태 복원
+        const savedPage = localStorage.getItem('memberMypage_resumePage');
+        return savedPage ? parseInt(savedPage, 10) : 0;
+    });
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalElements, setTotalElements] = useState(0);
 
-    const resumes = [
-        {
-            id: 1,
-            title: "프론트엔드 개발자 이력서",
-            updatedAt: "2025-03-10",
-            isDefault: false,
-            skills: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Git"],
-        },
-        {
-            id: 2,
-            title: "경력기술서 (간소화)",
-            updatedAt: "2025-02-20",
-            isDefault: true,
-            skills: ["React", "JavaScript", "HTML/CSS"],
-        },
-    ];
+    useEffect(() => {
+        const fetchResumes = async () => {
+            try {
+                setLoading(true);
+                const token = getAccessToken();
+                if (!token) {
+                    setError("로그인이 필요합니다.");
+                    return;
+                }
+
+                const params = new URLSearchParams({ page: String(page), size: "5" });
+                const response = await fetch(`/resumes?${params.toString()}`, {
+                    method: "GET",
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                });
+
+                if (!response.ok) {
+                    const serverMessage = await extractErrorMessage(
+                        response,
+                        "이력서 목록을 불러오는데 실패했습니다."
+                    );
+                    throw new Error(serverMessage);
+                }
+
+                const data = await response.json();
+                setResumes(data.content || []);
+                setTotalPages(data.totalPages || 0);
+                setTotalElements(data.totalElements || 0);
+            } catch (err) {
+                console.error('이력서 목록을 불러오는데 실패했습니다:', err);
+                setError(err.message || '이력서 목록을 불러오는데 실패했습니다.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchResumes();
+    }, [page]);
+
+    // 컴포넌트 마운트 후 localStorage 정리
+    useEffect(() => {
+        localStorage.removeItem('memberMypage_resumePage');
+    }, []);
+
+    const handleSetAsMainResume = async (resumeId) => {
+        try {
+            const token = getAccessToken();
+            if (!token) {
+                alert("로그인이 필요합니다.");
+                return;
+            }
+
+            const response = await fetch(`/resumes/${resumeId}/public`, {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (!response.ok) {
+                const serverMessage = await extractErrorMessage(
+                    response,
+                    "대표 이력서 설정에 실패했습니다."
+                );
+                throw new Error(serverMessage);
+            }
+
+            // 성공 시 이력서 관리 탭의 첫 페이지로 이동
+            localStorage.setItem('memberMypage_activeMenu', 'resume');
+            localStorage.setItem('memberMypage_resumePage', '0');
+            window.location.reload();
+        } catch (err) {
+            console.error('대표 이력서 설정 실패:', err);
+            alert(err.message || '대표 이력서 설정에 실패했습니다.');
+        }
+    };
+
+    const handleDeleteResume = async (resumeId) => {
+        const isConfirmed = window.confirm('이력서를 삭제하시겠습니까?');
+        if (!isConfirmed) return;
+
+        try {
+            const token = getAccessToken();
+            if (!token) {
+                alert("로그인이 필요합니다.");
+                return;
+            }
+
+            const response = await fetch(`/resumes/${resumeId}/status`, {
+                method: "PATCH",
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (!response.ok) {
+                const serverMessage = await extractErrorMessage(
+                    response,
+                    "이력서 삭제에 실패했습니다."
+                );
+                throw new Error(serverMessage);
+            }
+
+            setResumes((prev) => prev.filter((resume) => resume.resumeId !== resumeId));
+            setTotalElements((prev) => Math.max(0, prev - 1));
+            alert('이력서가 삭제되었습니다.');
+            // 성공 시 이력서 관리 탭의 첫 페이지로 이동
+            setLoading(true);
+            localStorage.setItem('memberMypage_activeMenu', 'resume');
+            localStorage.setItem('memberMypage_resumePage', '0');
+            window.location.reload();
+        } catch (err) {
+            console.error('이력서 삭제 실패:', err);
+            alert(err.message || '이력서 삭제에 실패했습니다.');
+        }
+    };
+
+    if (loading) {
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-bold text-[#3C2A21]">이력서 관리</h3>
+                    <button
+                        onClick={() => navigate("/memberMypage/resumes/new")}
+                        className="text-sm bg-yellow-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg transition-opacity flex items-center gap-1.5"
+                    >
+                        <i className="ri-add-line"></i> 새 이력서
+                    </button>
+                </div>
+                <div className="text-center py-8">
+                    <p className="text-gray-500">이력서를 불러오는 중...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-lg font-bold text-[#3C2A21]">이력서 관리</h3>
+                    <button
+                        onClick={() => navigate("/memberMypage/resumes/new")}
+                        className="text-sm bg-yellow-500 hover:opacity-90 text-white font-semibold px-4 py-2 rounded-lg transition-opacity flex items-center gap-1.5"
+                    >
+                        <i className="ri-add-line"></i> 새 이력서
+                    </button>
+                </div>
+                <div className="text-center py-8">
+                    <p className="text-red-500">{error}</p>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">
@@ -37,53 +208,117 @@ function ResumeSection() {
                 </button>
             </div>
 
-            {resumes.map((resume) => (
-                <div
-                    key={resume.id}
-                    className="bg-white border border-[#E8DCCB] rounded-xl p-5 hover:shadow-md transition-shadow"
-                >
-                    <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-bold text-[#5D4037] text-base">{resume.title}</h4>
-                        {resume.isDefault && (
-                            <span className="text-xs bg-yellow-100 text-yellow-700 border border-yellow-200 px-2 py-0.5 rounded-full font-medium">
-                기본 이력서
-              </span>
-                        )}
-                    </div>
-                    <p className="text-xs text-gray-400 mb-3">최종 수정일: {resume.updatedAt}</p>
-                    <div className="flex flex-wrap gap-1.5 mb-4">
-                        {resume.skills.map((s) => (
-                            <span
-                                key={s}
-                                className="text-xs bg-[#FFF8F0] text-[#8D6E63] border border-[#F3E8D0] px-2 py-0.5 rounded-full"
-                            >
-                {s}
-              </span>
-                        ))}
-                    </div>
-                    <div className="flex gap-2">
-                        <button
-                            onClick={() => navigate(`/memberMypage/resumes/${resume.id}`)}
-                            className="flex-1 text-sm text-[#8D6E63] border border-[#D7B89C] rounded-lg py-2 hover:bg-[#FFF3E0] transition-colors font-medium"
-                        >
-                            미리보기
-                        </button>
-                        <button
-                            onClick={() => navigate(`/memberMypage/resumes/${resume.id}/edit`)}
-                            className="flex-1 text-sm text-gray-700 border border-gray-200 rounded-lg py-2 hover:bg-gray-50 transition-colors font-medium"
-                        >
-                            수정
-                        </button>
-                    </div>
+            {resumes.length === 0 ? (
+                <div className="text-center py-16 text-gray-400">
+                    <i className="ri-file-list-line text-5xl block mb-3 text-gray-300"></i>
+                    <p className="font-medium">등록된 이력서가 없습니다.</p>
+                    <p className="text-sm mt-1">새 이력서를 작성해보세요!</p>
+                    <button
+                        onClick={() => navigate("/memberMypage/resumes/new")}
+                        className="mt-4 text-sm bg-yellow-500 text-white px-4 py-2 rounded-lg hover:opacity-90"
+                    >
+                        새 이력서 작성
+                    </button>
                 </div>
-            ))}
+            ) : (
+                resumes.map((resume) => (
+                    <div
+                        key={resume.resumeId}
+                        className="bg-white border border-[#E8DCCB] rounded-xl p-5 hover:shadow-md transition-shadow"
+                    >
+                        <div className="flex items-center justify-between mb-1">
+                            <h4 className="font-bold text-[#5D4037] text-base">{resume.title}</h4>
+                            <button
+                                onClick={() => handleSetAsMainResume(resume.resumeId)}
+                                className="text-xl text-yellow-500 hover:scale-110 transition-transform"
+                                title={resume.isPublic ? '대표 이력서' : '일반 이력서'}
+                            >
+                                {resume.isPublic ? (
+                                    <i className="ri-pushpin-fill"></i>
+                                ) : (
+                                    <i className="ri-pushpin-line"></i>
+                                )}
+                            </button>
+                        </div>
+                        <p className="text-xs text-gray-400 mb-3">최종 수정일: {new Date(resume.updatedAt).toLocaleDateString()}</p>
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                            {resume.skills.map((skill) => (
+                                <span
+                                    key={skill.skillKeyword}
+                                    className="text-xs bg-[#FFF8F0] text-[#8D6E63] border border-[#F3E8D0] px-2 py-0.5 rounded-full"
+                                >
+                                    {skill.skillKeyword}
+                                </span>
+                            ))}
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={() => navigate(`/memberMypage/resumes/${resume.resumeId}`)}
+                                className="flex-1 text-sm text-[#8D6E63] border border-[#D7B89C] rounded-lg py-2 hover:bg-[#FFF3E0] transition-colors font-medium"
+                            >
+                                상세보기
+                            </button>
+                            <button
+                                onClick={() => navigate(`/memberMypage/resumes/${resume.resumeId}/edit`)}
+                                className="flex-1 text-sm text-gray-700 border border-gray-200 rounded-lg py-2 hover:bg-gray-50 transition-colors font-medium"
+                            >
+                                수정
+                            </button>
+                            <button
+                                onClick={() => handleDeleteResume(resume.resumeId)}
+                                className="flex-1 text-sm text-red-600 border border-red-200 rounded-lg py-2 hover:bg-red-50 transition-colors font-medium"
+                            >
+                                삭제
+                            </button>
+                        </div>
+                    </div>
+                ))
+            )}
 
-            <button
-                onClick={() => navigate("/memberMypage/resumes")}
-                className="w-full text-sm text-[#8D6E63] border border-[#D7B89C] rounded-xl py-3 hover:bg-[#FFF3E0] transition-colors font-medium"
-            >
-                전체 이력서 목록 보기 →
-            </button>
+            {/* 페이지네이션 */}
+            {resumes.length > 0 && totalPages > 1 && (() => {
+                const maxPagesPerGroup = 5;
+                const currentGroup = Math.floor(page / maxPagesPerGroup);
+                const startPage = currentGroup * maxPagesPerGroup;
+                const endPage = Math.min(startPage + maxPagesPerGroup, totalPages);
+
+                return (
+                    <div className="flex items-center justify-center gap-1 mt-6 pt-4 border-t border-[#E8DCCB]">
+                        {/* 이전 버튼 */}
+                        <button
+                            onClick={() => setPage(Math.max(0, startPage - 1))}
+                            disabled={page === startPage}
+                            className="px-3 py-2 border border-[#D7B89C] rounded-lg text-sm text-[#8D6E63] cursor-pointer hover:bg-[#FFF3E0] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            <i className="ri-arrow-left-s-line"></i>
+                        </button>
+
+                        {/* 페이지 번호 버튼들 */}
+                        {Array.from({ length: endPage - startPage }, (_, i) => startPage + i).map((pageNum) => (
+                            <button
+                                key={pageNum}
+                                onClick={() => setPage(pageNum)}
+                                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                    page === pageNum
+                                        ? 'bg-yellow-500 text-white border border-yellow-500'
+                                        : 'border border-[#D7B89C] text-[#8D6E63] hover:bg-[#FFF3E0]'
+                                }`}
+                            >
+                                {pageNum + 1}
+                            </button>
+                        ))}
+
+                        {/* 다음 버튼 */}
+                        <button
+                            onClick={() => setPage(endPage)}
+                            disabled={endPage === totalPages}
+                            className="px-3 py-2 border border-[#D7B89C] rounded-lg text-sm text-[#8D6E63] disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#FFF3E0] transition-colors font-medium"
+                        >
+                            <i className="ri-arrow-right-s-line"></i>
+                        </button>
+                    </div>
+                );
+            })()}
         </div>
     );
 }
@@ -171,7 +406,16 @@ export default function MemberMypage() {
         location.pathname !== "/memberMypage/";
 
     // 중첩 라우트가 아닐 때만 탭 상태 관리
-    const [activeMenu, setActiveMenu] = useState("profile");
+    const [activeMenu, setActiveMenu] = useState(() => {
+        // localStorage에서 탭 상태 복원
+        return localStorage.getItem('memberMypage_activeMenu') || "profile";
+    });
+
+    // 컴포넌트 마운트 후 localStorage 정리
+    useEffect(() => {
+        localStorage.removeItem('memberMypage_activeMenu');
+        localStorage.removeItem('memberMypage_resumePage');
+    }, []);
 
     const handleChangeMenu = (menu) => {
         setActiveMenu(menu);

@@ -38,10 +38,15 @@ public class ResumeService {
 
     // 이력서 목록 조회
     @Transactional(readOnly = true)
-    public Page<ResumeListResponseDto> getResumeList(Long userId, Pageable pageable) {
+    public Page<ResumeListResponseDto> getResumeList(String loginId, Pageable pageable) {
+        // 회원 조회
+        Member member = memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
+        Long userId = member.getMemberId();
+
         // 페이지네이션 적용한 리스트 조회
         Page<Resume> resumePage =
-                resumeRepository.findByMember_MemberIdAndIsDeletedFalse(userId, pageable);
+                resumeRepository.findByMemberIdOrderByPublicFirst(userId, pageable);
 
         return resumePage.map(ResumeListResponseDto::from);
     }
@@ -49,7 +54,12 @@ public class ResumeService {
 
     // 이력서 상세 조회
     @Transactional(readOnly = true)
-    public ResumeDetailResponseDto getResumeDetail(Long userId, Long resumeId) {
+    public ResumeDetailResponseDto getResumeDetail(String loginId, Long resumeId) {
+        // 회원 조회
+        Member member = memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
+        Long userId = member.getMemberId();
+
         // 이력서 조회
         Resume resume = resumeRepository.findById(resumeId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 이력서입니다."));
@@ -69,10 +79,11 @@ public class ResumeService {
 
 
     // 이력서 생성
-    public Long createResume(Long userId, ResumeWriteRequestDto dto, MultipartFile image) {
+    public Long createResume(String loginId, ResumeWriteRequestDto dto, MultipartFile image) {
         // 회원 조회
-        Member member = memberRepository.findById(userId)
+        Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
+        Long userId = member.getMemberId();
 
         // 이미지 저장
         String imagePath = null;
@@ -137,10 +148,11 @@ public class ResumeService {
 
 
     // 이력서 수정
-    public Long updateResume(Long userId, Long resumeId, ResumeWriteRequestDto dto, MultipartFile image) {
+    public Long updateResume(String loginId, Long resumeId, ResumeWriteRequestDto dto, MultipartFile image) {
         // 회원 조회
-        Member member = memberRepository.findById(userId)
+        Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
+        Long userId = member.getMemberId();
 
         // 기존 이력서 조회
         Resume resume = resumeRepository.findById(resumeId)
@@ -267,10 +279,11 @@ public class ResumeService {
 
     // 이력서 삭제
     @Transactional
-    public Long deleteResume(Long userId, Long resumeId) {
+    public Long deleteResume(String loginId, Long resumeId) {
         // 회원 조회
-        Member member = memberRepository.findById(userId)
+        Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
+        Long userId = member.getMemberId();
 
         // 회원 소유 이력서 조회
         Resume resume = resumeRepository.findByResumeIdAndMember_MemberId(resumeId, userId)
@@ -285,10 +298,11 @@ public class ResumeService {
 
     // 이력서 공개 설정
     @Transactional
-    public Long updatePublicStatus(Long userId, Long resumeId) {
+    public Long updatePublicStatus(String loginId, Long resumeId) {
         // 회원 조회
-        Member member = memberRepository.findById(userId)
+        Member member = memberRepository.findByLoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
+        Long userId = member.getMemberId();
 
         // 사용자 소유의 이력서 가져오기
         Resume targetResume = resumeRepository.findByResumeIdAndMember_MemberId(resumeId, userId)

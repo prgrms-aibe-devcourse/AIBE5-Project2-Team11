@@ -6,7 +6,6 @@ import Membership from "./pages/Membership";
 import Community from "./pages/Community";
 import CommunityDetail from "./pages/CommunityDetail";
 import CommunityWrite from "./pages/CommunityWrite";
-import ResumeList from "./pages/ResumeList";
 import ResumeForm from "./pages/ResumeForm";
 import ResumeDetail from "./pages/ResumeDetail";
 import CompanyMypage from "./pages/CompanyMypage";
@@ -44,7 +43,6 @@ export default function App() {
           {/* 마이페이지: 사이드바가 유지되는 중첩 라우트 */}
           <Route path="/memberMypage" element={<MemberMypage />}>
             {/* 이력서 관리 중첩 라우트 */}
-            <Route path="resumes" element={<ResumeList />} />
             <Route path="resumes/new" element={<ResumeForm />} />
             <Route path="resumes/:id" element={<ResumeDetail />} />
             <Route path="resumes/:id/edit" element={<ResumeForm />} />
