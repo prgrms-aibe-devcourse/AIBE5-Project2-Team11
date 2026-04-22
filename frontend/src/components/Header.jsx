@@ -20,6 +20,28 @@ export default function Header() {
     return localStorage.getItem("isLogin") === "true";
   });
 
+  // ✅ localStorage 변경 감지 (OAuth2 로그인 후 업데이트)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setIsLogin(localStorage.getItem("isLogin") === "true");
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // OAuth2 로그인 직후 업데이트 (같은 탭에서는 storage 이벤트 발생 안 함)
+    const checkLoginStatus = () => {
+      setIsLogin(localStorage.getItem("isLogin") === "true");
+    };
+
+    // 페이지 포커스 시 확인
+    window.addEventListener("focus", checkLoginStatus);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", checkLoginStatus);
+    };
+  }, []);
+
   const [isAlarmOpen, setIsAlarmOpen] = useState(false);
 
   // 임시 데이터
@@ -60,7 +82,16 @@ export default function Header() {
       location.pathname === path || location.pathname.startsWith(path + "/");
 
   const handleLogout = () => {
+    // ✅ 모든 로그인 정보 제거 (OAuth2 + 일반 로그인)
     localStorage.removeItem("isLogin");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("memberId");
+    localStorage.removeItem("memberName");
+    localStorage.removeItem("loginId");
+    localStorage.removeItem("memberType");
+    sessionStorage.removeItem("accessToken");
+
     setIsLogin(false);
     navigate("/");
   };

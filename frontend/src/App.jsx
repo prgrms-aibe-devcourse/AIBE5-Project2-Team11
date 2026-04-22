@@ -2,6 +2,8 @@ import { Routes, Route } from "react-router-dom";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
+import OAuth2Callback from "./pages/OAuth2Callback";
+import OAuth2CompleteRegistration from "./pages/OAuth2CompleteRegistration";
 import Membership from "./pages/Membership";
 import Community from "./pages/Community";
 import CommunityDetail from "./pages/CommunityDetail";
@@ -26,6 +28,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/community" element={<Community />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/oauth2/callback" element={<OAuth2Callback />} />
+          <Route path="/oauth2/complete-registration" element={<OAuth2CompleteRegistration />} />
           <Route path="/membership" element={<Membership />} />
           <Route path="/communityDetail/:post_id" element={<CommunityDetail />} />
           <Route path="/communityWrite" element={<CommunityWrite />} />

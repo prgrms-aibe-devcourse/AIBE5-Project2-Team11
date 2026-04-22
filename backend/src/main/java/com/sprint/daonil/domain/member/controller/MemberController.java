@@ -7,6 +7,7 @@ import com.sprint.daonil.domain.member.dto.LoginRequestDto;
 import com.sprint.daonil.domain.member.dto.SignupRequestDto;
 import com.sprint.daonil.domain.member.dto.UpdateMemberInfoRequestDto;
 import com.sprint.daonil.domain.member.entity.Member;
+import com.sprint.daonil.domain.member.enumtype.Role;
 import com.sprint.daonil.domain.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -265,6 +266,199 @@ public class MemberController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", "회원 정보 수정 중 오류가 발생했습니다.");
+
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * OAuth2 콜백 - JWT 토큰 검증 및 회원 정보 반환
+     */
+    @GetMapping("/oauth2/callback")
+    public ResponseEntity<Map<String, Object>> oauth2Callback(
+            @RequestParam String token,
+            @RequestParam Long memberId,
+            @RequestParam String provider) {
+        try {
+            if (!jwtUtil.validateToken(token)) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "유효하지 않은 토큰입니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            Member member = memberService.getMemberById(memberId);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "OAuth2 로그인 성공");
+            response.put("token", token);
+            response.put("memberId", member.getMemberId());
+            response.put("loginId", member.getLoginId());
+            response.put("email", member.getEmail());
+            response.put("name", member.getName());
+            response.put("role", member.getRole().toString());
+            response.put("provider", provider);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "OAuth2 콜백 처리 중 오류가 발생했습니다.");
+
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 소셜 계정 조회
+     */
+    @GetMapping("/social-account/{provider}")
+    public ResponseEntity<Map<String, Object>> getSocialAccount(
+            @PathVariable String provider) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+            if (auth == null || !auth.isAuthenticated()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "인증되지 않은 사용자입니다.");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            String loginId = auth.getName();
+            Member member = memberService.getMemberByLoginId(loginId);
+            boolean hasAccount = memberService.hasSocialAccount(member.getMemberId(), provider);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("linked", hasAccount);
+            response.put("provider", provider);
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "소셜 계정 조회 중 오류가 발생했습니다.");
+
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 소셜 계정 해제
+     */
+    @DeleteMapping("/unlink-social-account/{provider}")
+    public ResponseEntity<Map<String, Object>> unlinkSocialAccount(
+            @PathVariable String provider) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+            if (auth == null || !auth.isAuthenticated()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "인증되지 않은 사용자입니다.");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            String loginId = auth.getName();
+            Member member = memberService.getMemberByLoginId(loginId);
+            memberService.unlinkSocialAccount(member.getMemberId(), provider);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", provider + " 계정 연결이 해제되었습니다.");
+
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+
+            return ResponseEntity.badRequest().body(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "소셜 계정 해제 중 오류가 발생했습니다.");
+
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 소셜 로그인 후 역할 및 추가 정보 설정
+     * PENDING 상태의 회원이 추가 정보를 입력하고 역할을 선택할 때 사용
+     */
+    @PostMapping("/complete-registration")
+    public ResponseEntity<Map<String, Object>> completeRegistration(
+            @RequestBody Map<String, String> requestBody) {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+            if (auth == null || !auth.isAuthenticated()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "인증되지 않은 사용자입니다.");
+                return ResponseEntity.status(401).body(response);
+            }
+
+            String loginId = auth.getName();
+            Member member = memberService.getMemberByLoginId(loginId);
+
+            // PENDING 상태 확인
+            if (member.getRole() != Role.PENDING) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "이미 역할이 설정된 회원입니다.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            // 역할 설정
+            String roleStr = requestBody.get("role");
+            if (roleStr == null || roleStr.trim().isEmpty()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "역할(JOB_SEEKER 또는 COMPANY)을 선택해주세요.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            Role newRole;
+            try {
+                newRole = Role.valueOf(roleStr.toUpperCase());
+                if (newRole == Role.PENDING) {
+                    throw new IllegalArgumentException("PENDING은 선택 불가합니다.");
+                }
+            } catch (IllegalArgumentException e) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "유효하지 않은 역할입니다. JOB_SEEKER 또는 COMPANY를 선택하세요.");
+                return ResponseEntity.badRequest().body(response);
+            }
+
+            String phoneNumber = requestBody.get("phoneNumber");
+            String address = requestBody.get("address");
+
+            Member updatedMember = memberService.completeSocialMemberRegistration(
+                    member.getMemberId(),
+                    newRole,
+                    phoneNumber,
+                    address
+            );
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "회원 정보 설정이 완료되었습니다.");
+            response.put("memberId", updatedMember.getMemberId());
+            response.put("role", updatedMember.getRole().toString());
+            response.put("name", updatedMember.getName());
+            response.put("phoneNumber", updatedMember.getPhoneNumber());
+            response.put("address", updatedMember.getAddress());
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "회원 정보 설정 중 오류가 발생했습니다.");
 
             return ResponseEntity.badRequest().body(response);
         }
