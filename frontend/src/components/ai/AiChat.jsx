@@ -35,13 +35,60 @@ export default function AiChat() {
 
   // 지역 목록
   const regions = [
-    "서울", "경기", "인천", "부산", "대구", "대전",
+    "전체", "서울", "경기", "인천", "부산", "대구", "대전",
     "광주", "울산", "세종", "전북", "전남", "경북", "경남", "강원", "제주"
   ];
 
-  // 직무 카테고리 (DB의 field 테이블 depth2 값과 일치해야 함)
-  const jobCategories = [
-    "사업관리", "경영", "경영(사회조사분석)", "경영(소비자전문상담)", "경영(컨벤션기획)",
+  // work_region에서 광역시/도 추출 함수
+  const extractRegionFromAddress = (address) => {
+    if (!address) return "";
+
+    const regionMap = {
+      "서울": "서울",
+      "경기": "경기",
+      "인천": "인천",
+      "부산": "부산",
+      "대구": "대구",
+      "대전": "대전",
+      "광주": "광주",
+      "울산": "울산",
+      "세종": "세종",
+      "전북": "전북",
+      "전남": "전남",
+      "경북": "경북",
+      "경남": "경남",
+      "강원": "강원",
+      "제주": "제주",
+      "충남": "전남",
+      "충북": "전북",
+      "충청남": "전남",
+      "충청북": "전북"
+    };
+
+    for (const [key, value] of Object.entries(regionMap)) {
+      if (address.includes(key)) {
+        return value;
+      }
+    }
+    return "";
+  };
+
+  // 직무 카테고리 (대분류 -> 소분류 구조)
+  const jobCategoryMap = {
+    "관리자": ["관리직(임원·부서장)"],
+    "사무 종사자": ["경영·행정·사무직"],
+    "서비스 종사자": ["청소 및 기타 개인서비스직", "음식 서비스직", "돌봄 서비스직(간병·육아)", "미용·예식 서비스직", "여행·숙박·오락 서비스직", "경호·경비직", "스포츠·레크리에이션직"],
+    "판매 종사자": ["영업·판매직"],
+    "전문가 및 관련 종사자": ["보건·의료직", "예술·디자인·방송직", "사회복지·종교직", "금융·보험직", "교육직", "인문·사회과학 연구직", "법률직", "자연·생명과학 연구직", "정보통신 연구개발직 및 공학기술직", "제조 연구개발직 및 공학기술직", "건설·채굴 연구개발직 및 공학기술직"],
+    "기능원 및 관련 기능 종사자": ["인쇄·목재·공예 및 기타 설치·정비·생산직", "금속·재료 설치·정비·생산직(판금·단조·주조·용접·도장 등)", "전기·전자 설치·정비·생산직", "기계 설치·정비·생산직", "화학·환경 설치·정비·생산직", "정보통신 설치·정비직", "건설·채굴직"],
+    "장치·기계조작 및 조립 종사자": ["식품 가공·생산직", "섬유·의복 생산직", "운전·운송직"],
+    "농림어업 숙련 종사자": ["농림어업직"],
+    "단순노무 종사자": ["제조 단순직"]
+  };
+
+  // 자격증 추천용 직무 카테고리 (기존 depth2 값)
+  const qualificationCategories = [
+    "전체", "사업관리", "경영", "경영(사회조사분석)", "경영(소비자전문상담)", "경영(컨벤션기획)",
     "회계", "사무", "생산관리", "금융.보험",
     "교육.자연.과학.사회과학", "법률.경찰.소방.교도.국방",
     "보건.의료", "보건.의료(국제의료관광코디네이터)", "사회복지.종교",
@@ -74,34 +121,22 @@ export default function AiChat() {
   // 가능한 질문 리스트 (필터 요구사항 포함)
   const suggestedQuestions = [
     { 
-      text: "OO지역 OO직무 공고 추천해줘", 
-      requiredFilters: ["region", "jobCategory"],
+      text: "OO지역 OO공고 추천해줘",
+      requiredFilters: ["region", "jobMajor", "jobMinor"],
       type: "job",
-      template: (region, jobCategory) => `${region} 지역의 ${jobCategory} 공고 추천해줘`
+      template: (region, jobMajor, jobMinor) => `${region} 지역의 ${jobMinor} 공고 추천해줘`
     },
     { 
-      text: "OO지역 공고 추천해줘", 
-      requiredFilters: ["region"],
-      type: "job",
-      template: (region) => `${region} 지역 공고 추천해줘`
-    },
-    { 
-      text: "OO직무 공고 추천해줘", 
-      requiredFilters: ["jobCategory"],
-      type: "job",
-      template: (_, jobCategory) => `${jobCategory} 공고 추천해줘`
-    },
-    { 
-      text: "OO작업환경 직무 추천해줘", 
+      text: "OO작업환경 직무 추천해줘",
       requiredFilters: ["workEnvironments"],
       type: "job",
-      template: (_, __, workEnv) => `${workEnv.join(", ")} 환경의 직무 추천해줘`
+      template: (_, __, ___, workEnv) => `${workEnv.join(", ")} 환경의 직무 추천해줘`
     },
     {
-      text: "OO직무 자격증 추천해줘",
-      requiredFilters: ["jobCategory"],
+      text: "OO분야 자격증 추천해줘",
+      requiredFilters: ["qualificationCategory"],
       type: "qualification",
-      template: (_, jobCategory) => `${jobCategory}에 필요한 자격증 추천해줘`
+      template: (_, __, ___, ____, qualCat) => `${qualCat} 분야에 필요한 자격증 추천해줘`
     },
     {
       text: "OO자격증 상세 일정 알려줘",
@@ -115,15 +150,17 @@ export default function AiChat() {
   const [selectedQuestion, setSelectedQuestion] = useState(null);
   const [tempFilters, setTempFilters] = useState({
     region: "",
-    jobCategory: "",
+    jobMajor: "",
+    jobMinor: "",
     workEnvironments: [],
+    qualificationCategory: "",
   });
 
   // 프로필 데이터 로드
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
         if (!token) return;
 
         const response = await fetch("/members/profile", {
@@ -184,17 +221,18 @@ export default function AiChat() {
         // 필터링된 공고로 추천 요청
         let filteredJobs = sampleJobs;
 
-        if (filters.region) {
-          filteredJobs = filteredJobs.filter((job) =>
-            job.location?.includes(filters.region) || job.compAddr?.includes(filters.region)
-          );
+        // 지역 필터링 (work_region에서 광역시/도 추출하여 비교)
+        if (filters.region && filters.region !== "전체") {
+          filteredJobs = filteredJobs.filter((job) => {
+            const jobRegion = extractRegionFromAddress(job.work_region || job.location || job.compAddr || "");
+            return jobRegion === filters.region;
+          });
         }
 
+        // 소분류 필터링 (job_category 직접 비교)
         if (filters.jobCategory) {
           filteredJobs = filteredJobs.filter((job) =>
-            job.title?.includes(filters.jobCategory) ||
-            job.jobCategory?.includes(filters.jobCategory) ||
-            job.jobNm?.includes(filters.jobCategory)
+            job.job_category === filters.jobCategory
           );
         }
 
@@ -236,8 +274,10 @@ ${response.explanation}`;
     setSelectedQuestion(question);
     setTempFilters({
       region: "",
-      jobCategory: "",
+      jobMajor: "",
+      jobMinor: "",
       workEnvironments: [],
+      qualificationCategory: "",
     });
   };
 
@@ -250,6 +290,9 @@ ${response.explanation}`;
           : [...prev.workEnvironments, value];
         return { ...prev, workEnvironments: updated };
       });
+    } else if (key === "jobMajor") {
+      // 대분류 선택 시 소분류 초기화
+      setTempFilters({ ...tempFilters, [key]: value, jobMinor: "" });
     } else {
       setTempFilters({ ...tempFilters, [key]: value });
     }
@@ -262,8 +305,10 @@ ${response.explanation}`;
     // 필수 필터 체크
     const missingFilters = selectedQuestion.requiredFilters.filter((filterType) => {
       if (filterType === "region") return !tempFilters.region;
-      if (filterType === "jobCategory") return !tempFilters.jobCategory;
+      if (filterType === "jobMajor") return !tempFilters.jobMajor;
+      if (filterType === "jobMinor") return !tempFilters.jobMinor;
       if (filterType === "workEnvironments") return tempFilters.workEnvironments.length === 0;
+      if (filterType === "qualificationCategory") return !tempFilters.qualificationCategory;
       return false;
     });
 
@@ -275,11 +320,13 @@ ${response.explanation}`;
     // 질문 생성
     const finalQuestion = selectedQuestion.template(
       tempFilters.region,
-      tempFilters.jobCategory,
+      tempFilters.jobMajor,
+      tempFilters.jobMinor,
       tempFilters.workEnvironments.map((id) => {
         const opt = workEnvironmentOptions.find((o) => o.id === id);
         return opt?.label;
-      })
+      }),
+      tempFilters.qualificationCategory
     );
 
     setMessages((prev) => [...prev, { role: "user", text: finalQuestion }]);
@@ -290,7 +337,7 @@ ${response.explanation}`;
       // 자격증 추천
       if (selectedQuestion.type === "qualification") {
         // AI 기반 자격증 추천 (depth2 필터링으로 자동 조회)
-        const aiRecommendation = await getAiQualificationRecommendation(tempFilters.jobCategory);
+        const aiRecommendation = await getAiQualificationRecommendation(tempFilters.qualificationCategory);
 
         if (aiRecommendation && aiRecommendation.success) {
           const qualifications = aiRecommendation.qualifications || [];
@@ -332,17 +379,18 @@ ${explanation}
         // 공고 추천
         let filteredJobs = sampleJobs;
 
-        if (tempFilters.region) {
-          filteredJobs = filteredJobs.filter((job) =>
-            job.location?.includes(tempFilters.region) || job.compAddr?.includes(tempFilters.region)
-          );
+        // 지역 필터링 (광역시/도 수준)
+        if (tempFilters.region && tempFilters.region !== "전체") {
+          filteredJobs = filteredJobs.filter((job) => {
+            const jobRegion = extractRegionFromAddress(job.work_region || job.location || job.compAddr || "");
+            return jobRegion === tempFilters.region;
+          });
         }
 
-        if (tempFilters.jobCategory) {
+        // 소분류 필터링 (job_category 정확히 매칭)
+        if (tempFilters.jobMinor) {
           filteredJobs = filteredJobs.filter((job) =>
-            job.title?.includes(tempFilters.jobCategory) ||
-            job.jobCategory?.includes(tempFilters.jobCategory) ||
-            job.jobNm?.includes(tempFilters.jobCategory)
+            job.job_category === tempFilters.jobMinor
           );
         }
 
@@ -640,17 +688,51 @@ ${examSchedulesText}
               </div>
             )}
 
-            {/* 직무 필터 */}
-            {selectedQuestion.requiredFilters.includes("jobCategory") && (
+            {/* 대분류 필터 */}
+            {selectedQuestion.requiredFilters.includes("jobMajor") && (
               <div>
-                <label className="text-sm font-semibold text-gray-700 mb-2 block">직무 선택</label>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">직무 대분류</label>
                 <select
-                  value={tempFilters.jobCategory}
-                  onChange={(e) => handleTempFilterChange("jobCategory", e.target.value)}
+                  value={tempFilters.jobMajor}
+                  onChange={(e) => handleTempFilterChange("jobMajor", e.target.value)}
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
                 >
                   <option value="">선택하세요</option>
-                  {jobCategories.map((category) => (
+                  {Object.keys(jobCategoryMap).map((major) => (
+                    <option key={major} value={major}>{major}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* 소분류 필터 */}
+            {selectedQuestion.requiredFilters.includes("jobMinor") && tempFilters.jobMajor && (
+              <div>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">직무 소분류</label>
+                <select
+                  value={tempFilters.jobMinor}
+                  onChange={(e) => handleTempFilterChange("jobMinor", e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                >
+                  <option value="">선택하세요</option>
+                  {jobCategoryMap[tempFilters.jobMajor]?.map((minor) => (
+                    <option key={minor} value={minor}>{minor}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {/* 자격증 카테고리 필터 */}
+            {selectedQuestion.requiredFilters.includes("qualificationCategory") && (
+              <div>
+                <label className="text-sm font-semibold text-gray-700 mb-2 block">분야 선택</label>
+                <select
+                  value={tempFilters.qualificationCategory}
+                  onChange={(e) => handleTempFilterChange("qualificationCategory", e.target.value)}
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-yellow-500"
+                >
+                  <option value="">선택하세요</option>
+                  {qualificationCategories.map((category) => (
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>

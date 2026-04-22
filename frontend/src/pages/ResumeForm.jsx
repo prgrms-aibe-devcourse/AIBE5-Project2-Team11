@@ -121,10 +121,135 @@ export default function ResumeForm() {
       alert("이름을 입력해주세요.");
       return;
     }
-    setSaved(true);
-    setTimeout(() => {
-      navigate("/memberMypage/resumes");
-    }, 800);
+
+    const hasInvalidDisability = (resume.profile.disabilities || []).some(
+      (item) => !item.disabilityType?.trim()
+    );
+    if (hasInvalidDisability) {
+      alert("장애 정보를 추가하신 경우, 장애 유형은 필수로 선택해주세요.");
+      return;
+    }
+
+    const hasInvalidExperience = resume.experiences.some(
+      (exp) =>
+        !exp.company?.trim() ||
+        !exp.position?.trim() ||
+        !exp.startDate?.trim() ||
+        !exp.endDate?.trim()
+    );
+    if (hasInvalidExperience) {
+      alert("경력을 추가하신 경우, 회사명/직책/재직기간(시작·종료일)은 필수로 입력해주세요. (주요 업무/성과는 선택)");
+      return;
+    }
+
+    const hasInvalidEducation = resume.educations.some(
+      (edu) => !edu.school?.trim() || !edu.major?.trim() || !edu.startDate?.trim() || !edu.endDate?.trim() || !edu.degree?.trim()
+    );
+    if (hasInvalidEducation) {
+      alert("학력을 추가하신 경우, 학교명/전공/재학기간(시작·종료일)/학위는 모두 필수로 입력해주세요.");
+      return;
+    }
+
+    const hasInvalidSkill = resume.skills.some((skill) => !skill?.trim());
+    if (hasInvalidSkill) {
+      alert("추가된 스킬 항목을 확인해주세요.");
+      return;
+    }
+
+    const hasUnselectedCertificate = resume.certificates.some((cert) => cert.isSearchMode || !cert.name);
+    if (hasUnselectedCertificate) {
+      alert("자격증을 추가하신 경우, 돋보기로 검색 후 체크(선택) 버튼으로 자격증명을 확정해주세요.");
+      return;
+    }
+    const hasInvalidCertificate = resume.certificates.some((cert) => !cert.name?.trim() || !cert.date?.trim());
+    if (hasInvalidCertificate) {
+      alert("자격증을 추가하신 경우, 자격증명과 취득일은 필수로 입력해주세요.");
+      return;
+    }
+
+    const hasInvalidLanguage = resume.languages.some(
+      (lang) =>
+        !lang.languageName?.trim() ||
+        !lang.testName?.trim() ||
+        !lang.score?.trim() ||
+        !lang.acquiredDate?.trim() ||
+        !lang.expirationDate?.trim()
+    );
+    if (hasInvalidLanguage) {
+      alert("어학을 추가하신 경우, 언어명/시험명/점수/취득일/만료일은 모두 필수로 입력해주세요.");
+      return;
+    }
+
+    try {
+      setSaved(true);
+
+      const payload = {
+        title: resume.title.trim(),
+        selfIntroduction: resume.profile.summary.trim(),
+        portfolioUrl: resume.profile.portfolioUrl?.trim() || "",
+        careers: resume.experiences.map((exp) => ({
+          companyName: exp.company,
+          position: exp.position,
+          startDate: exp.startDate,
+          endDate: exp.endDate,
+          content: exp.description,
+        })),
+        educations: resume.educations.map((edu) => ({
+          schoolName: edu.school,
+          major: edu.major,
+          startDate: edu.startDate,
+          endDate: edu.endDate,
+          degree: edu.degree,
+        })),
+        skills: resume.skills.map((skill) => ({ skillKeyword: skill })),
+        resumeDisabilities: (resume.profile.disabilities || []).map((item) => ({
+          disabilityName: item.disabilityType,
+          description: item.disabilityDescription || "",
+        })),
+        langQualifications: resume.languages.map((lang) => ({
+          languageName: lang.languageName,
+          testName: lang.testName,
+          score: lang.score,
+          acquiredDate: lang.acquiredDate,
+          expirationDate: lang.expirationDate,
+        })),
+        certificates: resume.certificates.map((cert) => ({
+          certificateName: cert.name,
+          acquiredDate: cert.date,
+        })),
+      };
+
+      const formData = new FormData();
+      if (resume.profile.profileImage) {
+        formData.append("image", resume.profile.profileImage);
+      }
+      formData.append(
+        "data",
+        new Blob([JSON.stringify(payload)], { type: "application/json" })
+      );
+
+      const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
+      const url = isEdit ? `${API_BASE}/resumes/${id}` : `${API_BASE}/resumes`;
+      const response = await fetch(url, {
+        method: isEdit ? "PATCH" : "POST",
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const serverMessage = await extractErrorMessage(
+          response,
+          "이력서 저장에 실패했습니다."
+        );
+        throw new Error(serverMessage);
+      }
+
+      navigate("/memberMypage");
+    } catch (err) {
+      console.error("이력서 저장 실패:", err);
+      alert(err.message || "이력서 저장에 실패했습니다.");
+      setSaved(false);
+    }
   };
 
   const inputClass = "w-full border border-[#D7B89C] rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 bg-white";

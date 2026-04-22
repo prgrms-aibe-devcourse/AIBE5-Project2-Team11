@@ -45,7 +45,60 @@ const sampleResumes = [
 export default function ResumeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const resume = sampleResumes.find((r) => r.id === id) ?? sampleResumes[0];
+  const [resume, setResume] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const extractErrorMessage = async (response) => {
+      try {
+        const errorBody = await response.json();
+        return (
+          errorBody?.message ||
+          errorBody?.detail ||
+          errorBody?.error ||
+          "이력서 상세 조회에 실패했습니다."
+        );
+      } catch {
+        return "이력서 상세 조회에 실패했습니다.";
+      }
+    };
+
+    const fetchResumeDetail = async () => {
+      try {
+        const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
+        if (!token) {
+          setError("로그인이 필요합니다.");
+          return;
+        }
+
+        const response = await fetch(`/resumes/${id}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) {
+          const serverMessage = await extractErrorMessage(response);
+          throw new Error(serverMessage);
+        }
+
+        const data = await response.json();
+        setResume(data);
+      } catch (err) {
+        console.error('이력서 상세 조회에 실패했습니다:', err);
+        setError(err.message || '이력서 상세 조회에 실패했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) {
+      fetchResumeDetail();
+    }
+  }, [id]);
 
   const handlePrint = () => window.print();
 
