@@ -1310,16 +1310,38 @@ export default function JobDetail() {
       }
     };
     fetchJobData();
-    fetchBookmarkStatus();
+
+    const fetchBookmarkStatus = async () => {
+      try {
+        const response = await api.get(`/api/bookmarks/${id}/status`);
+        if (response.data && response.data.isBookmarked !== undefined) {
+          setIsBookmarked(response.data.isBookmarked);
+        }
+      } catch (error) {
+        console.error("북마크 상태 조회 실패:", error);
+      }
+    };
+    if (id) {
+        fetchBookmarkStatus();
+    }
   }, [id]);
 
   const toggleBookmark = async () => {
+    if (isUnauthenticatedMember) {
+      alert('로그인 후 이용할 수 있습니다.');
+      return;
+    }
     try {
-      const res = await api.post(`/api/bookmarks/${job.id}`);
-      setIsBookmarked(res.data.isBookmarked);
-      alert(res.data.message);
-    } catch (err) {
-      alert('로그인이 필요한 서비스이거나 오류가 발생했습니다.');
+      await api.post(`/api/bookmarks/${job.id}`);
+      setIsBookmarked(!isBookmarked);
+      if (!isBookmarked) {
+        alert("스크랩 목록에 추가되었습니다.");
+      } else {
+        alert("스크랩이 취소되었습니다.");
+      }
+    } catch (error) {
+      console.error("북마크 토글 실패:", error);
+      alert("요청 처리 중 오류가 발생했습니다.");
     }
   };
 
@@ -1383,6 +1405,17 @@ export default function JobDetail() {
 
               {/* 버튼 영역 */}
               <div className="mt-8 flex flex-col sm:flex-row items-center gap-3 pt-6 border-t border-gray-100">
+                <button
+                    onClick={toggleBookmark}
+                    className={`shrink-0 w-14 h-14 rounded-xl flex items-center justify-center border transition-all ${
+                        isBookmarked 
+                        ? 'border-yellow-400 bg-yellow-50 text-yellow-500 hover:bg-yellow-100' 
+                        : 'border-gray-200 bg-gray-50 text-gray-400 hover:bg-gray-100'
+                    }`}
+                    title={isBookmarked ? "스크랩 취소" : "스크랩하기"}
+                >
+                    <i className={isBookmarked ? "ri-star-fill text-2xl" : "ri-star-line text-2xl"}></i>
+                </button>
                 <button
                     onClick={() => {
                       if (isUnauthenticatedMember) {

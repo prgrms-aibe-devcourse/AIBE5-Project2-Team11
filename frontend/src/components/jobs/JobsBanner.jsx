@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { jobPostingApi } from '../../api/jobPostingApi';
+import api from '../../api/axios';
 
 // ==========================================
 // 1. 필터 데이터 정의 (지역 + 6개 근로환경)
@@ -50,6 +51,50 @@ export default function JobsPage() {
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
+  const [bookmarkedJobIds, setBookmarkedJobIds] = useState(new Set());
+
+  useEffect(() => {
+    if (memberType !== 'UNAUTHENTICATED') {
+      const fetchAllBookmarks = async () => {
+        try {
+          const res = await api.get('/api/bookmarks?page=0&size=1000');
+          if (res.data && res.data.content) {
+            setBookmarkedJobIds(new Set(res.data.content.map(b => b.jobPostingId)));
+          }
+        } catch (e) {
+          console.error("북마크 조회 실패:", e);
+        }
+      };
+      fetchAllBookmarks();
+    }
+  }, [memberType]);
+
+  const toggleBookmark = async (e, jobId) => {
+    e.stopPropagation();
+    if (memberType === 'UNAUTHENTICATED') {
+      alert("로그인 후 이용할 수 있습니다.");
+      return;
+    }
+    try {
+      const res = await api.post(`/api/bookmarks/${jobId}`);
+      const isBookmarked = res.data.isBookmarked;
+      
+      setBookmarkedJobIds(prev => {
+        const next = new Set(prev);
+        if (isBookmarked) {
+          next.add(jobId);
+        } else {
+          next.delete(jobId);
+        }
+        return next;
+      });
+      // 성공 메세지가 있다면 alert 띄우기 (옵션)
+      // if (res.data.message) alert(res.data.message);
+    } catch (e) {
+      console.error(e);
+      alert("북마크 처리 중 오류가 발생했습니다.");
+    }
+  };
 
   const fetchJobs = async (currentPage) => {
     try {
@@ -374,8 +419,11 @@ export default function JobsPage() {
                         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { navigate(`/jobs/${job.id}`); e.preventDefault(); } }}
                         className="relative p-5 border border-gray-200 rounded-2xl bg-white shadow-sm hover:shadow-md transition-all duration-200 flex flex-col h-full group cursor-pointer"
                     >
-                      <button className="absolute top-5 right-5 text-gray-300 hover:text-yellow-400 transition-colors" onClick={(e) => e.stopPropagation()}>
-                        <i className="ri-star-line text-xl"></i>
+                      <button 
+                        className="absolute top-5 right-5 transition-colors" 
+                        onClick={(e) => toggleBookmark(e, job.id)}
+                      >
+                        <i className={`text-2xl ${bookmarkedJobIds.has(job.id) ? 'ri-star-fill text-[#E66235]' : 'ri-star-line text-gray-300 hover:text-[#E66235]'}`}></i>
                       </button>
 
                       <div className="flex items-start gap-4 mb-4 pr-6">

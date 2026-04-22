@@ -51,12 +51,19 @@ public class Bookmark {
 
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime createdAt = LocalDateTime.now();
 
     // Builder 패턴을 사용하여 필수 값만으로 안전하게 객체 생성
     @Builder
     public Bookmark(Member member, JobPosting jobPosting) {
         this.member = member;
         this.jobPosting = jobPosting;
+    }
+
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = LocalDateTime.now();
+        }
     }
 }
