@@ -112,7 +112,7 @@ export default function ResumeForm() {
       certificates: prev.certificates.filter((_, i) => i !== idx),
     }));
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!resume.title.trim()) {
       alert("이력서 제목을 입력해주세요.");
       return;
