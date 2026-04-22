@@ -24,7 +24,8 @@ public class JobPostingController {
     @GetMapping
     public ResponseEntity<Page<JobPostingResponseDto>> getJobPostings(
             @RequestParam(required = false) String keyword,
-            @RequestParam(required = false) String jobCategory,
+            @RequestParam(required = false) String mainCategory,
+            @RequestParam(required = false) String subCategory,
             @RequestParam(required = false) String workRegion,
             @RequestParam(required = false) String envBothHands,
             @RequestParam(required = false) String envEyesight,
@@ -35,7 +36,7 @@ public class JobPostingController {
             @PageableDefault(size = 10) Pageable pageable) {
 
         Page<JobPostingResponseDto> result = jobPostingService.getJobPostings(
-            keyword, jobCategory, workRegion,
+            keyword, mainCategory, subCategory, workRegion,
             envBothHands, envEyesight, envHandWork, envLiftPower, envLstnTalk, envStndWalk,
             pageable);
         return ResponseEntity.ok(result);

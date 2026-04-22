@@ -9,12 +9,12 @@ export default function CompanyJobpostDetailModal({ isOpen, onClose, job }) {
   };
 
   const workEnvOptions = {
-    hands: ["", "양손작업 가능", "한손작업 가능", "한손보조작업 가능"],
-    vision: ["", "아주 작은 글씨를 읽을 수 있음", "일상적 활동 가능", "비교적 큰 인쇄물을 읽을 수 있음"],
-    hand_work: ["", "정밀한 작업 가능", "작은 물품 조립 가능", "큰 물품 조립 가능"],
-    lifting: ["", "20Kg 이상의 물건을 다룰 수 있음", "5Kg 이내의 물건을 다룰 수 있음", "5~20Kg의 물건을 다룰 수 있음"],
-    hearing: ["", "듣고 말하기에 어려움 없음", "간단한 듣고 말하기 가능", "듣고 말하는 작업 어려움"],
-    standing: ["", "오랫동안 가능", "일부 서서하는 작업 가능", "서거나 걷는 일 어려움"],
+    envBothHands: ["", "양손작업 가능", "한손작업 가능", "한손보조작업 가능"],
+    envEyesight: ["", "아주 작은 글씨를 읽을 수 있음", "일상적 활동 가능", "비교적 큰 인쇄물을 읽을 수 있음"],
+    envHandWork: ["", "정밀한 작업가능", "작은 물품 조립가능", "큰 물품 조립가능"],
+    envLiftPower: ["", "20Kg 이상의 물건을 다룰 수 있음", "5Kg 이내의 물건을 다룰 수 있음", "5~20Kg의 물건을 다룰 수 있음"],
+    envLstnTalk: ["", "듣고 말하기에 어려움 없음", "간단한 듣고 말하기 가능", "듣고 말하는 작업 어려움"],
+    envStndWalk: ["", "오랫동안 가능", "일부 서서하는 작업 가능", "서거나 걷는 일 어려움"],
   };
 
   const SectionTitle = ({ title }) => (
@@ -41,8 +41,11 @@ export default function CompanyJobpostDetailModal({ isOpen, onClose, job }) {
             </div>
             <div>
               <div className="flex items-center gap-2 mb-1">
+                <span className="bg-[#FDF8E8] text-[#D9A34A] text-[10px] px-2 py-0.5 rounded-md font-bold border border-[#FBEFCD] mr-1">
+                  {job.main_category || job.mainCategory}
+                </span>
                 <span className="bg-[#FDF8E8] text-[#D9A34A] text-[10px] px-2 py-0.5 rounded-md font-bold border border-[#FBEFCD]">
-                  {job.job_category}
+                  {job.sub_category || job.subCategory}
                 </span>
                 <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold border ${job.is_closed ? 'bg-gray-100 text-gray-400 border-gray-200' : 'bg-green-50 text-green-600 border-green-100'}`}>
                   {job.is_closed ? '마감됨' : '게시 중'}
@@ -62,9 +65,9 @@ export default function CompanyJobpostDetailModal({ isOpen, onClose, job }) {
           <section>
             <SectionTitle title="기본 정보" />
             <div className="space-y-1">
-              <InfoRow label="고용 형태" value={job.job_type} />
-              <InfoRow label="모집 인원" value={job.recruit_count ? `${job.recruit_count}명` : '0명'} />
-              <InfoRow label="접수 기간" value={`${job.created_at?.split('T')[0]} ~ ${job.application_end_date?.split('T')[0]}`} />
+              <InfoRow label="고용 형태" value={job.employmentType} />
+              <InfoRow label="모집 인원" value={job.recruitCount ? `${job.recruitCount}명` : '0명'} />
+              <InfoRow label="접수 기간" value={`${job.applicationStartDate?.split('T')[0] || job.created_at?.split('T')[0] || '-'} ~ ${job.application_end_date?.split('T')[0] || '-'}`} />
               <InfoRow label="자격 요건" value={job.qualification} />
             </div>
           </section>
@@ -73,9 +76,9 @@ export default function CompanyJobpostDetailModal({ isOpen, onClose, job }) {
           <section>
             <SectionTitle title="근무 조건" />
             <div className="space-y-1">
-              <InfoRow label="근무 지역" value={job.work_location || job.location_detail} />
-              <InfoRow label="급여 정보" value={job.salary_amount ? `${job.salary_type} ${job.salary_amount}` : '회사 내규에 따름'} />
-              <InfoRow label="근무 시간" value={job.working_hours} />
+              <InfoRow label="근무 지역" value={job.workRegion} />
+              <InfoRow label="급여 정보" value={job.salary ? `${job.salaryType || ''} ${job.salary}` : '회사 내규에 따름'} />
+              <InfoRow label="근무 시간" value={job.workHours} />
             </div>
           </section>
 
@@ -83,9 +86,11 @@ export default function CompanyJobpostDetailModal({ isOpen, onClose, job }) {
           <section>
             <SectionTitle title="작업 환경" />
             <div className="grid grid-cols-2 gap-x-8 gap-y-4 bg-[#FAF9F6] p-5 rounded-2xl border border-[#F1EEE5]">
-              {Object.entries(workEnvLabels).map(([key, label]) => {
-                const valueIndex = job.work_environment?.[key] || '1';
-                const valueText = workEnvOptions[key][parseInt(valueIndex)] || '정보 없음';
+              {Object.entries({
+                envBothHands: "손 사용", envEyesight: "시력", envHandWork: "손 작업",
+                envLiftPower: "들기 능력", envLstnTalk: "청각·언어", envStndWalk: "서기·걷기"
+              }).map(([key, label]) => {
+                const valueText = job[key] || '정보 없음'; // job.envBothHands 등 직접 매핑
                 return (
                   <div key={key}>
                     <p className="text-[11px] font-bold text-[#B5A991] mb-1">{label}</p>

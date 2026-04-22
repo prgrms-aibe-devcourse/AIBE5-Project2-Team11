@@ -1287,7 +1287,7 @@ export default function JobDetail() {
             date: apiJob.applicationEndDate ? apiJob.applicationEndDate.toString() : '상시',
             workEnv: [apiJob.envBothHands, apiJob.envEyesight, apiJob.envHandWork, apiJob.envLiftPower, apiJob.envLstnTalk, apiJob.envStndWalk].filter(Boolean),
             badges: [apiJob.employmentType].filter(Boolean),
-            tags: [apiJob.jobCategory].filter(Boolean),
+            tags: [apiJob.mainCategory, apiJob.subCategory].filter(Boolean),
             tech: [],
             original: {
               ...apiJob,

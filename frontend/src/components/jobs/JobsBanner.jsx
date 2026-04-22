@@ -20,6 +20,29 @@ const ENV_OPTIONS = {
   envStndWalk: ["오랫동안 가능", "일부 서서하는 작업 가능", "서거나 걷는 일 어려움"]
 };
 
+const JOB_CATEGORIES = {
+  "관리자": ["관리직(임원·부서장)"],
+  "사무 종사자": ["경영·행정·사무직"],
+  "서비스 종사자": [
+    "돌봄 서비스직(간병·육아)", "미용·예식 서비스직", "스포츠·레크리에이션직", 
+    "여행·숙박·오락 서비스직", "음식 서비스직", "경호·경비직", "청소 및 기타 개인서비스직"
+  ],
+  "판매 종사자": ["영업·판매직"],
+  "전문가 및 관련 종사자": [
+    "정보통신 연구개발직 및 공학기술직", "제조 연구개발직 및 공학기술직", 
+    "건설·채굴 연구개발직 및 공학기술직", "자연·생명과학 연구직", "인문·사회과학 연구직", 
+    "법률직", "사회복지·종교직", "교육직", "금융·보험직", "보건·의료직", "예술·디자인·방송직"
+  ],
+  "기능원 및 관련 기능 종사자": [
+    "건설·채굴직", "기계 설치·정비·생산직", "금속·재료 설치·정비·생산직(판금·단조·주조·용접·도장 등)", 
+    "전기·전자 설치·정비·생산직", "정보통신 설치·정비직", "화학·환경 설치·정비·생산직", 
+    "인쇄·목재·공예 및 기타 설치·정비·생산직"
+  ],
+  "장치·기계조작 및 조립 종사자": ["식품 가공·생산직", "섬유·의복 생산직", "운전·운송직"],
+  "농림어업 숙련 종사자": ["농림어업직"],
+  "단순노무 종사자": ["제조 단순직"]
+};
+
 export default function JobsPage() {
   const navigate = useNavigate();
   const memberType = localStorage.getItem("memberType") || "UNAUTHENTICATED";
@@ -29,6 +52,8 @@ export default function JobsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState({
+    mainCategory: '',
+    subCategory: '',
     region: '',
     envBothHands: '',
     envEyesight: '',
@@ -44,7 +69,11 @@ export default function JobsPage() {
   // 필터 변경 핸들러
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters(prev => ({ ...prev, [name]: value }));
+    if (name === 'mainCategory') {
+      setFilters(prev => ({ ...prev, mainCategory: value, subCategory: '' }));
+    } else {
+      setFilters(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const [jobs, setJobs] = useState([]);
@@ -100,6 +129,8 @@ export default function JobsPage() {
     try {
       const data = await jobPostingApi.getJobPostings({
         keyword: searchTerm || undefined,
+        mainCategory: filters.mainCategory || undefined,
+        subCategory: filters.subCategory || undefined,
         workRegion: filters.region && filters.region !== '전국' ? filters.region : undefined,
         envBothHands: filters.envBothHands || undefined,
         envEyesight: filters.envEyesight || undefined,
@@ -119,7 +150,7 @@ export default function JobsPage() {
           date: apiJob.applicationEndDate ? apiJob.applicationEndDate.toString() : '상시',
           workEnv: [apiJob.envBothHands, apiJob.envEyesight, apiJob.envHandWork, apiJob.envLiftPower, apiJob.envLstnTalk, apiJob.envStndWalk].filter(Boolean),
           badges: [apiJob.employmentType].filter(Boolean),
-          tags: [apiJob.jobCategory].filter(Boolean),
+          tags: [apiJob.mainCategory, apiJob.subCategory].filter(Boolean),
           tech: [],
           original: apiJob,
           ...apiJob
@@ -215,7 +246,7 @@ export default function JobsPage() {
   // 필터 초기화
   const handleResetFilters = () => {
     setFilters({
-      region: '', envBothHands: '', envEyesight: '', envHandWork: '',
+      mainCategory: '', subCategory: '', region: '', envBothHands: '', envEyesight: '', envHandWork: '',
       envLiftPower: '', envLstnTalk: '', envStndWalk: ''
     });
   };
@@ -342,62 +373,85 @@ export default function JobsPage() {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {/* 1. 지역 */}
-                  <div>
+                <div className="space-y-6">
+                  {/* --- 1번째 줄: 희망 지역 --- */}
+                  <div className="max-w-xs">
                     <label className="block text-[12px] font-bold text-[#5D4037] mb-1.5">희망 지역</label>
                     <select name="region" value={filters.region} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
                       <option value="">전체 지역</option>
                       {REGIONS.map(reg => <option key={reg} value={reg}>{reg}</option>)}
                     </select>
                   </div>
-                  {/* 2. 양손 활용 */}
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#5D4037] mb-1.5">양손 활용</label>
-                    <select name="envBothHands" value={filters.envBothHands} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
-                      <option value="">전체</option>
-                      {ENV_OPTIONS.envBothHands.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
+
+                  {/* --- 2번째 줄: 직무 분류 --- */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <label className="block text-[12px] font-bold text-[#5D4037] mb-1.5">직무 대분류</label>
+                      <select name="mainCategory" value={filters.mainCategory} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
+                        <option value="">전체</option>
+                        {Object.keys(JOB_CATEGORIES).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[12px] font-bold text-[#5D4037] mb-1.5">직무 소분류</label>
+                      <select name="subCategory" value={filters.subCategory} onChange={handleFilterChange} disabled={!filters.mainCategory} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate disabled:bg-gray-100 disabled:text-gray-400">
+                        <option value="">전체</option>
+                        {filters.mainCategory && JOB_CATEGORIES[filters.mainCategory]?.map(sub => (
+                          <option key={sub} value={sub}>{sub}</option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  {/* 3. 시각 */}
+
+                  {/* --- 나머지 줄: 근무환경 --- */}
                   <div>
-                    <label className="block text-[12px] font-bold text-[#5D4037] mb-1.5">시각</label>
-                    <select name="envEyesight" value={filters.envEyesight} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
-                      <option value="">전체</option>
-                      {ENV_OPTIONS.envEyesight.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                  </div>
-                  {/* 4. 손작업 */}
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#5D4037] mb-1.5">손작업</label>
-                    <select name="envHandWork" value={filters.envHandWork} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
-                      <option value="">전체</option>
-                      {ENV_OPTIONS.envHandWork.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                  </div>
-                  {/* 5. 물건 다루기 */}
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#5D4037] mb-1.5">물건 다루기</label>
-                    <select name="envLiftPower" value={filters.envLiftPower} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
-                      <option value="">전체</option>
-                      {ENV_OPTIONS.envLiftPower.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                  </div>
-                  {/* 6. 의사소통 */}
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#5D4037] mb-1.5">의사소통</label>
-                    <select name="envLstnTalk" value={filters.envLstnTalk} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
-                      <option value="">전체</option>
-                      {ENV_OPTIONS.envLstnTalk.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
-                  </div>
-                  {/* 7. 서기/걷기 */}
-                  <div>
-                    <label className="block text-[12px] font-bold text-[#5D4037] mb-1.5">서기/걷기</label>
-                    <select name="envStndWalk" value={filters.envStndWalk} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
-                      <option value="">전체</option>
-                      {ENV_OPTIONS.envStndWalk.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                    </select>
+                    <h4 className="block text-[12px] font-bold text-[#5D4037] mb-3">
+                       근무 환경
+                    </h4>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                      {/* 1. 양손 활용 */}
+                      <div>
+                        <select name="envBothHands" value={filters.envBothHands} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
+                          <option value="">양손 활용 (전체)</option>
+                          {ENV_OPTIONS.envBothHands.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                      {/* 2. 시각 */}
+                      <div>
+                        <select name="envEyesight" value={filters.envEyesight} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
+                          <option value="">시각 (전체)</option>
+                          {ENV_OPTIONS.envEyesight.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                      {/* 3. 손작업 */}
+                      <div>
+                        <select name="envHandWork" value={filters.envHandWork} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
+                          <option value="">손작업 (전체)</option>
+                          {ENV_OPTIONS.envHandWork.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                      {/* 4. 물건 다루기 */}
+                      <div>
+                        <select name="envLiftPower" value={filters.envLiftPower} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
+                          <option value="">물건 다루기 (전체)</option>
+                          {ENV_OPTIONS.envLiftPower.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                      {/* 5. 의사소통 */}
+                      <div>
+                        <select name="envLstnTalk" value={filters.envLstnTalk} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
+                          <option value="">의사소통 (전체)</option>
+                          {ENV_OPTIONS.envLstnTalk.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                      {/* 6. 서기/걷기 */}
+                      <div>
+                        <select name="envStndWalk" value={filters.envStndWalk} onChange={handleFilterChange} className="w-full px-3 py-2.5 rounded-xl border border-gray-200 bg-white text-[13px] text-gray-700 focus:border-orange-400 focus:ring-1 outline-none truncate">
+                          <option value="">서기/걷기 (전체)</option>
+                          {ENV_OPTIONS.envStndWalk.map(opt => <option key={opt} value={opt}>{opt}</option>)}
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
