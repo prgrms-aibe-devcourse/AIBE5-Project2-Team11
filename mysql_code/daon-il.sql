@@ -505,3 +505,22 @@ CREATE TABLE IF NOT EXISTS job_embedding (
     INDEX idx_job_id (job_id) COMMENT '공고 조회 인덱스',
     FOREIGN KEY (job_id) REFERENCES job_posting(job_posting_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='채용공고 임베딩 저장소';
+
+
+CREATE TABLE IF NOT EXISTS social_account (
+    social_account_id BIGINT NOT NULL AUTO_INCREMENT,
+    member_id BIGINT NOT NULL,
+    provider VARCHAR(20) NOT NULL COMMENT 'GOOGLE, NAVER',
+    provider_user_id VARCHAR(100) NOT NULL COMMENT '소셜 제공자의 사용자 고유 식별자',
+    email VARCHAR(255) NULL,
+    name VARCHAR(100) NULL,
+    profile_image_url VARCHAR(500) NULL,
+    linked_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (social_account_id),
+    UNIQUE KEY uk_provider_user (provider, provider_user_id),
+    CONSTRAINT fk_social_account_member
+        FOREIGN KEY (member_id) REFERENCES member(member_id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='소셜 로그인 계정 연결 정보';
+
+-- member 테이블의 password 컬럼을 NULL 허용으로 변경 (소셜 로그인 계정을 위해)
+ALTER TABLE member MODIFY password VARCHAR(255) NULL;
