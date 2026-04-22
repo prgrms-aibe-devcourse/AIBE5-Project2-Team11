@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { jobPostingApi } from '../../api/jobPostingApi';
+import api from '../../api/axios';
 
 // ==========================================
 // 1. 순수 헬퍼 함수 및 공통 UI 컴포넌트, 옵션 데이터
@@ -380,6 +381,7 @@ export default function JobDetail() {
   const [isLoadingJob, setIsLoadingJob] = useState(true);
   const [jobError, setJobError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
     const fetchJobData = async () => {
@@ -418,8 +420,29 @@ export default function JobDetail() {
         setIsLoadingJob(false);
       }
     };
+
+    const fetchBookmarkStatus = async () => {
+      try {
+        const res = await api.get(`/api/bookmarks/${id}/status`);
+        setIsBookmarked(res.data.isBookmarked);
+      } catch (err) {
+        console.error("북마크 상태 조회 실패", err);
+      }
+    };
+
     fetchJobData();
+    fetchBookmarkStatus();
   }, [id]);
+
+  const toggleBookmark = async () => {
+    try {
+      const res = await api.post(`/api/bookmarks/${job.id}`);
+      setIsBookmarked(res.data.isBookmarked);
+      alert(res.data.message);
+    } catch (err) {
+      alert('로그인이 필요한 서비스이거나 오류가 발생했습니다.');
+    }
+  };
 
   if (isLoadingJob) {
     return (
@@ -481,6 +504,13 @@ export default function JobDetail() {
 
               {/* 버튼 영역 */}
               <div className="mt-8 flex flex-col sm:flex-row items-center gap-3 pt-6 border-t border-gray-100">
+                <button 
+                  onClick={toggleBookmark}
+                  className={`w-full sm:w-auto px-6 py-3.5 flex items-center justify-center gap-2 border transition-all text-sm font-bold rounded-xl ${isBookmarked ? 'bg-yellow-50 text-yellow-600 border-yellow-200' : 'bg-gray-50 text-gray-500 border-gray-200 hover:text-yellow-500 hover:border-yellow-200'}`}
+                >
+                  <i className={isBookmarked ? "ri-star-fill text-lg" : "ri-star-line text-lg"}></i>
+                  {isBookmarked ? '스크랩 취소' : '스크랩'}
+                </button>
                 <button onClick={() => setIsModalOpen(true)} className="w-full sm:w-auto flex-1 px-6 py-3.5 bg-[#E66235] hover:bg-[#D45326] shadow-md shadow-orange-200 transition-all text-white font-bold rounded-xl text-center">
                   지금 지원하기
                 </button>

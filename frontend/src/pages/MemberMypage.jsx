@@ -46,8 +46,8 @@ function ResumeSection() {
                         <h4 className="font-bold text-[#5D4037] text-base">{resume.title}</h4>
                         {resume.isDefault && (
                             <span className="text-xs bg-yellow-100 text-yellow-700 border border-yellow-200 px-2 py-0.5 rounded-full font-medium">
-                기본 이력서
-              </span>
+                                기본 이력서
+                            </span>
                         )}
                     </div>
                     <p className="text-xs text-gray-400 mb-3">최종 수정일: {resume.updatedAt}</p>
@@ -57,8 +57,8 @@ function ResumeSection() {
                                 key={s}
                                 className="text-xs bg-[#FFF8F0] text-[#8D6E63] border border-[#F3E8D0] px-2 py-0.5 rounded-full"
                             >
-                {s}
-              </span>
+                                {s}
+                            </span>
                         ))}
                     </div>
                     <div className="flex gap-2">

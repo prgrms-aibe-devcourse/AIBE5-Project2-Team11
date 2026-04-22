@@ -73,6 +73,8 @@ public class SecurityConfig {
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/jobs/company").hasRole("COMPANY")
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/jobs/**").permitAll()
                 .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/jobs").permitAll()
+                .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/bookmarks/*/status").permitAll()
+                .requestMatchers("/api/bookmarks/**").authenticated()
                 .requestMatchers("/members/me").authenticated()
                 .anyRequest().permitAll()
             )

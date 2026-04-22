@@ -87,7 +87,6 @@ public class ProfileService {
 
                 ProfileCertificate certificate = ProfileCertificate.builder()
                         .profile(profile)
-                        .certificateName(certDto.getCertificateName())
                         .acquiredDate(certDto.getAcquiredDate())
                         .scoreOrGrade(certDto.getScoreOrGrade())
                         .status(certDto.getStatus())
@@ -166,7 +165,7 @@ public class ProfileService {
         List<ProfileCertificateDto> certificates = profile.getCertificates().stream()
                 .map(cert -> ProfileCertificateDto.builder()
                         .id(cert.getProfileCertificateId())
-                        .certificateName(cert.getCertificateName())
+                        //.certificateName(cert.getCertificateName())
                         .acquiredDate(cert.getAcquiredDate())
                         .scoreOrGrade(cert.getScoreOrGrade())
                         .status(cert.getStatus())

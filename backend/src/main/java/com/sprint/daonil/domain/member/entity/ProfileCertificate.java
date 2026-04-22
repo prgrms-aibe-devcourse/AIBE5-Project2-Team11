@@ -21,8 +21,8 @@ public class ProfileCertificate {
     @JoinColumn(name = "profile_id", nullable = false)
     private Profile profile;
 
-    @Column(name = "certificate_name", length = 150)
-    private String certificateName;
+//    @Column(name = "certificate_name", length = 150)
+//    private String certificateName;
 
     @Column(name = "acquired_date")
     private String acquiredDate;
