@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import AlarmPopover from "./alarm";
+import daonilLogo from "../assets/images/logo/daonil-logo.jpg";
 
 export default function Header() {
   const location = useLocation();
@@ -98,12 +99,11 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-10 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-500 text-white">
-                <i className="ri-briefcase-line text-sm"></i>
-              </div>
-              <span className="text-lg font-extrabold text-[#5D4037]">
-              다온일
-            </span>
+              <img
+                src={daonilLogo}
+                alt="다온일"
+                className="h-10 w-auto object-contain"
+              />
             </Link>
 
             <nav className="flex items-center gap-2">
