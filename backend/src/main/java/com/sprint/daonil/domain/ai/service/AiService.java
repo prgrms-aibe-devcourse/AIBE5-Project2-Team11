@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.sprint.daonil.domain.ai.entity.JobEmbedding;
 import com.sprint.daonil.domain.ai.repository.JobEmbeddingRepository;
+import com.sprint.daonil.domain.ai.util.JobCategoryClassifier;
+import com.sprint.daonil.domain.ai.util.DisabilityJobWeights;
+import com.sprint.daonil.domain.ai.util.WorkEnvironmentMatcher;
+import com.sprint.daonil.domain.ai.util.JobDetailAnalyzer;
 import com.sprint.daonil.domain.Certificate.Service.QualificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -538,5 +542,183 @@ public class AiService {
         }
         return null;
     }
-}
 
+    // ===== 8️⃣ 장애 유형별 공고 추천 (NEW - 규칙 기반 + 장애 가중치) =====
+    /**
+     * 공고 제목을 직업군으로 분류하고, 사용자 장애 유형과 매칭하여 추천
+     * 하이브리드 방식: 규칙 기반 분류 + 장애별 가중치 점수
+     *
+     * @param jobs 모든 공고 목록
+     * @param disabilityType 장애 유형 (예: "지체장애", "시각장애")
+     * @param topN 상위 몇 개를 추천할 것인지
+     * @return 점수 정렬된 추천 공고 목록
+     */
+    public List<Map<String, Object>> getDisabilityBasedRecommendations(
+            List<Map<String, Object>> jobs,
+            String disabilityType,
+            int topN) {
+
+        try {
+            log.info("Starting disability-based recommendation: disability={}, totalJobs={}", disabilityType, jobs.size());
+
+            // 1단계: 사용자의 장애 유형별 직업군 가중치 로드
+            Map<String, Double> userWeights = DisabilityJobWeights.getWeightsByDisability(disabilityType);
+            log.info("Loaded weights for disability: {}", disabilityType);
+
+            // 2단계: 각 공고의 직업군 분류 및 점수 계산
+            List<Map<String, Object>> scoredJobs = jobs.stream()
+                    .map(job -> {
+                        try {
+                            String title = (String) job.get("title") != null ? 
+                                          (String) job.get("title") : 
+                                          (String) job.getOrDefault("jobNm", "");
+                            String content = (String) job.getOrDefault("content", "");
+
+                            // 1) 공고 제목 + 내용을 33개 직업군으로 분류
+                            Map<String, Double> jobCategoryVector = JobCategoryClassifier.classifyTitleAndContent(title, content);
+
+                            // 2) 직업군 기반 점수 계산
+                            double categoryMatchScore = JobCategoryClassifier.calculateMatchScore(jobCategoryVector, userWeights);
+
+                            // 3) 작업환경 기반 추가 점수 계산 (직업군 점수와 동일 가중치)
+                            boolean envBothHands = true;  // 기본값: 양손 사용 가능
+                            boolean envStndWalk = true;   // 기본값: 서있기/걷기 가능
+                            boolean envEyesight = true;   // 기본값: 시력 필요
+
+                            double environmentMatchScore = WorkEnvironmentMatcher.calculateEnvironmentMatchScore(
+                                    title, content, disabilityType,
+                                    envBothHands, envStndWalk, envEyesight);
+
+                            // 4) 상세 직무 특성 분석 (추가 10%) - jobPostingId 포함
+                            String companyName = (String) job.getOrDefault("company", "");
+                            Long jobPostingId = null;
+                            
+                            // jobPostingId 추출 시도
+                            Object idObj = job.get("id") != null ? job.get("id") : job.get("jobPostingId");
+                            if (idObj instanceof Number) {
+                                jobPostingId = ((Number) idObj).longValue();
+                            } else if (idObj instanceof String) {
+                                try {
+                                    jobPostingId = Long.parseLong((String) idObj);
+                                } catch (NumberFormatException e) {
+                                    // 무시
+                                }
+                            }
+                            
+                            double detailScore = JobDetailAnalyzer.analyzeJobDetails(title, content, companyName, jobPostingId);
+
+                            // 5) 최종 점수 계산 (직업군 60% + 작업환경 30% + 상세특성 10%)
+                            double combinedScore = (categoryMatchScore * 0.6) + (environmentMatchScore * 0.3) + (detailScore * 0.1);
+
+                            // 결과에 정보 추가
+                            Map<String, Object> result = new HashMap<>(job);
+                            result.put("matchScore", combinedScore);
+                            result.put("categoryScore", categoryMatchScore);
+                            result.put("environmentScore", environmentMatchScore);
+                            result.put("detailScore", detailScore);
+                            result.put("jobCategoryVector", jobCategoryVector);
+                            result.put("jobDetailCategory", JobDetailAnalyzer.getJobDetailCategory(title, content, companyName));
+
+                            return result;
+                        } catch (Exception e) {
+                            log.error("Error processing job: {}", job.get("title"), e);
+                            Map<String, Object> result = new HashMap<>(job);
+                            result.put("matchScore", 0.0);
+                            return result;
+                        }
+                    })
+                    .collect(Collectors.toList());
+
+            // 3단계: 점수 순으로 정렬하여 상위 topN 반환
+            List<Map<String, Object>> topRecommendations = scoredJobs.stream()
+                    .sorted((a, b) -> {
+                        Double scoreA = (Double) a.get("matchScore");
+                        Double scoreB = (Double) b.get("matchScore");
+                        return scoreB.compareTo(scoreA);  // 내림차순
+                    })
+                    .limit(topN)
+                    .collect(Collectors.toList());
+
+            log.info("Successfully generated {} disability-based recommendations", topRecommendations.size());
+            return topRecommendations;
+
+        } catch (Exception e) {
+            log.error("Error in getDisabilityBasedRecommendations", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 추천 결과에 대한 설명 생성 (장애별 추천)
+     */
+    public String generateDisabilityRecommendationExplanation(
+            String disabilityType,
+            List<Map<String, Object>> topJobs) {
+        try {
+            StringBuilder jobsContext = new StringBuilder();
+
+            for (int i = 0; i < topJobs.size(); i++) {
+                Map<String, Object> job = topJobs.get(i);
+                Double score = (Double) job.getOrDefault("matchScore", 0.0);
+                Map<String, Double> vector = (Map<String, Double>) job.get("jobCategoryVector");
+
+                jobsContext.append(String.format("[공고 %d] %s\n", i + 1, job.get("title")));
+                jobsContext.append(String.format("  회사: %s\n", job.getOrDefault("company", "미정")));
+                jobsContext.append(String.format("  지역: %s\n", job.getOrDefault("workRegion", "미정")));
+                jobsContext.append(String.format("  점수: %.4f\n", score));
+
+                if (vector != null && !vector.isEmpty()) {
+                    jobsContext.append("  주요 직업군: ");
+                    vector.entrySet().stream()
+                            .filter(e -> e.getValue() > 0.2)
+                            .forEach(e -> jobsContext.append(String.format("%s(%.1f%%) ", e.getKey(), e.getValue() * 100)));
+                    jobsContext.append("\n");
+                }
+                jobsContext.append("\n");
+            }
+
+            String contextMessage = String.format("""
+                장애 유형: %s
+                
+                추천 공고 정보:
+                %s
+                
+                위의 공고들이 %s인 사용자에게 왜 적합한지 설명해주세요.
+                각 공고의 특징, 접근성, 장점을 강조하세요.
+                """, disabilityType, jobsContext.toString(), disabilityType);
+
+            Map<String, Object> requestBody = new HashMap<>();
+            requestBody.put("model", GPT_MODEL);
+            requestBody.put("messages", List.of(
+                    Map.of("role", "system", "content", RECOMMENDATION_SYSTEM_PROMPT),
+                    Map.of("role", "user", "content", contextMessage)
+            ));
+            requestBody.put("temperature", 0.7);
+            requestBody.put("max_tokens", 1500);
+
+            String jsonBody = objectMapper.writeValueAsString(requestBody);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(OPENAI_API_URL))
+                    .header("Authorization", "Bearer " + openAiApiKey)
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() == 200) {
+                Map<String, Object> responseBody = objectMapper.readValue(response.body(), Map.class);
+                List<Map<String, Object>> choices = (List<Map<String, Object>>) responseBody.get("choices");
+                if (!choices.isEmpty()) {
+                    Map<String, Object> message = (Map<String, Object>) choices.get(0).get("message");
+                    return (String) message.get("content");
+                }
+            } else {
+                log.error("OpenAI API Error: " + response.statusCode());
+            }
+        } catch (Exception e) {
+            log.error("Error generating disability recommendation explanation", e);
+        }
+        return "추천 설명을 생성할 수 없습니다.";
+    }
+}
