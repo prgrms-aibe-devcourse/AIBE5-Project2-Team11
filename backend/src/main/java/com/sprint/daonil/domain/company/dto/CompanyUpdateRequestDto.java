@@ -12,7 +12,7 @@ public class CompanyUpdateRequestDto {
     private String address;
     private String companyDescription;
 
-    // 업종 (선택값)
+    // 업종
     private Long industryTypeId;
     private Long detailIndustryTypeId;
 

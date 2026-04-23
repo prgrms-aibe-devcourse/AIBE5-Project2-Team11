@@ -29,24 +29,7 @@ public class CompanyService {
         Company company = companyRepository.findByMember_LoginId(loginId)
                 .orElseThrow(() -> new ResponseStatusException( HttpStatus.NOT_FOUND, "존재하지 않는 기업 회원입니다."));
 
-        // 업종(대분류) 조회
-        String industryName = null;
-        if (company.getIndustryTypeId() != null) {
-            industryName = industryTypeRepository
-                    .findById(company.getIndustryTypeId())
-                    .map(industry -> industry.getIndustryName())
-                    .orElse(null);
-        }
-        // 상세 업종 조회
-        String detailIndustryName = null;
-        if (company.getDetailIndustryTypeId() != null) {
-            detailIndustryName = detailIndustryTypeRepository
-                    .findById(company.getDetailIndustryTypeId())
-                    .map(detial -> detial.getDetailIndustryName())
-                    .orElse(null);
-        }
-
-        return CompanyInfoResponseDto.fromEntity(company, industryName, detailIndustryName);
+        return CompanyInfoResponseDto.fromEntity(company);
     }
 
 

@@ -13,23 +13,35 @@ export default function CompanyInfoEditModal({ isOpen, onClose, formData, onChan
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <label className="block text-xs text-gray-500 mb-1">기업명</label>
-              <input type="text" name="company_name" value={formData.company_name} onChange={onChange} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991]" />
+              <input type="text" name="companyName" value={formData.companyName ?? ""} onChange={onChange} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991]" />
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">사업자번호</label>
-              <input type="text" name="business_number" value={formData.business_number} onChange={onChange} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991]" />
+              <input type="text" name="businessNumber" value={formData.businessNumber ?? ""} onChange={onChange} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991]" />
             </div>
             <div>
               <label className="block text-xs text-gray-500 mb-1">이메일</label>
-              <input type="email" name="company_email" value={formData.company_email} onChange={onChange} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991]" />
+              <input type="email" name="companyEmail" value={formData.companyEmail ?? ""} onChange={onChange} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991]" />
             </div>
             <div className="col-span-2">
               <label className="block text-xs text-gray-500 mb-1">주소</label>
-              <input type="text" name="address" value={formData.address} onChange={onChange} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991]" />
+              <input type="text" name="address" value={formData.address ?? ""} onChange={onChange} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991]" />
             </div>
             <div className="col-span-2">
               <label className="block text-xs text-gray-500 mb-1">기업 소개</label>
-              <textarea name="company_description" value={formData.company_description} onChange={onChange} rows="3" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991] resize-none" />
+              <textarea name="companyDescription" value={formData.companyDescription ?? ""} onChange={onChange} rows="3" className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991] resize-none" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">담당자명</label>
+              <input type="text" name="managerName" value={formData.managerName ?? ""} onChange={onChange} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991]" />
+            </div>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">담당자 전화번호</label>
+              <input type="text" name="managerPhone" value={formData.managerPhone ?? ""} onChange={onChange} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991]" />
+            </div>
+            <div className="col-span-2">
+              <label className="block text-xs text-gray-500 mb-1">담당자 사무실 주소</label>
+              <input type="text" name="managerOfficeAddress" value={formData.managerOfficeAddress ?? ""} onChange={onChange} className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#B5A991]" />
             </div>
           </div>
 

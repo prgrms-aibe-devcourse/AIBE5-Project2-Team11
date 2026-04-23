@@ -15,8 +15,8 @@ public class CompanyInfoResponseDto {
     private String companyName;
     private String businessNumber; // 사업자 등록 번호
 
-    private String industryTypeName;
-    private String detailIndustryTypeName;
+    private Long industryTypeId;
+    private Long detailIndustryTypeId;
 
     private String companyEmail;
     private String address;
@@ -29,13 +29,13 @@ public class CompanyInfoResponseDto {
 
 
     // Entity -> DTO 변환
-    public static CompanyInfoResponseDto fromEntity(Company company, String industryName, String detailIndustryName) {
+    public static CompanyInfoResponseDto fromEntity(Company company) {
         CompanyInfoResponseDto dto = new CompanyInfoResponseDto();
 
         dto.setCompanyName(company.getCompanyName());
         dto.setBusinessNumber(company.getBusinessNumber());
-        dto.setIndustryTypeName(industryName);
-        dto.setDetailIndustryTypeName(detailIndustryName);
+        dto.setIndustryTypeId(company.getIndustryTypeId());
+        dto.setDetailIndustryTypeId(company.getDetailIndustryTypeId());
         dto.setCompanyEmail(company.getCompanyEmail());
         dto.setAddress(company.getAddress());
         dto.setCompanyDescription(company.getCompanyDescription());
