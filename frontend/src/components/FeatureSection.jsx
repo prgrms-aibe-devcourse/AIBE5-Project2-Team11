@@ -1,7 +1,6 @@
-import { Users, MessageCircle, Phone, FileText, Briefcase } from "lucide-react";
+import { Users, FileText, Briefcase } from "lucide-react";
 import { Link } from "react-router-dom";
 import matchImg from "../assets/images/main/featureSection/match.jpg";
-import counselImg from "../assets/images/main/featureSection/counsel.jpg"
 
 export default function FeatureSection() {
   return (
@@ -54,34 +53,6 @@ export default function FeatureSection() {
               다양한 기업의 채용공고를 실시간으로 확인하세요.
             </p>
           </Link>
-        </div>
-
-        {/* 세 번째 행: 전문 상담 지원 */}
-        <div className="grid grid-cols-1 gap-6">
-          {/* 5. 상담 지원 영역 - 큰 카드 */}
-          <div className="bg-[#EFC4B6] rounded-3xl p-6 flex items-center gap-4">
-            {/* 이미지 자리 */}
-            <img src={counselImg} alt="상담 이미지"
-              className="w-24 h-24 object-cover rounded-2xl"/>
-
-            <div>
-              <h3 className="text-lg font-bold mb-2">전문 상담 지원</h3>
-              <p className="text-sm text-gray-700 mb-3">
-                전문 직업 상담사가 여러분의 꿈을 향한 첫걸음을 1:1로 밀착 지원합니다.
-              </p>
-
-              <div className="flex gap-2">
-                <button className="flex items-center gap-1 bg-white px-3 py-1 rounded-full text-sm">
-                  <MessageCircle className="w-4 h-4" />
-                  실시간 채팅
-                </button>
-                <button className="flex items-center gap-1 bg-white px-3 py-1 rounded-full text-sm">
-                  <Phone className="w-4 h-4" />
-                  전화 상담
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
       </div>

@@ -34,25 +34,30 @@ export const getTextEmbedding = async (text) => {
 };
 
 /**
- * 채용공고 추천 (임베딩 기반)
- * 
+ * 채용공고 추천 (임베딩 기반 + 백엔드 필터링)
+ *
  * 흐름:
  * 1. 질문을 임베딩으로 변환
- * 2. 모든 공고와 유사도 비교
- * 3. TOP 5 공고 자동 선택
- * 4. GPT로 추천 이유 설명
- * 
+ * 2. 지역 + 소분류로 백엔드 재필터링
+ * 3. 모든 공고와 유사도 비교
+ * 4. TOP 5 공고 자동 선택
+ * 5. GPT로 추천 이유 설명
+ *
  * @param {string} query - 사용자 질문
  * @param {Array} jobs - 전체 공고 리스트 (전체를 넘김, 서버가 필터링)
+ * @param {string} region - 지역 필터 (선택)
+ * @param {string} subCategory - 소분류 필터 (선택)
  * @returns {Object} { query, topJobs, explanation, count }
  */
-export const getAiRecommendation = async (query, jobs) => {
+export const getAiRecommendation = async (query, jobs, region, subCategory) => {
   try {
     const response = await api.post('/api/ai/recommend', {
       query: query,
       jobs: jobs,  // 전체 공고 리스트
+      region: region,  // 지역 필터
+      subCategory: subCategory,  // 소분류 필터
     });
-    return response.data;  // { topJobs, explanation, count }
+    return response.data;  // { topJobs, explanation, count, filtered_count }
   } catch (error) {
     console.error('Error calling recommendation API:', error);
     throw error;

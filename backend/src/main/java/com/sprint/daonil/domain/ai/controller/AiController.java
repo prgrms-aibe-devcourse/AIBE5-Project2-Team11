@@ -4,6 +4,8 @@ import com.sprint.daonil.domain.ai.dto.AiChatRequest;
 import com.sprint.daonil.domain.ai.dto.AiChatResponse;
 import com.sprint.daonil.domain.ai.dto.AiRecommendRequest;
 import com.sprint.daonil.domain.ai.service.AiService;
+import com.sprint.daonil.domain.jobposting.entity.JobPosting;
+import com.sprint.daonil.domain.jobposting.repository.JobPostingRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -21,6 +24,7 @@ import java.util.Map;
 public class AiController {
 
     private final AiService aiService;
+    private final JobPostingRepository jobPostingRepository;
 
     /**
      * GPT-4o-mini를 사용한 일반 채팅
@@ -61,40 +65,76 @@ public class AiController {
     }
 
     /**
-     * 채용공고 추천 (개선된 버전)
-     *
-     * 방식: 임베딩 기반 유사도 검색 → TOP 5 선택 → GPT로 설명
+     * 채용공고 추천 (DB 직접 조회 + 필터링)
      *
      * Request:
      * {
      *   "query": "사용자 질문",
-     *   "jobs": [ { 공고 객체들... } ]  // 전체 공고 리스트
+     *   "region": "서울",  // work_region에서 검색
+     *   "subCategory": "사회복지·종교직"  // sub_category와 정확히 매칭
      * }
      *
      * Process:
-     * 1. 질문 임베딩 생성
-     * 2. 각 공고와 유사도 계산
-     * 3. TOP 5 선택
-     * 4. GPT에 설명 요청
+     * 1. DB에서 region + subCategory로 필터링된 공고 조회
+     * 2. 임베딩 기반 TOP 5 추천 공고 선택
+     * 3. GPT로 추천 설명 생성
      */
     @PostMapping("/recommend")
     public ResponseEntity<Map<String, Object>> recommend(@RequestBody Map<String, Object> request) {
         try {
             String query = (String) request.get("query");
-            List<Map<String, Object>> jobs = (List<Map<String, Object>>) request.get("jobs");
+            String region = (String) request.get("region");
+            String subCategory = (String) request.get("subCategory");
 
-            log.info("Recommendation request: query={}, jobs count={}", query, jobs != null ? jobs.size() : 0);
+            log.info("Recommendation request: query={}, region={}, subCategory={}", query, region, subCategory);
 
-            if (jobs == null || jobs.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "공고 데이터가 없습니다"));
+            // 1단계: DB에서 필터링된 공고 조회
+            List<JobPosting> dbJobs = jobPostingRepository.findAll();
+
+            // 지역 필터링
+            if (region != null && !region.isEmpty() && !"전체".equals(region)) {
+                dbJobs = dbJobs.stream()
+                        .filter(job -> job.getWorkRegion() != null && job.getWorkRegion().contains(region))
+                        .collect(Collectors.toList());
+            }
+            
+            // 소분류 필터링
+            if (subCategory != null && !subCategory.isEmpty()) {
+                dbJobs = dbJobs.stream()
+                        .filter(job -> subCategory.equals(job.getSubCategory()))
+                        .collect(Collectors.toList());
             }
 
-            // 1단계: 임베딩 기반 TOP 5 추천 공고 선택
-            int topN = 5;
-            List<Map<String, Object>> topJobs = aiService.getTopRecommendations(query, jobs, topN);
+            log.info("Filtered jobs from DB: {} jobs", dbJobs.size());
 
-            // 2단계: 선택된 공고에 대한 추천 설명 생성
+            if (dbJobs.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "해당 조건의 공고가 없습니다"));
+            }
+
+            // JobPosting을 Map으로 변환 (AI 서비스에 전달)
+            List<Map<String, Object>> filteredJobsMap = dbJobs.stream()
+                    .map(job -> {
+                        Map<String, Object> jobMap = new HashMap<>();
+                        jobMap.put("id", job.getJobPostingId());  // 프론트엔드가 찾는 필드
+                        jobMap.put("job_posting_id", job.getJobPostingId());
+                        jobMap.put("title", job.getTitle());
+                        jobMap.put("jobNm", job.getTitle());
+                        jobMap.put("company", job.getCompany() != null ? job.getCompany().getCompanyName() : "미정");
+                        jobMap.put("busplaName", job.getCompany() != null ? job.getCompany().getCompanyName() : "미정");
+                        jobMap.put("sub_category", job.getSubCategory());
+                        jobMap.put("job_category", job.getSubCategory());
+                        jobMap.put("work_region", job.getWorkRegion());
+                        jobMap.put("content", job.getContent());
+                        return jobMap;
+                    })
+                    .collect(Collectors.toList());
+
+            // 2단계: 임베딩 기반 TOP 5 추천 공고 선택
+            int topN = 5;
+            List<Map<String, Object>> topJobs = aiService.getTopRecommendations(query, filteredJobsMap, topN);
+
+            // 3단계: 선택된 공고에 대한 추천 설명 생성
             String explanation = aiService.generateRecommendation(query, topJobs);
 
             Map<String, Object> response = new HashMap<>();
@@ -102,6 +142,9 @@ public class AiController {
             response.put("topJobs", topJobs);
             response.put("explanation", explanation);
             response.put("count", topJobs.size());
+            response.put("filtered_count", filteredJobsMap.size());
+            response.put("region", region);
+            response.put("subCategory", subCategory);
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {

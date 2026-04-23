@@ -26,7 +26,7 @@ export default function ResumeDetail() {
 
     const fetchResumeDetail = async () => {
       try {
-        const token = localStorage.getItem("accessToken");
+        const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
         if (!token) {
           setError("로그인이 필요합니다.");
           return;
