@@ -557,7 +557,7 @@ ALTER TABLE bookmark
     ADD CONSTRAINT FK_bookmark_job_posting 
         FOREIGN KEY (job_posting_id) REFERENCES job_posting (job_posting_id) ON DELETE CASCADE;
 
-
+use daonil;
 -- JobPosting 테이블 컬럼 수정 (대/소분류) 26.04.23
     -- 1. 기존 job_category 컬럼의 이름을 소분류를 의미하는 직관적인 이름으로 변경 (선택 사항)
 ALTER TABLE job_posting CHANGE job_category sub_category varchar(100);
@@ -615,5 +615,9 @@ END;
 SET SQL_SAFE_UPDATES = 1;
 
 
+
+
+-- post_like 테이블 DB 구조 변경 26.04.23
+ALTER TABLE post_like ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
         
