@@ -18,7 +18,7 @@ public class PostDetailResponseDto {
      private String category;
      private String title;
 
-     private String writer; // member name
+     private String writer; // member loginId
      private String createdAt;
      private int viewCount;
      private int likeCount;
@@ -37,7 +37,7 @@ public class PostDetailResponseDto {
           this.category = post.getCategory();
           this.title = post.getTitle();
 
-          this.writer = post.getMember().getName();
+          this.writer = post.getMember().getLoginId();
           this.createdAt = post.getCreatedAt().toString();
           this.viewCount = post.getViewCount();
           this.likeCount = likeCount;

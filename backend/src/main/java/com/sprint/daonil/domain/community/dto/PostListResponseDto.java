@@ -20,7 +20,7 @@ public class PostListResponseDto {
     private int viewCount;
     private long likeCount;
     private long commentCount;
-    private String writer; // member name
+    private String writer; // member loginId
     private LocalDateTime createdAt;
 
     // Entity -> DTO
@@ -32,7 +32,7 @@ public class PostListResponseDto {
         this.viewCount = post.getViewCount();
         this.likeCount = likeCount;
         this.commentCount = commentCount;
-        this.writer = post.getMember().getName();
+        this.writer = post.getMember().getLoginId();
         this.createdAt = post.getCreatedAt();
     }
 }

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import api from "../../api/axios";
 
 function normalizeCategory(category) {
-  if (category === "취업정보게시판") return "취업정보";
+  if (category === "취업정보게시판") return "취업정보게시판";
   return category;
 }
 
@@ -26,7 +26,7 @@ export default function CommunityWriteForm() {
   const editPostId = editPost?.postId;
 
   // 게시글 유형 데이터
-  const categories = ["자유게시판", "취업정보", "질문게시판"];
+  const categories = ["자유게시판", "취업정보게시판", "질문게시판"];
 
   // 입력값(폼) 상태 관리  
   const [category, setCategory] = useState(normalizeCategory(editPost?.category) || "자유게시판");

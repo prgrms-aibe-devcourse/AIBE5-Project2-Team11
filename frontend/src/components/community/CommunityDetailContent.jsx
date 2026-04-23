@@ -324,6 +324,10 @@ export default function CommunityDetailContent() {
     content: detail.content,
   };
 
+  const loginId = localStorage.getItem("loginId");
+  const isPostOwner =
+    loginId != null && loginId !== "" && loginId === detail.writer;
+
   return (
     <>
       <div className="max-w-4xl mx-auto px-6 py-10 bg-[#FDFBF7]">
@@ -472,34 +476,33 @@ export default function CommunityDetailContent() {
 
                 {postMenuOpen && (
                   <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded shadow-sm w-28 z-10">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPostMenuOpen(false);
-                        const loginId = localStorage.getItem("loginId");
-                        if (!loginId || loginId !== detail.writer) {
-                          alert("수정 권한이 없습니다.");
-                          return;
-                        }
-                        navigate("/communityWrite", {
-                          state: { post: editPostPayload },
-                        });
-                      }}
-                      className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                    >
-                      수정
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPostMenuOpen(false);
-                        setModalType("deletePost");
-                        setTargetId(detail.postId);
-                      }}
-                      className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                    >
-                      삭제
-                    </button>
+                    {isPostOwner && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPostMenuOpen(false);
+                          navigate("/communityWrite", {
+                            state: { post: editPostPayload },
+                          });
+                        }}
+                        className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                      >
+                        수정
+                      </button>
+                    )}
+                    {isPostOwner && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPostMenuOpen(false);
+                          setModalType("deletePost");
+                          setTargetId(detail.postId);
+                        }}
+                        className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                      >
+                        삭제
+                      </button>
+                    )}
                     <button
                       type="button"
                       onClick={() => {
@@ -529,7 +532,12 @@ export default function CommunityDetailContent() {
           </div>
 
           <div className="space-y-6 mb-8">
-            {comments.map((comment) => (
+            {comments.map((comment) => {
+              const isCommentOwner =
+                loginId != null &&
+                loginId !== "" &&
+                loginId === comment.writer;
+              return (
               <div
                 key={comment.commentId}
                 className="pb-6 border-b border-gray-50 last:border-0"
@@ -583,28 +591,32 @@ export default function CommunityDetailContent() {
 
                         {commentMenuOpen === comment.commentId && (
                           <div className="absolute right-0 top-full mt-1 bg-white rounded shadow-sm w-28 z-10 border border-gray-200">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCommentMenuOpen(null);
-                                setEditingCommentId(comment.commentId);
-                                setEditText(comment.content);
-                              }}
-                              className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                            >
-                              수정
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCommentMenuOpen(null);
-                                setModalType("deleteComment");
-                                setTargetId(comment.commentId);
-                              }}
-                              className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                            >
-                              삭제
-                            </button>
+                            {isCommentOwner && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCommentMenuOpen(null);
+                                  setEditingCommentId(comment.commentId);
+                                  setEditText(comment.content);
+                                }}
+                                className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                              >
+                                수정
+                              </button>
+                            )}
+                            {isCommentOwner && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCommentMenuOpen(null);
+                                  setModalType("deleteComment");
+                                  setTargetId(comment.commentId);
+                                }}
+                                className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                              >
+                                삭제
+                              </button>
+                            )}
                             <button
                               type="button"
                               onClick={() => {
@@ -662,7 +674,8 @@ export default function CommunityDetailContent() {
                   </p>
                 )}
               </div>
-            ))}
+            );
+            })}
           </div>
 
           {hasCommunityActionToken && (

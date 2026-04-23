@@ -19,7 +19,6 @@ function isJobInfoCategory(category) {
 
 function normalizeTabCategory(category) {
   if (!category) return "전체";
-  if (category === "취업정보") return "취업정보게시판";
   return category;
 }
 
