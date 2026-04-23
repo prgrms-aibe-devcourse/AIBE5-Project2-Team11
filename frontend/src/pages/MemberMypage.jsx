@@ -19,7 +19,7 @@ async function extractErrorMessage(response, fallbackMessage) {
 }
 
 function getAccessToken() {
-    return localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
+    return localStorage.getItem("authToken") || localStorage.getItem("accessToken") || sessionStorage.getItem("accessToken");
 }
 
 // 이력서 관리 섹션 - ResumeList 페이지로 이동하는 런처패드
@@ -47,7 +47,10 @@ function ResumeSection() {
                 }
 
                 const params = new URLSearchParams({ page: String(page), size: "5" });
-                const response = await fetch(`/resumes?${params.toString()}`, {
+                const url = `/resumes?${params.toString()}`;
+                console.log("이력서 목록 요청:", url, "Token:", token ? "있음" : "없음");
+                
+                const response = await fetch(url, {
                     method: "GET",
                     headers: {
                         Authorization: `Bearer ${token}`,
@@ -55,6 +58,8 @@ function ResumeSection() {
                     },
                 });
 
+                console.log("응답 상태:", response.status, "Content-Type:", response.headers.get("content-type"));
+                
                 if (!response.ok) {
                     const serverMessage = await extractErrorMessage(
                         response,

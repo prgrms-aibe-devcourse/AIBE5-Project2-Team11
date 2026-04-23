@@ -14,6 +14,7 @@ export default defineConfig({
       '/jobs': 'http://localhost:8080',
       '/api': 'http://localhost:8080',
       '/members': 'http://localhost:8080',
+      '/resumes': 'http://localhost:8080',
       '/api/jobs': 'http://localhost:8080'
     }
   }
