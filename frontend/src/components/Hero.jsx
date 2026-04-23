@@ -148,7 +148,7 @@ export default function Hero() {
         <h1 className="text-5xl md:text-7xl font-black leading-[1.1] text-[#2C160D]">
           당신의 <span className="text-[#D98E3A]">가능성</span>이<br />
           <span
-            className="font-handwriting text-6xl md:text-8xl text-[#E8A94A]"
+            className="font-handwriting font-normal text-6xl md:text-8xl text-[#E8A94A]"
             style={{
               fontFamily: "'Gaegu', cursive",
               fontWeight: 400,
