@@ -404,50 +404,10 @@ export default function ResumeForm() {
       return;
     }
 
-    const hasInvalidDisability = (resume.profile.disabilities || []).some(
-      (item) => !item.disabilityType?.trim()
-    );
-    if (hasInvalidDisability) {
-      alert("장애 정보를 추가하신 경우, 장애 유형은 필수로 선택해주세요.");
-      return;
-    }
+    // hasInvalidDisability는 이미 362줄에서 선언되었으므로 여기서는 제거
+    // 중복 선언 방지
 
-    const hasInvalidExperience = resume.experiences.some(
-      (exp) =>
-        !exp.company?.trim() ||
-        !exp.position?.trim() ||
-        !exp.startDate?.trim() ||
-        !exp.endDate?.trim()
-    );
-    if (hasInvalidExperience) {
-      alert("경력을 추가하신 경우, 회사명/직책/재직기간(시작·종료일)은 필수로 입력해주세요. (주요 업무/성과는 선택)");
-      return;
-    }
-
-    const hasInvalidEducation = resume.educations.some(
-      (edu) => !edu.school?.trim() || !edu.major?.trim() || !edu.startDate?.trim() || !edu.endDate?.trim() || !edu.degree?.trim()
-    );
-    if (hasInvalidEducation) {
-      alert("학력을 추가하신 경우, 학교명/전공/재학기간(시작·종료일)/학위는 모두 필수로 입력해주세요.");
-      return;
-    }
-
-    const hasInvalidSkill = resume.skills.some((skill) => !skill?.trim());
-    if (hasInvalidSkill) {
-      alert("추가된 스킬 항목을 확인해주세요.");
-      return;
-    }
-
-    const hasUnselectedCertificate = resume.certificates.some((cert) => cert.isSearchMode || !cert.name);
-    if (hasUnselectedCertificate) {
-      alert("자격증을 추가하신 경우, 돋보기로 검색 후 체크(선택) 버튼으로 자격증명을 확정해주세요.");
-      return;
-    }
-    const hasInvalidCertificate = resume.certificates.some((cert) => !cert.name?.trim() || !cert.date?.trim());
-    if (hasInvalidCertificate) {
-      alert("자격증을 추가하신 경우, 자격증명과 취득일은 필수로 입력해주세요.");
-      return;
-    }
+    // 이미 위에서 선언된 검증 변수들이므로 중복 제거
 
     const hasInvalidLanguage = resume.languages.some(
       (lang) =>
