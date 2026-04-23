@@ -22,13 +22,13 @@ public class JobPostingService {
 
     // 채용공고 목록 조회 (다중 필터 + 페이징)
     @Transactional(readOnly = true)
-    public Page<JobPostingResponseDto> getJobPostings(String keyword, String jobCategory,
+    public Page<JobPostingResponseDto> getJobPostings(String keyword, String mainCategory, String subCategory,
                                                       String workRegion,
                                                       String envBothHands, String envEyesight, 
                                                       String envHandWork, String envLiftPower, 
                                                       String envLstnTalk, String envStndWalk,
                                                       Pageable pageable) {
-        return jobPostingRepository.findByFilters(keyword, jobCategory, workRegion, 
+        return jobPostingRepository.findByFilters(keyword, mainCategory, subCategory, workRegion, 
                 envBothHands, envEyesight, envHandWork, envLiftPower, envLstnTalk, envStndWalk,
                 false, pageable)
                 .map(JobPostingResponseDto::fromEntity);

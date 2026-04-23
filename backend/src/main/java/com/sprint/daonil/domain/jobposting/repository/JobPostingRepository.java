@@ -24,7 +24,8 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
     @EntityGraph(attributePaths = {"company"})
     @Query("SELECT jp FROM JobPosting jp WHERE jp.isClosed = :isClosed " +
             "AND (:keyword IS NULL OR jp.title LIKE %:keyword% OR jp.content LIKE %:keyword%) " +
-            "AND (:jobCategory IS NULL OR jp.jobCategory = :jobCategory) " +
+            "AND (:mainCategory IS NULL OR jp.mainCategory = :mainCategory) " +
+            "AND (:subCategory IS NULL OR jp.subCategory = :subCategory) " +
             "AND (:workRegion IS NULL OR jp.workRegion LIKE %:workRegion%) " +
             "AND (:envBothHands IS NULL OR jp.envBothHands = :envBothHands) " +
             "AND (:envEyesight IS NULL OR jp.envEyesight = :envEyesight) " +
@@ -33,7 +34,8 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
             "AND (:envLstnTalk IS NULL OR jp.envLstnTalk = :envLstnTalk) " +
             "AND (:envStndWalk IS NULL OR jp.envStndWalk = :envStndWalk)")
     Page<JobPosting> findByFilters(@Param("keyword") String keyword,
-                                   @Param("jobCategory") String jobCategory,
+                                   @Param("mainCategory") String mainCategory,
+                                   @Param("subCategory") String subCategory,
                                    @Param("workRegion") String workRegion,
                                    @Param("envBothHands") String envBothHands,
                                    @Param("envEyesight") String envEyesight,

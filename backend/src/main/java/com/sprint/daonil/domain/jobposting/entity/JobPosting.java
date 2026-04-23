@@ -28,8 +28,11 @@ public class JobPosting {
     @Column(name = "title", nullable = false, length = 150)
     private String title;
 
-    @Column(name = "job_category", length = 100)
-    private String jobCategory;
+    @Column(name = "main_category", length = 100)
+    private String mainCategory;
+
+    @Column(name = "sub_category", length = 100)
+    private String subCategory;
 
     @Column(name = "employment_type", length = 50)
     private String employmentType;
@@ -97,7 +100,8 @@ public class JobPosting {
 
     public void update(JobPostingRequestDto requestDto) {
         this.title = requestDto.getTitle();
-        this.jobCategory = requestDto.getJobCategory();
+        this.mainCategory = requestDto.getMainCategory();
+        this.subCategory = requestDto.getSubCategory();
         this.employmentType = requestDto.getEmploymentType();
         this.workRegion = requestDto.getWorkRegion();
         this.salary = requestDto.getSalary();
