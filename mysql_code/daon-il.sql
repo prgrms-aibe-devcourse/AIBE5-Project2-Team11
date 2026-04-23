@@ -491,7 +491,6 @@ INSERT INTO disability (name, description) VALUES
 ('언어장애', '발음, 발성, 언어 이해 및 표현에 어려움이 있는 장애'),
 ('지적장애', '지적 기능과 적응 행동에 제한이 있는 장애');
 
-
 CREATE TABLE IF NOT EXISTS job_embedding (
     job_embedding_id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '임베딩 ID',
     job_id BIGINT NOT NULL UNIQUE COMMENT '공고 ID (job_posting.job_posting_id 참조)',
@@ -505,11 +504,8 @@ CREATE TABLE IF NOT EXISTS job_embedding (
     INDEX idx_job_id (job_id) COMMENT '공고 조회 인덱스',
     FOREIGN KEY (job_id) REFERENCES job_posting(job_posting_id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='채용공고 임베딩 저장소';
-delete from social_account;
-select * from social_account;
-select * from member;
-delete from member where member_id = 5;
-select * from company;
+
+
 -- OAuth2/소셜 로그인 지원을 위한 social_account 테이블
 CREATE TABLE IF NOT EXISTS social_account (
     social_account_id BIGINT NOT NULL AUTO_INCREMENT,
@@ -529,7 +525,6 @@ CREATE TABLE IF NOT EXISTS social_account (
 -- member 테이블의 password 컬럼을 NULL 허용으로 변경 (소셜 로그인 계정을 위해)
 ALTER TABLE member MODIFY password VARCHAR(255) NULL;
 
--- ouath 회원가입 완료 전 role을 PENDING으로 설정하기 위해 추가
 ALTER TABLE member 
 MODIFY role ENUM(
   'PENDING',

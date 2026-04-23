@@ -349,97 +349,6 @@ export default function ResumeForm() {
       certificates: prev.certificates.filter((_, i) => i !== idx),
     }));
 
-  const getCertificateSuggestions = (query) => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return CERTIFICATE_OPTIONS
-      .filter((option) => option.toLowerCase().includes(q))
-      .slice(0, 10);
-  };
-
-  const updateCertificateQuery = (idx, value) => {
-    setResume((prev) => {
-      const arr = [...prev.certificates];
-      arr[idx] = { ...arr[idx], nameQuery: value, selectedName: "" };
-      return { ...prev, certificates: arr };
-    });
-    setActiveCertificateDropdown(idx);
-  };
-
-  const selectCertificateCandidate = (idx, selectedName) => {
-    setResume((prev) => {
-      const arr = [...prev.certificates];
-      arr[idx] = { ...arr[idx], selectedName, nameQuery: selectedName };
-      return { ...prev, certificates: arr };
-    });
-    setActiveCertificateDropdown(null);
-  };
-
-  const toggleCertificateSearchMode = (idx) => {
-    setResume((prev) => {
-      const arr = [...prev.certificates];
-      const nextMode = !arr[idx].isSearchMode;
-      arr[idx] = {
-        ...arr[idx],
-        isSearchMode: nextMode,
-        nameQuery: nextMode ? arr[idx].name : arr[idx].name,
-        selectedName: "",
-      };
-      return { ...prev, certificates: arr };
-    });
-    setActiveCertificateDropdown((prev) => (prev === idx ? null : idx));
-  };
-
-  const applyCertificateSelection = (idx) => {
-    const cert = resume.certificates[idx];
-    const selectedValue = cert?.selectedName || cert?.nameQuery || "";
-    if (!CERTIFICATE_OPTIONS.includes(selectedValue)) {
-      alert("드롭다운에서 자격증명을 선택해주세요.");
-      return;
-    }
-
-    setResume((prev) => {
-      const arr = [...prev.certificates];
-      arr[idx] = {
-        ...arr[idx],
-        name: selectedValue,
-        nameQuery: selectedValue,
-        selectedName: "",
-        isSearchMode: false,
-      };
-      return { ...prev, certificates: arr };
-    });
-    setActiveCertificateDropdown(null);
-  };
-
-  const addLanguage = () =>
-    setResume((prev) => ({
-      ...prev,
-      languages: [
-        ...prev.languages,
-        {
-          languageName: "",
-          testName: "",
-          score: "",
-          acquiredDate: "",
-          expirationDate: "",
-        },
-      ],
-    }));
-
-  const updateLanguage = (idx, field, value) =>
-    setResume((prev) => {
-      const arr = [...prev.languages];
-      arr[idx] = { ...arr[idx], [field]: value };
-      return { ...prev, languages: arr };
-    });
-
-  const removeLanguage = (idx) =>
-    setResume((prev) => ({
-      ...prev,
-      languages: prev.languages.filter((_, i) => i !== idx),
-    }));
-
   const handleSave = async () => {
     if (!resume.title.trim()) {
       alert("이력서 제목을 입력해주세요.");
@@ -447,6 +356,51 @@ export default function ResumeForm() {
     }
     if (!resume.profile.summary.trim()) {
       alert("자기소개를 입력해주세요.");
+      return;
+    }
+
+    const hasInvalidDisability = (resume.profile.disabilities || []).some(
+      (item) => !item.disabilityType?.trim()
+    );
+    if (hasInvalidDisability) {
+      alert("장애 정보를 추가하신 경우, 장애 유형은 필수로 선택해주세요.");
+      return;
+    }
+
+    const hasInvalidExperience = resume.experiences.some(
+      (exp) =>
+        !exp.company?.trim() ||
+        !exp.position?.trim() ||
+        !exp.startDate?.trim() ||
+        !exp.endDate?.trim()
+    );
+    if (hasInvalidExperience) {
+      alert("경력을 추가하신 경우, 회사명/직책/재직기간(시작·종료일)은 필수로 입력해주세요. (주요 업무/성과는 선택)");
+      return;
+    }
+
+    const hasInvalidEducation = resume.educations.some(
+      (edu) => !edu.school?.trim() || !edu.major?.trim() || !edu.startDate?.trim() || !edu.endDate?.trim() || !edu.degree?.trim()
+    );
+    if (hasInvalidEducation) {
+      alert("학력을 추가하신 경우, 학교명/전공/재학기간(시작·종료일)/학위는 모두 필수로 입력해주세요.");
+      return;
+    }
+
+    const hasInvalidSkill = resume.skills.some((skill) => !skill?.trim());
+    if (hasInvalidSkill) {
+      alert("추가된 스킬 항목을 확인해주세요.");
+      return;
+    }
+
+    const hasUnselectedCertificate = resume.certificates.some((cert) => cert.isSearchMode || !cert.name);
+    if (hasUnselectedCertificate) {
+      alert("자격증을 추가하신 경우, 돋보기로 검색 후 체크(선택) 버튼으로 자격증명을 확정해주세요.");
+      return;
+    }
+    const hasInvalidCertificate = resume.certificates.some((cert) => !cert.name?.trim() || !cert.date?.trim());
+    if (hasInvalidCertificate) {
+      alert("자격증을 추가하신 경우, 자격증명과 취득일은 필수로 입력해주세요.");
       return;
     }
 
@@ -556,7 +510,7 @@ export default function ResumeForm() {
         new Blob([JSON.stringify(payload)], { type: "application/json" })
       );
 
-      const token = localStorage.getItem("accessToken");
+      const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
       const url = isEdit ? `${API_BASE}/resumes/${id}` : `${API_BASE}/resumes`;
       const response = await fetch(url, {
         method: isEdit ? "PATCH" : "POST",
