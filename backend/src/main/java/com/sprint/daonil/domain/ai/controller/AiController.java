@@ -226,5 +226,116 @@ public class AiController {
                     .body(Map.of("success", false, "error", "오류가 발생했습니다: " + e.getMessage()));
         }
     }
-}
 
+    /**
+     * ⭐ 새로운 엔드포인트: 장애 유형별 공고 추천 (하이브리드 방식)
+     *
+     * 공고 제목 → 33개 직업군 가중치 변환 → 장애 유형별 가중치와 매칭 → 점수 계산
+     *
+     * Request:
+     * {
+     *   "disabilityType": "지체장애", "시각장애", "청각장애", "언어장애", "지적장애", "정신장애"
+     *   "region": "서울" (선택사항)
+     *   "topN": 3 (상위 몇 개 추천할 것인지, 기본값 3)
+     * }
+     *
+     * Response:
+     * {
+     *   "success": true,
+     *   "disabilityType": "지체장애",
+     *   "region": "서울",
+     *   "recommendations": [
+     *     {
+     *       "title": "공고 제목",
+     *       "company": "회사명",
+     *       "region": "지역",
+     *       "matchScore": 0.0542,
+     *       "jobCategoryVector": { ... },
+     *       "explanation": "이 공고는..."
+     *     }
+     *   ]
+     * }
+     */
+    @PostMapping("/recommend/disability")
+    public ResponseEntity<Map<String, Object>> recommendByDisability(@RequestBody Map<String, Object> request) {
+        try {
+            String disabilityType = (String) request.get("disabilityType");
+            String region = (String) request.get("region");
+            Integer topN = (Integer) request.getOrDefault("topN", 3);
+
+            if (disabilityType == null || disabilityType.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("error", "장애 유형을 입력해주세요"));
+            }
+
+            log.info("Disability-based recommendation request: disability={}, region={}, topN={}", disabilityType, region, topN);
+
+            // 1단계: DB에서 모든 활성화된 공고 조회
+            List<JobPosting> allJobs = jobPostingRepository.findAll().stream()
+                    .filter(job -> !job.getIsClosed())  // 마감되지 않은 공고만
+                    .collect(Collectors.toList());
+
+            // 지역 필터링
+            if (region != null && !region.isEmpty() && !"전체".equals(region)) {
+                allJobs = allJobs.stream()
+                        .filter(job -> job.getWorkRegion() != null && job.getWorkRegion().contains(region))
+                        .collect(Collectors.toList());
+                log.info("Filtered by region: {} (jobs: {})", region, allJobs.size());
+            }
+
+            // JobPosting을 Map으로 변환
+            List<Map<String, Object>> jobsMap = allJobs.stream()
+                    .map(job -> {
+                        Map<String, Object> jobMap = new HashMap<>();
+                        jobMap.put("id", job.getJobPostingId());
+                        jobMap.put("jobPostingId", job.getJobPostingId());
+                        jobMap.put("job_posting_id", job.getJobPostingId());
+                        jobMap.put("title", job.getTitle());
+                        jobMap.put("jobNm", job.getTitle());
+                        jobMap.put("company", job.getCompany() != null ? job.getCompany().getCompanyName() : "미정");
+                        jobMap.put("busplaName", job.getCompany() != null ? job.getCompany().getCompanyName() : "미정");
+                        jobMap.put("sub_category", job.getSubCategory());
+                        jobMap.put("job_category", job.getSubCategory());
+                        jobMap.put("work_region", job.getWorkRegion());
+                        jobMap.put("content", job.getContent());
+                        return jobMap;
+                    })
+                    .collect(Collectors.toList());
+
+            log.info("Total jobs loaded: {}", jobsMap.size());
+
+            // 2단계: 장애 유형별 추천 점수 계산
+            List<Map<String, Object>> recommendations = aiService.getDisabilityBasedRecommendations(
+                    jobsMap,
+                    disabilityType,
+                    topN
+            );
+
+            // 3단계: 추천 설명 생성 (선택사항)
+            String explanation = aiService.generateDisabilityRecommendationExplanation(
+                    disabilityType,
+                    recommendations
+            );
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("disabilityType", disabilityType);
+            if (region != null && !region.isEmpty()) {
+                response.put("region", region);
+            }
+            response.put("count", recommendations.size());
+            response.put("totalJobCount", jobsMap.size());
+            response.put("recommendations", recommendations);
+            response.put("explanation", explanation);
+
+            log.info("Successfully generated {} recommendations for disability: {}", recommendations.size(), disabilityType);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("Error in disability-based recommendation endpoint", e);
+            return ResponseEntity.badRequest()
+                    .body(Map.of("success", false, "error", "오류가 발생했습니다: " + e.getMessage()));
+        }
+    }
+
+}

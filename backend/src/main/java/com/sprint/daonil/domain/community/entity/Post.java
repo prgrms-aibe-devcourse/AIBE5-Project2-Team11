@@ -20,6 +20,7 @@ public class Post {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "post_id")
     private Long postId;
 
     // 작성자
@@ -32,17 +33,27 @@ public class Post {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "image_url")
     private String imageUrl;
+
+    @Column(name = "attachment_url")
     private String attachmentUrl;
 
+    @Column(name = "view_count")
     private int viewCount;
+
+    @Column(name = "like_count")
     private int likeCount;
 
+    @Column(name = "is_deleted")
     private Boolean isDeleted;
 
     private String category;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     // 댓글
