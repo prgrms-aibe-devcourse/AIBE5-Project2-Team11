@@ -273,7 +273,7 @@ export default function AiChat() {
            console.log("필터링 결과 없음. 전체 공고로 대체됨");
          }
 
-         const response = await getAiRecommendation(userMsg, filteredJobs);
+         const response = await getAiRecommendation(userMsg, filteredJobs, filters.region, filters.jobMinor);
 
          if (response && response.explanation) {
            const topJobsText = response.topJobs
@@ -469,7 +469,7 @@ ${explanation}
 
         if (filteredJobs.length === 0) filteredJobs = jobs;
 
-        const response = await getAiRecommendation(finalQuestion, filteredJobs);
+        const response = await getAiRecommendation(finalQuestion, filteredJobs, tempFilters.region, tempFilters.jobMinor);
 
         if (response && response.explanation) {
           const topJobsText = response.topJobs
@@ -869,7 +869,15 @@ ${examSchedulesText}
                 <div
                   key={idx}
                   className="p-2 bg-yellow-50 border border-yellow-200 rounded-lg cursor-pointer hover:shadow-md transition text-sm"
-                  onClick={() => navigate(`/jobs/${job.id || job.rno}`)}
+                  onClick={() => {
+                    const jobId = job.id || job.job_posting_id || job.rno;
+                    if (jobId) {
+                      navigate(`/jobs/${jobId}`);
+                    } else {
+                      console.error("공고 ID를 찾을 수 없습니다:", job);
+                      alert("공고 상세 정보를 불러올 수 없습니다.");
+                    }
+                  }}
                 >
                   <p className="font-semibold text-gray-800 line-clamp-1">{job.title || job.jobNm}</p>
                   <p className="text-xs text-gray-600 line-clamp-1">{job.company || job.busplaName}</p>
