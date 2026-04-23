@@ -2,6 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import AlarmPopover from "./alarm";
 import daonilLogo from "../assets/images/logo/daonil-logo.jpg";
+import { fetchAlarms, markAlarmAsRead } from "../api/alarmApi";
 
 export default function Header() {
   const location = useLocation();
@@ -19,6 +20,25 @@ export default function Header() {
   const [isLogin, setIsLogin] = useState(() => {
     return localStorage.getItem("isLogin") === "true";
   });
+
+  const [isAlarmOpen, setIsAlarmOpen] = useState(false);
+  const [alarms, setAlarms] = useState([]);
+  const [isLoadingAlarms, setIsLoadingAlarms] = useState(false);
+
+  // ✅ 알림 조회 함수
+  const loadAlarms = async () => {
+    try {
+      setIsLoadingAlarms(true);
+      const alarmsData = await fetchAlarms();
+      setAlarms(alarmsData);
+    } catch (error) {
+      console.error("알림 조회 실패:", error);
+      // 에러 발생 시 알림을 빈 배열로 설정
+      setAlarms([]);
+    } finally {
+      setIsLoadingAlarms(false);
+    }
+  };
 
   // ✅ localStorage 변경 감지 (OAuth2 로그인 후 업데이트)
   useEffect(() => {
@@ -42,32 +62,14 @@ export default function Header() {
     };
   }, []);
 
-  const [isAlarmOpen, setIsAlarmOpen] = useState(false);
-
-  // 임시 데이터
-  const [alarms, setAlarms] = useState([
-    {
-      alarm_id: 1,
-      receiver_id: 3,
-      message: "새로운 지원자가 이력서를 제출했습니다.",
-      is_read: false,
-      created_at: "2026-04-16 11:30",
-    },
-    {
-      alarm_id: 2,
-      receiver_id: 3,
-      message: "공지사항이 새로 등록되었습니다.",
-      is_read: false,
-      created_at: "2026-04-16 10:10",
-    },
-    {
-      alarm_id: 3,
-      receiver_id: 3,
-      message: "관심 공고의 마감일이 하루 남았습니다.",
-      is_read: true,
-      created_at: "2026-04-15 18:20",
-    },
-  ]);
+  // ✅ 로그인 상태일 때 알림 조회
+  useEffect(() => {
+    if (isLogin) {
+      loadAlarms();
+    } else {
+      setAlarms([]);
+    }
+  }, [isLogin]);
 
   const alarmRef = useRef(null);
 
@@ -96,17 +98,22 @@ export default function Header() {
     navigate("/");
   };
 
-  const unreadCount = alarms.filter((alarm) => !alarm.is_read).length;
+  const unreadCount = alarms.filter((alarm) => !alarm.isRead).length;
 
   const handleAlarmClick = (alarm) => {
-    // 클릭한 알림 읽음 처리
-    setAlarms((prev) =>
-        prev.map((item) =>
-            item.alarm_id === alarm.alarm_id
-                ? { ...item, is_read: true }
-                : item
-        )
-    );
+    // 클릭한 알림 읽음 처리 (Backend 호출)
+    markAlarmAsRead(alarm.alarmId).then(() => {
+      // UI 업데이트
+      setAlarms((prev) =>
+          prev.map((item) =>
+              item.alarmId === alarm.alarmId
+                  ? { ...item, isRead: true }
+                  : item
+          )
+      );
+    }).catch((error) => {
+      console.error("알림 읽음 처리 실패:", error);
+    });
 
     // 필요 시 여기서 페이지 이동
     // navigate("/notice");
