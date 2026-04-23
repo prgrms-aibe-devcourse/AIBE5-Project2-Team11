@@ -13,4 +13,5 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
 
     @EntityGraph(attributePaths = {"member"})
     Optional<Company> findByMember_LoginId(String loginId);
+
 }
