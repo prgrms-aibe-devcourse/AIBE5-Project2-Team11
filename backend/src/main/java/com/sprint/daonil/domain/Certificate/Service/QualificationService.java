@@ -89,8 +89,8 @@ public class QualificationService {
         if (qualification != null) {
             log.info("✓ 자격증 조회 성공: {} (JMCD: {})", qualification.getName(), qualification.getJMCD());
             
-            // date 테이블에서 Native Query로 직접 조회 (컬럼명 명확히 지정)
-            List<ExamDate> examDates = examDateRepository.findByJmCdNative(qualification.getJMCD());
+            // JPQL 기반 조회로 컬럼명 대소문자/예약어 이슈를 피한다.
+            List<ExamDate> examDates = examDateRepository.findByJmCd(qualification.getJMCD());
             log.info("✓ 시험 일정 조회: {}개 회차", examDates.size());
             
             if (!examDates.isEmpty()) {

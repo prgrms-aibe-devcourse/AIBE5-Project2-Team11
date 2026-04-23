@@ -16,9 +16,6 @@ public interface ExamDateRepository extends JpaRepository<ExamDate, ExamDateId> 
     @Query("SELECT e FROM ExamDate e WHERE e.id.jmCd = :jmCd ORDER BY e.id.year DESC, e.id.period DESC")
     List<ExamDate> findByJmCd(@Param("jmCd") String jmCd);
     
-    // Native Query: Hibernate 명명 전략이 camelCase를 유지하므로 백틱 불필요
-    @Query(value = "SELECT * FROM `date` WHERE jmCd = :jmCd ORDER BY year DESC, period DESC", nativeQuery = true)
-    List<ExamDate> findByJmCdNative(@Param("jmCd") String jmCd);
 }
 
 
