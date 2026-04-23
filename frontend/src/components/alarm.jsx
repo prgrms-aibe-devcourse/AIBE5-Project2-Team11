@@ -30,16 +30,16 @@ export default function Alarm({
                     ) : (
                         alarms.map((alarm) => (
                             <button
-                                key={alarm.alarm_id}
+                                key={alarm.alarmId}
                                 type="button"
                                 onClick={() => onAlarmClick(alarm)}
                                 className={`w-full text-left px-4 py-3 border-b border-[#F8EFE5] hover:bg-[#FFF8F0] transition ${
-                                    !alarm.is_read ? "bg-[#FFFDF8]" : "bg-white"
+                                    !alarm.isRead ? "bg-[#FFFDF8]" : "bg-white"
                                 }`}
                             >
                                 <div className="flex items-start gap-3">
                                     <div className="pt-1">
-                                        {!alarm.is_read ? (
+                                        {!alarm.isRead ? (
                                             <span className="block w-2.5 h-2.5 rounded-full bg-red-500"></span>
                                         ) : (
                                             <span className="block w-2.5 h-2.5 rounded-full bg-gray-300"></span>
@@ -51,7 +51,7 @@ export default function Alarm({
                                             {alarm.message}
                                         </p>
                                         <p className="mt-1 text-xs text-gray-400">
-                                            {alarm.created_at}
+                                            {new Date(alarm.createdAt).toLocaleString('ko-KR')}
                                         </p>
                                     </div>
                                 </div>
