@@ -87,7 +87,7 @@ public class ProfileService {
 
                 ProfileCertificate certificate = ProfileCertificate.builder()
                         .profile(profile)
-                        .certificateName(certDto.getCertificateName())
+//                        .certificateName(certDto.getCertificateName()) //    DB에 존재하지 않는 필드
                         .acquiredDate(certDto.getAcquiredDate())
                         .scoreOrGrade(certDto.getScoreOrGrade())
                         .status(certDto.getStatus())
@@ -166,13 +166,14 @@ public class ProfileService {
         List<ProfileCertificateDto> certificates = profile.getCertificates().stream()
                 .map(cert -> ProfileCertificateDto.builder()
                         .id(cert.getProfileCertificateId())
-                        .certificateName(cert.getCertificateName())
+//                        .certificateName(cert.getCertificateName()) //    DB에 존재하지 않는 필드
                         .acquiredDate(cert.getAcquiredDate())
                         .scoreOrGrade(cert.getScoreOrGrade())
                         .status(cert.getStatus())
                         .fieldId(cert.getFieldId())
                         .build())
                 .collect(Collectors.toList());
+
 
         List<ProfileDisabilityDto> disabilities = profile.getDisabilities().stream()
                 .map(dis -> ProfileDisabilityDto.builder()
@@ -185,6 +186,7 @@ public class ProfileService {
 
         return ProfileResponseDto.builder()
                 .profileId(profile.getProfileId())
+                .birthDate(profile.getBirthDate())
                 .career(profile.getCareer())
                 .preferredJob(profile.getPreferredJob())
                 .preferredRegion(profile.getPreferredRegion())

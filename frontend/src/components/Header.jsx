@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import AlarmPopover from "./alarm";
+import daonilLogo from "../assets/images/logo/daonil-logo.jpg";
 
 export default function Header() {
   const location = useLocation();
@@ -18,6 +19,28 @@ export default function Header() {
   const [isLogin, setIsLogin] = useState(() => {
     return localStorage.getItem("isLogin") === "true";
   });
+
+  // ✅ localStorage 변경 감지 (OAuth2 로그인 후 업데이트)
+  useEffect(() => {
+    const handleStorageChange = () => {
+      setIsLogin(localStorage.getItem("isLogin") === "true");
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+
+    // OAuth2 로그인 직후 업데이트 (같은 탭에서는 storage 이벤트 발생 안 함)
+    const checkLoginStatus = () => {
+      setIsLogin(localStorage.getItem("isLogin") === "true");
+    };
+
+    // 페이지 포커스 시 확인
+    window.addEventListener("focus", checkLoginStatus);
+
+    return () => {
+      window.removeEventListener("storage", handleStorageChange);
+      window.removeEventListener("focus", checkLoginStatus);
+    };
+  }, []);
 
   const [isAlarmOpen, setIsAlarmOpen] = useState(false);
 
@@ -59,7 +82,16 @@ export default function Header() {
       location.pathname === path || location.pathname.startsWith(path + "/");
 
   const handleLogout = () => {
+    // ✅ 모든 로그인 정보 제거 (OAuth2 + 일반 로그인)
     localStorage.removeItem("isLogin");
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("memberId");
+    localStorage.removeItem("memberName");
+    localStorage.removeItem("loginId");
+    localStorage.removeItem("memberType");
+    sessionStorage.removeItem("accessToken");
+
     setIsLogin(false);
     navigate("/");
   };
@@ -98,12 +130,11 @@ export default function Header() {
         <div className="max-w-7xl mx-auto px-10 h-16 flex items-center justify-between">
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
-              <div className="w-8 h-8 flex items-center justify-center rounded-full bg-yellow-500 text-white">
-                <i className="ri-briefcase-line text-sm"></i>
-              </div>
-              <span className="text-lg font-extrabold text-[#5D4037]">
-              다온일
-            </span>
+              <img
+                src={daonilLogo}
+                alt="다온일"
+                className="h-14 w-auto object-contain mt-2"
+              />
             </Link>
 
             <nav className="flex items-center gap-2">

@@ -1,46 +1,6 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-
-const sampleResumes = [
-  {
-    id: "1",
-    title: "프론트엔드 개발자 이력서",
-    updatedAt: "2025-03-10",
-    isDefault: false,
-    profile: {
-      name: "김다온",
-      email: "daon.kim@email.com",
-      phone: "010-1234-5678",
-      address: "서울특별시 마포구",
-      birthDate: "1995-05-15",
-      summary:
-        "5년 경력의 프론트엔드 개발자입니다. React와 TypeScript를 주로 사용하며 사용자 중심의 UI를 개발합니다. 접근성 개선과 성능 최적화 경험이 있습니다.",
-    },
-    experiences: [
-      {
-        company: "A기업",
-        position: "프론트엔드 개발자",
-        period: "2020.03 ~ 2025.02",
-        description: "React 기반 웹 서비스 개발, WCAG 2.1 접근성 개선 작업 주도",
-      },
-      {
-        company: "B기업",
-        position: "주니어 개발자",
-        period: "2018.06 ~ 2020.02",
-        description: "HTML/CSS/JavaScript 기반 퍼블리싱 및 UI 개발",
-      },
-    ],
-    educations: [
-      {
-        school: "○○대학교",
-        major: "컴퓨터공학과",
-        period: "2013.03 ~ 2018.02",
-        degree: "학사",
-      },
-    ],
-    skills: ["React", "TypeScript", "Next.js", "Tailwind CSS", "Git", "Figma"],
-    certificates: [{ name: "정보처리기사", issuer: "한국산업인력공단", date: "2019.08" }],
-  },
-];
+import defaultUserPhoto from "../assets/images/resume/defalut_userPhoto.jpeg";
 
 export default function ResumeDetail() {
   const { id } = useParams();
@@ -102,13 +62,39 @@ export default function ResumeDetail() {
 
   const handlePrint = () => window.print();
 
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="text-center py-8">
+          <p className="text-gray-500">이력서를 불러오는 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !resume) {
+    return (
+      <div className="space-y-4">
+        <div className="text-center py-8">
+          <p className="text-red-500">{error || '이력서를 찾을 수 없습니다.'}</p>
+          <button
+            onClick={() => navigate("/memberMypage")}
+            className="mt-4 text-sm bg-yellow-500 text-white px-4 py-2 rounded-lg hover:opacity-90"
+          >
+            목록으로 돌아가기
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* 서브 컨트롤 바 */}
       <div className="bg-white border border-[#F3E8D0] rounded-xl p-4 flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate("/memberMypage/resumes")}
+            onClick={() => navigate("/memberMypage")}
             className="text-[#8D6E63] hover:text-[#5D4037] text-sm flex items-center gap-1"
           >
             <i className="ri-arrow-left-line"></i> 목록
@@ -136,67 +122,80 @@ export default function ResumeDetail() {
       <div className="bg-white shadow-md rounded-2xl overflow-hidden print:shadow-none print:rounded-none">
         {/* 상단 프로필 헤더 */}
         <div className="bg-gradient-to-r from-[#5D4037] to-[#8D6E63] px-8 py-8 text-white">
-          <h1 className="text-3xl font-bold mb-1">{resume.profile.name}</h1>
-          <p className="text-orange-200 text-sm mb-4">{resume.title}</p>
-          <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-orange-100">
-            {resume.profile.email && (
-              <span className="flex items-center gap-1">
-                <i className="ri-mail-line"></i> {resume.profile.email}
-              </span>
-            )}
-            {resume.profile.phone && (
-              <span className="flex items-center gap-1">
-                <i className="ri-phone-line"></i> {resume.profile.phone}
-              </span>
-            )}
-            {resume.profile.address && (
-              <span className="flex items-center gap-1">
-                <i className="ri-map-pin-line"></i> {resume.profile.address}
-              </span>
-            )}
-            {resume.profile.birthDate && (
-              <span className="flex items-center gap-1">
-                <i className="ri-cake-line"></i> {resume.profile.birthDate}
-              </span>
-            )}
+          <div className="flex items-center gap-6">
+            <img
+              src={resume.userPhoto ? `http://localhost:8080${resume.userPhoto}` : defaultUserPhoto}
+              alt="프로필 사진"
+              className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
+              onError={(e) => {
+                console.error('프로필 이미지 로드 실패:', e.target.src);
+                e.target.src = defaultUserPhoto; // 로드 실패 시 기본 이미지로 변경
+              }}
+            />
+            <div className="flex-1">
+              <h1 className="text-3xl font-bold mb-1">{resume.name}</h1>
+              <p className="text-orange-200 text-sm mb-4">{resume.title}</p>
+              <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm text-orange-100">
+                {resume.email && (
+                  <span className="flex items-center gap-1">
+                    <i className="ri-mail-line"></i> {resume.email}
+                  </span>
+                )}
+                {resume.phoneNumber && (
+                  <span className="flex items-center gap-1">
+                    <i className="ri-phone-line"></i> {resume.phoneNumber}
+                  </span>
+                )}
+                {resume.address && (
+                  <span className="flex items-center gap-1">
+                    <i className="ri-map-pin-line"></i> {resume.address}
+                  </span>
+                )}
+                {resume.birthDate && (
+                  <span className="flex items-center gap-1">
+                    <i className="ri-cake-line"></i> {resume.birthDate}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
         <div className="px-8 py-8 space-y-8">
           {/* 자기소개 */}
-          {resume.profile.summary && (
+          {resume.selfIntroduction && (
             <section>
               <h2 className="text-base font-bold text-[#5D4037] border-b-2 border-yellow-400 pb-1 mb-3">
                 자기소개
               </h2>
               <p className="text-sm text-gray-600 leading-relaxed whitespace-pre-line">
-                {resume.profile.summary}
+                {resume.selfIntroduction}
               </p>
             </section>
           )}
 
           {/* 경력 */}
-          {resume.experiences.length > 0 && (
+          {resume.careers && resume.careers.length > 0 && (
             <section>
               <h2 className="text-base font-bold text-[#5D4037] border-b-2 border-yellow-400 pb-1 mb-4">
                 경력 사항
               </h2>
               <div className="space-y-5">
-                {resume.experiences.map((exp, idx) => (
+                {resume.careers.map((exp, idx) => (
                   <div key={idx} className="flex gap-4">
                     <div className="flex flex-col items-center">
                       <div className="w-3 h-3 rounded-full bg-yellow-500 mt-1 flex-shrink-0" />
-                      {idx < resume.experiences.length - 1 && (
+                      {idx < resume.careers.length - 1 && (
                         <div className="w-px flex-1 bg-gray-200 mt-1" />
                       )}
                     </div>
                     <div className="pb-4">
                       <div className="flex flex-wrap items-baseline gap-2 mb-0.5">
-                        <span className="font-semibold text-[#5D4037]">{exp.company}</span>
+                        <span className="font-semibold text-[#5D4037]">{exp.companyName}</span>
                         <span className="text-sm text-yellow-700">{exp.position}</span>
                       </div>
-                      <p className="text-xs text-gray-400 mb-1">{exp.period}</p>
-                      <p className="text-sm text-gray-600">{exp.description}</p>
+                      <p className="text-xs text-gray-400 mb-1">{exp.startDate} ~ {exp.endDate}</p>
+                      <p className="text-sm text-gray-600">{exp.content}</p>
                     </div>
                   </div>
                 ))}
@@ -205,7 +204,7 @@ export default function ResumeDetail() {
           )}
 
           {/* 학력 */}
-          {resume.educations.length > 0 && (
+          {resume.educations && resume.educations.length > 0 && (
             <section>
               <h2 className="text-base font-bold text-[#5D4037] border-b-2 border-yellow-400 pb-1 mb-4">
                 학력 사항
@@ -214,13 +213,13 @@ export default function ResumeDetail() {
                 {resume.educations.map((edu, idx) => (
                   <div key={idx} className="flex items-start justify-between">
                     <div>
-                      <span className="font-medium text-[#5D4037]">{edu.school}</span>
+                      <span className="font-medium text-[#5D4037]">{edu.schoolName}</span>
                       <span className="text-sm text-gray-500 ml-2">{edu.major}</span>
                       <span className="text-xs text-yellow-700 ml-2 border border-yellow-200 bg-yellow-50 px-1.5 py-0.5 rounded">
                         {edu.degree}
                       </span>
                     </div>
-                    <span className="text-xs text-gray-400 whitespace-nowrap ml-4">{edu.period}</span>
+                    <span className="text-xs text-gray-400 whitespace-nowrap ml-4">{edu.startDate} ~ {edu.endDate}</span>
                   </div>
                 ))}
               </div>
@@ -228,7 +227,7 @@ export default function ResumeDetail() {
           )}
 
           {/* 스킬 */}
-          {resume.skills.length > 0 && (
+          {resume.skills && resume.skills.length > 0 && (
             <section>
               <h2 className="text-base font-bold text-[#5D4037] border-b-2 border-yellow-400 pb-1 mb-3">
                 보유 스킬
@@ -236,10 +235,10 @@ export default function ResumeDetail() {
               <div className="flex flex-wrap gap-2">
                 {resume.skills.map((skill) => (
                   <span
-                    key={skill}
+                    key={skill.skillKeyword}
                     className="text-sm bg-[#FFF8F0] text-[#8D6E63] border border-[#F3E8D0] px-3 py-1 rounded-full"
                   >
-                    {skill}
+                    {skill.skillKeyword}
                   </span>
                 ))}
               </div>
@@ -247,7 +246,7 @@ export default function ResumeDetail() {
           )}
 
           {/* 자격증 */}
-          {resume.certificates.length > 0 && (
+          {resume.certificates && resume.certificates.length > 0 && (
             <section>
               <h2 className="text-base font-bold text-[#5D4037] border-b-2 border-yellow-400 pb-1 mb-3">
                 자격증
@@ -257,19 +256,74 @@ export default function ResumeDetail() {
                   <div key={idx} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
-                      <span className="font-medium text-[#5D4037]">{cert.name}</span>
-                      <span className="text-gray-400">{cert.issuer}</span>
+                      <span className="font-medium text-[#5D4037]">{cert.certificateName}</span>
                     </div>
-                    <span className="text-xs text-gray-400">{cert.date}</span>
+                    <span className="text-xs text-gray-400">{cert.acquiredDate}</span>
                   </div>
                 ))}
               </div>
             </section>
           )}
+
+          {/* 언어 자격증 */}
+          {resume.langQualifications && resume.langQualifications.length > 0 && (
+            <section>
+              <h2 className="text-base font-bold text-[#5D4037] border-b-2 border-yellow-400 pb-1 mb-3">
+                언어 자격증
+              </h2>
+              <div className="space-y-2">
+                {resume.langQualifications.map((lang, idx) => (
+                  <div key={idx} className="flex items-center justify-between text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                      <span className="font-medium text-[#5D4037]">{lang.languageName} - {lang.testName}</span>
+                      <span className="text-gray-400">점수: {lang.score}</span>
+                    </div>
+                    <span className="text-xs text-gray-400">취득일: {lang.acquiredDate}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 장애 정보 */}
+          {resume.resumeDisabilities && resume.resumeDisabilities.length > 0 && (
+            <section>
+              <h2 className="text-base font-bold text-[#5D4037] border-b-2 border-yellow-400 pb-1 mb-3">
+                장애 정보
+              </h2>
+              <div className="space-y-2">
+                {resume.resumeDisabilities.map((dis, idx) => (
+                  <div key={idx} className="flex items-center gap-2 text-sm">
+                    <span className="w-1.5 h-1.5 rounded-full bg-yellow-500" />
+                    <span className="font-medium text-[#5D4037]">{dis.disabilityName}</span>
+                    <span className="text-gray-400">{dis.description}</span>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 포트폴리오 URL */}
+          {resume.portfolioUrl && (
+            <section>
+              <h2 className="text-base font-bold text-[#5D4037] border-b-2 border-yellow-400 pb-1 mb-3">
+                포트폴리오
+              </h2>
+              <a
+                href={resume.portfolioUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-blue-600 hover:underline"
+              >
+                {resume.portfolioUrl}
+              </a>
+            </section>
+          )}
         </div>
 
         <div className="px-8 py-4 bg-[#FFF8F0] border-t border-[#F3E8D0] text-right">
-          <p className="text-xs text-gray-400">최종 수정일: {resume.updatedAt}</p>
+          <p className="text-xs text-gray-400">최종 수정일: {new Date().toLocaleDateString()}</p>
         </div>
       </div>
     </div>

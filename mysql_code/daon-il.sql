@@ -483,7 +483,7 @@ select * from disability;
 select * from profile_certificate;
 select * from date;
 select * from company;
-select * from job_posting where title = '공영주차장 관리원';
+select * from job_posting;
 INSERT INTO disability (name, description) VALUES
 ('지체장애', '절단, 관절, 근육 등의 손상으로 이동이나 신체 활동에 제약이 있는 장애'),
 ('시각장애', '시력 저하 또는 실명으로 인해 시각적 정보 인식에 어려움이 있는 장애'),
@@ -533,3 +533,86 @@ MODIFY role ENUM(
   'ADMIN'
 ) NOT NULL;
 
+-- Bookmark DB 구조 변경 26.04.22
+    -- 1. 기존에 설정되어 있던 외래키(제약조건)를 먼저 삭제합니다.
+    -- (CASCADE 옵션을 넣어서 새로 만들기 위해 기존 것을 삭제)
+ALTER TABLE bookmark DROP FOREIGN KEY FK_bookmark_member;
+ALTER TABLE bookmark DROP FOREIGN KEY FK_bookmark_job_posting;
+
+    -- 2. 필요한 인덱스와 CASCADE 옵션이 적용된 외래키를 한 번에 추가합니다.
+ALTER TABLE bookmark
+        -- 중복 북마크 방지 및 회원 기준 조회를 위한 복합 유니크 인덱스
+    ADD UNIQUE INDEX uk_member_job (member_id, job_posting_id),
+        -- 특정 공고 기준 조회를 위한 단일 인덱스
+    ADD INDEX idx_job_posting (job_posting_id),
+        -- 회원이 탈퇴하면 북마크도 자동 삭제되도록 설정
+    ADD CONSTRAINT FK_bookmark_member 
+        FOREIGN KEY (member_id) REFERENCES member (member_id) ON DELETE CASCADE,
+        -- 공고가 삭제되면 북마크도 자동 삭제되도록 설정
+    ADD CONSTRAINT FK_bookmark_job_posting 
+        FOREIGN KEY (job_posting_id) REFERENCES job_posting (job_posting_id) ON DELETE CASCADE;
+
+use daonil;
+-- JobPosting 테이블 컬럼 수정 (대/소분류) 26.04.23
+    -- 1. 기존 job_category 컬럼의 이름을 소분류를 의미하는 직관적인 이름으로 변경 (선택 사항)
+ALTER TABLE job_posting CHANGE job_category sub_category varchar(100);
+
+    -- 2. 대분류를 저장할 새로운 컬럼 추가
+    -- 기존 컬럼(예: sub_category) 앞에 위치하도록 지정하여 구조를 깔끔하게 유지합니다.
+ALTER TABLE job_posting ADD COLUMN main_category varchar(100) AFTER title;
+
+    -- 3. 안전 업데이트 모드 해제 (전체 업데이트 허용)
+SET SQL_SAFE_UPDATES = 0;
+
+    -- 4. 기존 소분류(sub_category)를 기준으로 대분류(main_category) 일괄 업데이트
+UPDATE job_posting
+SET main_category = CASE 
+        /* 1. 관리자 (1개) */
+    WHEN sub_category IN ('관리직(임원·부서장)') 
+        THEN '관리자'
+        /* 2. 사무 종사자 (1개) */
+    WHEN sub_category IN ('경영·행정·사무직') 
+        THEN '사무 종사자'
+        /* 3. 서비스 종사자 (7개) */
+    WHEN sub_category IN (
+        '돌봄 서비스직(간병·육아)', '미용·예식 서비스직', '스포츠·레크리에이션직', 
+        '여행·숙박·오락 서비스직', '음식 서비스직', '경호·경비직', '청소 및 기타 개인서비스직'
+    ) THEN '서비스 종사자'
+        /* 4. 판매 종사자 (1개) */
+    WHEN sub_category IN ('영업·판매직') 
+        THEN '판매 종사자'
+        /* 5. 전문가 및 관련 종사자 (11개) */
+    WHEN sub_category IN (
+        '정보통신 연구개발직 및 공학기술직', '제조 연구개발직 및 공학기술직', 
+        '건설·채굴 연구개발직 및 공학기술직', '자연·생명과학 연구직', '인문·사회과학 연구직', 
+        '법률직', '사회복지·종교직', '교육직', '금융·보험직', '보건·의료직', '예술·디자인·방송직'
+    ) THEN '전문가 및 관련 종사자'
+        /* 6. 기능원 및 관련 기능 종사자 (7개) */
+    WHEN sub_category IN (
+        '건설·채굴직', '기계 설치·정비·생산직', '금속·재료 설치·정비·생산직(판금·단조·주조·용접·도장 등)', 
+        '전기·전자 설치·정비·생산직', '정보통신 설치·정비직', '화학·환경 설치·정비·생산직', 
+        '인쇄·목재·공예 및 기타 설치·정비·생산직'
+    ) THEN '기능원 및 관련 기능 종사자'
+        /* 7. 장치·기계조작 및 조립 종사자 (3개) */
+    WHEN sub_category IN ('식품 가공·생산직', '섬유·의복 생산직', '운전·운송직') 
+        THEN '장치·기계조작 및 조립 종사자'
+        /* 8. 농림어업 숙련 종사자 (1개) */
+    WHEN sub_category IN ('농림어업직') 
+        THEN '농림어업 숙련 종사자'
+        /* 9. 단순노무 종사자 (1개) */
+    WHEN sub_category IN ('제조 단순직') 
+        THEN '단순노무 종사자'
+        /* 예외 처리 (혹시 모를 빈 값 방지) */
+    ELSE main_category 
+END;
+
+    -- 3. 안전 업데이트 모드 원상복구
+SET SQL_SAFE_UPDATES = 1;
+
+
+
+
+-- post_like 테이블 DB 구조 변경 26.04.23
+ALTER TABLE post_like ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;
+
+        

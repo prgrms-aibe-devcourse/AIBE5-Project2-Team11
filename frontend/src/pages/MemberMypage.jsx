@@ -323,26 +323,42 @@ function ResumeSection() {
     );
 }
 
-// 스크랙 목록 섹션
+// 스크랩 목록 섹션
 function ScrapSection() {
     const navigate = useNavigate();
+    const [scraps, setScraps] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const scraps = [
-        {
-            id: 1,
-            company: "주식회사 모범기업",
-            title: "백엔드 개발자 모집 (장애인 우대 채용)",
-            deadline: "2025-04-30",
-            scrappedAt: "2025-03-15",
-        },
-        {
-            id: 2,
-            company: "주식회사 한사랑",
-            title: "UI/UX 디자이너 모집",
-            deadline: "2025-05-10",
-            scrappedAt: "2025-03-20",
-        },
-    ];
+    useEffect(() => {
+        const fetchBookmarks = async () => {
+            try {
+                const { default: api } = await import("../api/axios");
+                const response = await api.get('/api/bookmarks');
+                if (response.data && response.data.content) {
+                    setScraps(response.data.content);
+                }
+            } catch (error) {
+                console.error("북마크 목록을 불러오는데 실패했습니다.", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchBookmarks();
+    }, []);
+
+    const removeBookmark = async (id) => {
+        try {
+            const { default: api } = await import("../api/axios");
+            await api.post(`/api/bookmarks/${id}`);
+            // 서버 응답과 상관없이 스크랩 해제 되었을 것이므로 화면에서 즉시 제거
+            setScraps(scraps.filter(scrap => scrap.jobPostingId !== id));
+        } catch (error) {
+            console.error("북마크 취소 실패:", error);
+            alert("북마크 취소에 실패했습니다.");
+        }
+    };
+
+    if (loading) return <div className="py-10 text-center">불러오는 중...</div>;
 
     return (
         <div className="space-y-4">
@@ -353,12 +369,12 @@ function ScrapSection() {
 
             {scraps.length === 0 ? (
                 <div className="text-center py-16 text-gray-400">
-                    <i className="ri-bookmark-line text-5xl block mb-3 text-gray-300"></i>
+                    <i className="ri-star-line text-5xl block mb-3 text-gray-300"></i>
                     <p className="font-medium">스크랩한 채용공고가 없습니다.</p>
                     <p className="text-sm mt-1">채용공고를 찾아보세요!</p>
                     <button
                         onClick={() => navigate("/jobs")}
-                        className="mt-4 text-sm bg-yellow-500 text-white px-4 py-2 rounded-lg hover:opacity-90"
+                        className="mt-4 text-sm bg-[#E66235] text-white px-4 py-2 rounded-lg hover:opacity-90 transition-colors"
                     >
                         채용공고 바로가기
                     </button>
@@ -366,24 +382,24 @@ function ScrapSection() {
             ) : (
                 scraps.map((scrap) => (
                     <div
-                        key={scrap.id}
+                        key={scrap.jobPostingId}
                         className="bg-white border border-[#E8DCCB] rounded-xl p-5 hover:shadow-md transition-shadow"
                     >
                         <div className="flex items-start justify-between">
                             <div>
-                                <p className="text-xs text-[#8D6E63] font-medium mb-1">{scrap.company}</p>
+                                <p className="text-xs text-[#8D6E63] font-medium mb-1">{scrap.companyName}</p>
                                 <h4 className="font-bold text-[#5D4037] text-sm leading-snug">{scrap.title}</h4>
                                 <div className="flex gap-3 mt-2 text-xs text-gray-400">
-                                    <span>마감: {scrap.deadline}</span>
-                                    <span>스크랩: {scrap.scrappedAt}</span>
+                                    <span>마감: {scrap.applicationEndDate || '상시'}</span>
+                                    <span>작성일: {new Date(scrap.createdAt).toLocaleDateString()}</span>
                                 </div>
                             </div>
-                            <button className="text-yellow-500 hover:text-yellow-600 text-xl ml-3">
-                                <i className="ri-bookmark-fill"></i>
+                            <button onClick={() => removeBookmark(scrap.jobPostingId)} className="text-yellow-500 hover:text-yellow-600 text-xl ml-3">
+                                <i className="ri-star-fill"></i>
                             </button>
                         </div>
                         <button
-                            onClick={() => navigate(`/jobs/${scrap.id}`)}
+                            onClick={() => navigate(`/jobs/${scrap.jobPostingId}`)}
                             className="mt-3 w-full text-sm text-[#8D6E63] border border-[#D7B89C] rounded-lg py-2 hover:bg-[#FFF3E0] transition-colors font-medium"
                         >
                             공고 확인
