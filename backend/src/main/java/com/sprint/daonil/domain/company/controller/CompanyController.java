@@ -23,12 +23,12 @@ public class CompanyController {
     // 기업 정보 조회
     @GetMapping
     public ResponseEntity<CompanyInfoResponseDto> getMyCompany(@AuthenticationPrincipal UserDetails userDetails) {
-//        if (userDetails == null) {
-//            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
-//        }
-//
-//        CompanyInfoResponseDto result = companyService.getMyCompany(userDetails.getUsername());
-        CompanyInfoResponseDto result = companyService.getMyCompany("com4");
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+        }
+
+        CompanyInfoResponseDto result = companyService.getMyCompany(userDetails.getUsername());
+
         return ResponseEntity.ok(result);
     }
 
@@ -37,12 +37,11 @@ public class CompanyController {
     public ResponseEntity<Map<String, Object>> updateMyCompany(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestBody CompanyUpdateRequestDto request) {
-//        if (userDetails == null) {
-//            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
-//        }
-//
-//        Long updatedCompanyId = companyService.updateMyCompany(userDetails.getUsername(), request);
-        Long updatedCompanyId = companyService.updateMyCompany("com4", request);
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인이 필요합니다.");
+        }
+
+        Long updatedCompanyId = companyService.updateMyCompany(userDetails.getUsername(), request);
 
         return ResponseEntity.ok(Map.of("message", "기업 회원 정보 수정 완료", "companyId", updatedCompanyId ));
     }

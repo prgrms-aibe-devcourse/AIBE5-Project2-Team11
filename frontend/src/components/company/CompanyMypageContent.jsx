@@ -6,28 +6,9 @@ import {
   INDUSTRY_TYPES,
   INDUSTRY_NAME_BY_ID,
 } from "../../constants/industryOptions";
+import { REGION_DATA } from "../../constants/regionData";
 
-const REGION_DATA = {
-  서울: ["강남구", "강동구", "강북구", "강서구", "관악구", "광진구", "구로구", "금천구", "노원구", "도봉구", "동대문구", "동작구", "마포구", "서대문구", "서초구", "성동구", "성북구", "송파구", "양천구", "영등포구", "용산구", "은평구", "종로구", "중구", "중랑구"],
-  경기: ["가평군", "고양시", "과천시", "광명시", "광주시", "구리시", "군포시", "김포시", "남양주시", "동두천시", "부천시", "성남시", "수원시", "시흥시", "안산시", "안성시", "안양시", "양주시", "양평군", "여주시", "연천군", "오산시", "용인시", "의왕시", "의정부시", "이천시", "파주시", "평택시", "포천시", "하남시", "화성시"],
-  인천: ["강화군", "계양구", "남동구", "동구", "미추홀구", "부평구", "서구", "연수구", "옹진군", "중구"],
-  강원: ["강릉시", "고성군", "동해시", "삼척시", "속초시", "양구군", "양양군", "영월군", "원주시", "인제군", "정선군", "철원군", "춘천시", "태백시", "평창군", "홍천군", "화천군", "횡성군"],
-  충북: ["괴산군", "단양군", "보은군", "영동군", "옥천군", "음성군", "제천시", "증평군", "진천군", "청주시", "충주시"],
-  충남: ["계룡시", "공주시", "금산군", "논산시", "당진시", "보령시", "부여군", "서산시", "서천군", "아산시", "예산군", "천안시", "청양군", "태안군", "홍성군"],
-  대전: ["대덕구", "동구", "서구", "유성구", "중구"],
-  세종: ["세종시"],
-  전북: ["고창군", "군산시", "김제시", "남원시", "무주군", "부안군", "순창군", "완주군", "익산시", "임실군", "장수군", "전주시", "정읍시", "진안군"],
-  전남: ["강진군", "고흥군", "곡성군", "광양시", "구례군", "나주시", "담양군", "목포시", "무안군", "보성군", "순천시", "신안군", "여수시", "영광군", "영암군", "완도군", "장성군", "장흥군", "진도군", "함평군", "해남군", "화순군"],
-  광주: ["광산구", "남구", "동구", "북구", "서구"],
-  경북: ["경산시", "경주시", "고령군", "구미시", "군위군", "김천시", "문경시", "봉화군", "상주시", "성주군", "안동시", "영덕군", "영양군", "영주시", "영천시", "예천군", "울릉군", "울진군", "의성군", "청도군", "청송군", "칠곡군", "포항시"],
-  경남: ["거제시", "거창군", "고성군", "김해시", "남해군", "밀양시", "사천시", "산청군", "양산시", "의령군", "진주시", "창녕군", "창원시", "통영시", "하동군", "함안군", "함양군", "합천군"],
-  부산: ["강서구", "금정구", "기장군", "남구", "동구", "동래구", "부산진구", "북구", "사상구", "사하구", "서구", "수영구", "연제구", "영도구", "중구", "해운대구"],
-  대구: ["남구", "달서구", "달성군", "동구", "북구", "서구", "수성구", "중구"],
-  울산: ["남구", "동구", "북구", "울주군", "중구"],
-  제주: ["서귀포시", "제주시"],
-  전국: ["전국"],
-};
-
+// 주소 문자열 파싱/조합 유틸
 function parseAddress(address = "") {
   const parts = address.trim().split(/\s+/).filter(Boolean);
   return {
@@ -42,6 +23,7 @@ function composeAddress({ addressCity, addressDistrict, addressDetail }) {
 }
 
 export default function CompanyMypageContent({ onCompanyInfoSaved }) {
+  // 탭/편집 UI 상태
   const [activeTab, setActiveTab] = useState("company");
   const [isEditingCompany, setIsEditingCompany] = useState(false);
   const [isEditingManager, setIsEditingManager] = useState(false);
@@ -49,6 +31,8 @@ export default function CompanyMypageContent({ onCompanyInfoSaved }) {
   const [detailIndustryMenuOpen, setDetailIndustryMenuOpen] = useState(false);
   const [addressCityMenuOpen, setAddressCityMenuOpen] = useState(false);
   const [addressDistrictMenuOpen, setAddressDistrictMenuOpen] = useState(false);
+
+  // 기업/담당자 데이터 상태
   const [formData, setFormData] = useState({
     companyName: "",
     businessNumber: "",
@@ -77,10 +61,24 @@ export default function CompanyMypageContent({ onCompanyInfoSaved }) {
     managerPhone: "",
     managerOfficeAddress: "",
   });
+
+  // 로딩/에러 및 저장 상태
   const [isSavingCompany, setIsSavingCompany] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [passwordChanging, setPasswordChanging] = useState(false);
+  const [passwordMessage, setPasswordMessage] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+  const [accountDeleting, setAccountDeleting] = useState(false);
+  const [deleteMessage, setDeleteMessage] = useState("");
+  const [deleteError, setDeleteError] = useState(false);
 
+  // 초기 기업 정보 조회
   useEffect(() => {
     const fetchCompanyInfo = async () => {
       try {
@@ -115,6 +113,7 @@ export default function CompanyMypageContent({ onCompanyInfoSaved }) {
     fetchCompanyInfo();
   }, []);
 
+  // 공통 입력/탭 전환 핸들러
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     setIsEditingCompany(false);
@@ -159,6 +158,7 @@ export default function CompanyMypageContent({ onCompanyInfoSaved }) {
     setManagerDraft((prev) => ({ ...prev, [name]: value }));
   };
 
+  // 기업 정보 수정 핸들러
   const startCompanyEdit = () => {
     const parsedAddress = parseAddress(formData.address ?? "");
     setCompanyDraft({
@@ -217,6 +217,7 @@ export default function CompanyMypageContent({ onCompanyInfoSaved }) {
     }
   };
 
+  // 관리자 정보 수정 핸들러
   const startManagerEdit = () => {
     setManagerDraft({
       managerName: formData.managerName ?? "",
@@ -230,12 +231,153 @@ export default function CompanyMypageContent({ onCompanyInfoSaved }) {
     setIsEditingManager(false);
   };
 
-  const saveManagerEdit = () => {
-    setFormData((prev) => ({ ...prev, ...managerDraft }));
-    setIsEditingManager(false);
-    alert("관리자 정보가 저장되었습니다.");
+  const saveManagerEdit = async () => {
+    const payload = {
+      name: managerDraft.managerName?.trim() || "",
+      phoneNumber: managerDraft.managerPhone?.trim() || "",
+      address: managerDraft.managerOfficeAddress?.trim() || "",
+    };
+
+    try {
+      await api.put("/members/update-info", payload);
+      setFormData((prev) => ({ ...prev, ...managerDraft }));
+      setIsEditingManager(false);
+      alert("관리자 정보가 저장되었습니다.");
+    } catch (error) {
+      console.error("관리자 정보 수정 실패:", error);
+      alert("관리자 정보 저장에 실패했습니다.");
+    }
   };
 
+  // 계정 설정(비밀번호/탈퇴) 핸들러
+  const handleChangePassword = async () => {
+    setPasswordMessage("");
+    setPasswordError(false);
+
+    if (!passwordData.currentPassword) {
+      setPasswordMessage("현재 비밀번호를 입력해주세요.");
+      setPasswordError(true);
+      return;
+    }
+
+    if (!passwordData.newPassword) {
+      setPasswordMessage("새 비밀번호를 입력해주세요.");
+      setPasswordError(true);
+      return;
+    }
+
+    if (!passwordData.confirmPassword) {
+      setPasswordMessage("새 비밀번호 확인을 입력해주세요.");
+      setPasswordError(true);
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      setPasswordMessage("새 비밀번호와 비밀번호 확인이 일치하지 않습니다.");
+      setPasswordError(true);
+      return;
+    }
+
+    try {
+      setPasswordChanging(true);
+      const token =
+        localStorage.getItem("authToken") || localStorage.getItem("accessToken");
+
+      if (!token) {
+        setPasswordMessage("로그인이 필요합니다.");
+        setPasswordError(true);
+        return;
+      }
+
+      const response = await fetch("/members/change-password", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentPassword: passwordData.currentPassword,
+          newPassword: passwordData.newPassword,
+          confirmPassword: passwordData.confirmPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setPasswordMessage("비밀번호가 성공적으로 변경되었습니다.");
+        setPasswordError(false);
+        setPasswordData({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+        setTimeout(() => setPasswordMessage(""), 3000);
+      } else {
+        setPasswordMessage(data.message || "비밀번호 변경에 실패했습니다.");
+        setPasswordError(true);
+      }
+    } catch (error) {
+      console.error("비밀번호 변경 오류:", error);
+      setPasswordMessage("네트워크 오류가 발생했습니다.");
+      setPasswordError(true);
+    } finally {
+      setPasswordChanging(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const isConfirmed = window.confirm(
+      "정말로 회원탈퇴를 하시겠습니까?\n계정이 삭제되며 복구를 원할 시 운영진에게 연락해주세요."
+    );
+
+    if (!isConfirmed) {
+      return;
+    }
+
+    try {
+      setAccountDeleting(true);
+      const token =
+        localStorage.getItem("authToken") || localStorage.getItem("accessToken");
+
+      if (!token) {
+        setDeleteMessage("로그인이 필요합니다.");
+        setDeleteError(true);
+        return;
+      }
+
+      const response = await fetch("/members/delete-account", {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setDeleteMessage("회원탈퇴가 완료되었습니다. 로그인 페이지로 이동합니다.");
+        setDeleteError(false);
+        setTimeout(() => {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("accessToken");
+          window.location.href = "/login";
+        }, 2000);
+      } else {
+        setDeleteMessage(data.message || "회원탈퇴에 실패했습니다.");
+        setDeleteError(true);
+      }
+    } catch (error) {
+      console.error("회원 탈퇴 오류:", error);
+      setDeleteMessage("네트워크 오류가 발생했습니다.");
+      setDeleteError(true);
+    } finally {
+      setAccountDeleting(false);
+    }
+  };
+
+  // 화면 표시용 계산 값
   const industryName = useMemo(() => {
     if (!formData.industryTypeId) return "-";
     return INDUSTRY_NAME_BY_ID[formData.industryTypeId] ?? "-";
@@ -260,6 +402,7 @@ export default function CompanyMypageContent({ onCompanyInfoSaved }) {
   const selectedAddressCityName = companyDraft.addressCity || "시 선택";
   const selectedAddressDistrictName = companyDraft.addressDistrict || "도 선택";
 
+  // 로딩/에러 예외 화면
   if (isLoading) {
     return (
       <section className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
@@ -276,6 +419,7 @@ export default function CompanyMypageContent({ onCompanyInfoSaved }) {
     );
   }
 
+  // 메인 렌더링
   return (
     <section className="relative space-y-5">
       <div className="flex gap-2 bg-gray-100 p-2 rounded-lg">
@@ -305,6 +449,7 @@ export default function CompanyMypageContent({ onCompanyInfoSaved }) {
         </button>
       </div>
 
+      {/* 기업 정보 탭 */}
       {activeTab === "company" && (
         <div className="space-y-2">
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-sm">
@@ -596,6 +741,7 @@ export default function CompanyMypageContent({ onCompanyInfoSaved }) {
         </div>
       )}
 
+      {/* 관리자 정보 탭 */}
       {activeTab === "manager" && (
         <div className="space-y-2">
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-sm">
@@ -671,23 +817,89 @@ export default function CompanyMypageContent({ onCompanyInfoSaved }) {
         </div>
       )}
 
+      {/* 계정 설정 탭 */}
       {activeTab === "account" && (
         <div className="space-y-2">
-          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-sm space-y-6">
-            <div>
-              <p className="text-gray-400 mb-1 text-xs">계정 이메일</p>
-              <p className="font-medium text-gray-800">{formData.companyEmail || "-"}</p>
+          <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 text-sm space-y-8">
+            <div className="border-b pb-6 space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800">비밀번호 변경</h3>
+              <div className="space-y-3">
+                <input
+                  type="password"
+                  className="w-full border p-3 rounded"
+                  placeholder="현재 비밀번호"
+                  value={passwordData.currentPassword}
+                  onChange={(e) =>
+                    setPasswordData({
+                      ...passwordData,
+                      currentPassword: e.target.value,
+                    })
+                  }
+                />
+                <input
+                  type="password"
+                  className="w-full border p-3 rounded"
+                  placeholder="새 비밀번호"
+                  value={passwordData.newPassword}
+                  onChange={(e) =>
+                    setPasswordData({ ...passwordData, newPassword: e.target.value })
+                  }
+                />
+                <input
+                  type="password"
+                  className="w-full border p-3 rounded"
+                  placeholder="새 비밀번호 확인"
+                  value={passwordData.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordData({
+                      ...passwordData,
+                      confirmPassword: e.target.value,
+                    })
+                  }
+                />
+                <button
+                  onClick={handleChangePassword}
+                  disabled={passwordChanging}
+                  className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                >
+                  {passwordChanging ? "처리 중..." : "비밀번호 변경"}
+                </button>
+                {passwordMessage && (
+                  <div
+                    className={`p-3 rounded text-sm ${
+                      passwordError
+                        ? "bg-red-100 text-red-700"
+                        : "bg-green-100 text-green-700"
+                    }`}
+                  >
+                    {passwordMessage}
+                  </div>
+                )}
+              </div>
             </div>
-            <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-amber-800">
-              비밀번호 변경/회원 탈퇴 기능은 계정 관리 탭에 추가될 예정입니다.
-            </div>
-            <div className="flex justify-end">
+
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-gray-800">회원 탈퇴</h3>
+              <p className="text-sm text-gray-600">
+                회원 탈퇴를 하시면 계정이 삭제되며 복구할 수 없습니다.
+              </p>
               <button
-                type="button"
-                className="text-xs bg-[#4A2E2A] hover:bg-[#3E2723] px-4 py-1.5 rounded-md text-white font-bold transition-colors shadow-sm"
+                onClick={handleDeleteAccount}
+                disabled={accountDeleting}
+                className="w-full bg-red-500 text-white py-2 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition font-semibold"
               >
-                비밀번호 변경
+                {accountDeleting ? "처리 중..." : "회원 탈퇴"}
               </button>
+
+              {deleteMessage && (
+                <div
+                  className={`p-3 rounded text-sm ${
+                    deleteError ? "bg-red-100 text-red-700" : "bg-green-100 text-green-700"
+                  }`}
+                >
+                  {deleteMessage}
+                </div>
+              )}
             </div>
           </div>
         </div>
