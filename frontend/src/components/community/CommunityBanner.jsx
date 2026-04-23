@@ -6,6 +6,9 @@ export default function CommunityBanner({
   description,
   showButton
 }) {
+  const hasCommunityWriteToken =
+    !!localStorage.getItem("accessToken") || !!localStorage.getItem("authToken");
+
   return (
     <div className="w-full bg-[#2A1D16] py-10 h-[180px]">
       <div className="max-w-7xl mx-auto px-10 flex items-center justify-between h-full">
@@ -28,7 +31,7 @@ export default function CommunityBanner({
         </div>
 
         {/* 오른쪽 버튼 */}
-        {showButton && (
+        {showButton && hasCommunityWriteToken && (
           <Link
             to="/communityWrite"
             className="flex items-center gap-2 px-5 py-2.5 bg-[#E66235] hover:bg-[#D45326] text-white text-sm font-bold rounded-md transition-all shadow-sm"
