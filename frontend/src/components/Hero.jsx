@@ -1,6 +1,30 @@
+import video1 from "../assets/video/video1.mp4";
+
 export default function Hero() {
   return (
     <section className="relative overflow-hidden bg-[#FDFBF7] min-h-[560px]">
+      {/* 배경 비디오 */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover"
+      >
+        <source src={video1} type="video/mp4" />
+      </video>
+
+      {/* 비디오 위 수채화 톤 오버레이 (텍스트 가독성 확보) */}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(253,251,247,0.85) 0%, rgba(253,251,247,0.7) 40%, rgba(244,209,155,0.55) 100%)",
+        }}
+      />
+
       {/* 수채화 파스텔 블롭 배경 */}
       <div
         aria-hidden="true"
@@ -13,7 +37,7 @@ export default function Hero() {
           transform: "translateX(-50%)",
           background: "#F4D19B",
           filter: "blur(40px)",
-          opacity: 0.55,
+          opacity: 0.45,
         }}
       />
       <div
@@ -26,7 +50,7 @@ export default function Hero() {
           left: "6%",
           background: "#E8D5F2",
           filter: "blur(40px)",
-          opacity: 0.45,
+          opacity: 0.4,
         }}
       />
       <div
@@ -39,13 +63,13 @@ export default function Hero() {
           right: "6%",
           background: "#DCE8C6",
           filter: "blur(40px)",
-          opacity: 0.5,
+          opacity: 0.45,
         }}
       />
 
       {/* 좌측 플로팅 카드 */}
       <div
-        className="absolute left-[4%] md:left-[6%] top-[20%] hidden sm:block"
+        className="absolute left-[4%] md:left-[6%] top-[20%] hidden sm:block z-10"
         style={{ animation: "heroFloatA 6s ease-in-out infinite" }}
       >
         <div className="bg-white rounded-2xl shadow-lg px-4 py-3 border border-[#F3EAE1] flex items-center gap-2">
@@ -59,7 +83,7 @@ export default function Hero() {
         </div>
       </div>
       <div
-        className="absolute left-[6%] md:left-[10%] top-[60%] hidden sm:block"
+        className="absolute left-[6%] md:left-[10%] top-[60%] hidden sm:block z-10"
         style={{ animation: "heroFloatC 8s ease-in-out infinite" }}
       >
         <div className="bg-[#F4D19B] rounded-2xl shadow-lg px-4 py-3 flex items-center gap-2">
@@ -75,7 +99,7 @@ export default function Hero() {
 
       {/* 우측 플로팅 카드 */}
       <div
-        className="absolute right-[4%] md:right-[8%] top-[22%] hidden sm:block"
+        className="absolute right-[4%] md:right-[8%] top-[22%] hidden sm:block z-10"
         style={{ animation: "heroFloatB 7s ease-in-out infinite" }}
       >
         <div className="bg-white rounded-2xl shadow-lg px-4 py-3 border border-[#F3EAE1] flex items-center gap-2">
@@ -89,7 +113,7 @@ export default function Hero() {
         </div>
       </div>
       <div
-        className="absolute right-[3%] md:right-[6%] top-[62%] hidden sm:block"
+        className="absolute right-[3%] md:right-[6%] top-[62%] hidden sm:block z-10"
         style={{ animation: "heroFloatA 8s ease-in-out infinite" }}
       >
         <div className="bg-[#DCE8C6] rounded-2xl shadow-lg px-4 py-3 flex items-center gap-2">
@@ -154,30 +178,6 @@ export default function Hero() {
           >
             채용공고 보기
           </a>
-        </div>
-
-        {/* 신뢰 지표 */}
-        <div className="mt-10 inline-flex items-center gap-6 md:gap-8 bg-white/80 backdrop-blur px-8 py-4 rounded-full shadow-sm border border-[#F3EAE1]">
-          <div className="text-left">
-            <div className="text-xl md:text-2xl font-black text-[#2C160D]">
-              1,200+
-            </div>
-            <div className="text-[10px] text-[#8B6B4A]">채용 중인 기업</div>
-          </div>
-          <div className="w-px h-8 bg-[#EFE4D8]" />
-          <div className="text-left">
-            <div className="text-xl md:text-2xl font-black text-[#2C160D]">
-              8,500+
-            </div>
-            <div className="text-[10px] text-[#8B6B4A]">함께하는 구직자</div>
-          </div>
-          <div className="w-px h-8 bg-[#EFE4D8]" />
-          <div className="text-left">
-            <div className="text-xl md:text-2xl font-black text-[#2C160D]">
-              AI
-            </div>
-            <div className="text-[10px] text-[#8B6B4A]">맞춤 매칭 추천</div>
-          </div>
         </div>
       </div>
     </section>
