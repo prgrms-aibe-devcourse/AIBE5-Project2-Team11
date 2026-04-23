@@ -17,7 +17,8 @@ public class JobPostingResponseDto {
     private Long companyId;
     private String companyName;
     private String title;
-    private String jobCategory;
+    private String mainCategory;
+    private String subCategory;
     private String employmentType;
     private String workRegion;
     private Integer salary;
@@ -45,7 +46,8 @@ public class JobPostingResponseDto {
                 .companyId(jobPosting.getCompany().getCompanyId())
                 .companyName(jobPosting.getCompany().getCompanyName())
                 .title(jobPosting.getTitle())
-                .jobCategory(jobPosting.getJobCategory())
+                .mainCategory(jobPosting.getMainCategory())
+                .subCategory(jobPosting.getSubCategory())
                 .employmentType(jobPosting.getEmploymentType())
                 .workRegion(jobPosting.getWorkRegion())
                 .salary(jobPosting.getSalary())

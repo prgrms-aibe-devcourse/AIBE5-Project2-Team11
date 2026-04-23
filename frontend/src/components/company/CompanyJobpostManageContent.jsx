@@ -30,7 +30,8 @@ export default function CompanyJobpostManageContent() {
           const myJobs = data.content.map(apiJob => ({
             job_posting_id: apiJob.jobPostingId,
             title: apiJob.title || '제목 없음',
-            job_category: apiJob.jobCategory || '카테고리',
+            main_category: apiJob.mainCategory || '대분류',
+            sub_category: apiJob.subCategory || '소분류',
             created_at: apiJob.createdAt ? apiJob.createdAt.toString() : '2023-01-01',
             updated_at: apiJob.updatedAt ? apiJob.updatedAt.toString() : '2023-01-01',
             application_end_date: apiJob.applicationEndDate ? apiJob.applicationEndDate.toString() : '2099-12-31',
@@ -197,7 +198,8 @@ export default function CompanyJobpostManageContent() {
                   className="group hover:bg-gray-50 transition-all cursor-pointer"
                 >
                   <td className="px-6 py-6">
-                    <span className="inline-block bg-[#FDF8E8] text-[#D9A34A] text-[10px] px-2 py-0.5 rounded-md font-bold mb-1.5 border border-[#FBEFCD]">{job.job_category}</span>
+                    <span className="inline-block bg-[#FDF8E8] text-[#D9A34A] text-[10px] px-2 py-0.5 rounded-md font-bold mb-1.5 border border-[#FBEFCD] mr-1">{job.main_category}</span>
+                    <span className="inline-block bg-[#FDF8E8] text-[#D9A34A] text-[10px] px-2 py-0.5 rounded-md font-bold mb-1.5 border border-[#FBEFCD]">{job.sub_category}</span>
                     <p className="font-bold text-gray-900 leading-tight break-keep">{job.title}</p>
                   </td>
                   <td className="px-4 py-6 text-center text-[12px] text-[#A3A3A3] whitespace-nowrap">
