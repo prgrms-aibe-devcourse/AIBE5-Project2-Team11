@@ -1,70 +1,98 @@
 export default function Hero() {
   return (
-    <section className="w-full py-24 flex items-center justify-center relative overflow-hidden">
-      {/* 배경 비디오 */}
-      <video
-        autoPlay
-        loop
-        muted
-        className="absolute inset-0 w-full h-full object-cover"
-      >
-        <source src="/src/assets/video/video1.mp4" type="video/mp4" />
-      </video>
+    <section className="relative overflow-hidden bg-[#FDFBF7] min-h-[540px]">
+      {/* 수채화 파스텔 블롭 배경 */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute rounded-full"
+        style={{
+          width: 520,
+          height: 520,
+          top: -140,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "#F4D19B",
+          filter: "blur(40px)",
+          opacity: 0.5,
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute rounded-full"
+        style={{
+          width: 260,
+          height: 260,
+          top: 60,
+          left: "6%",
+          background: "#E8D5F2",
+          filter: "blur(40px)",
+          opacity: 0.4,
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute rounded-full"
+        style={{
+          width: 260,
+          height: 260,
+          top: 80,
+          right: "6%",
+          background: "#DCE8C6",
+          filter: "blur(40px)",
+          opacity: 0.45,
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute rounded-full"
+        style={{
+          width: 340,
+          height: 160,
+          bottom: -80,
+          left: "50%",
+          transform: "translateX(-50%)",
+          background: "#FEB300",
+          filter: "blur(40px)",
+          opacity: 0.2,
+        }}
+      />
 
       {/* 콘텐츠 */}
-      <div className="relative z-10 text-center max-w-3xl px-4">
-
-        {/* 작은 배지 */}
-        <div className="inline-block mb-6 px-4 py-1 bg-white/60 rounded-full text-sm text-gray-700">
-          다온을 환영합니다
-        </div>
-
-        {/* 메인 타이틀 */}
-        <h1 className="text-5xl md:text-6xl font-bold leading-tight mb-4">
-          당신의 <span className="text-yellow-800">가능성</span>이 <br />
-          빛나는 일자리
+      <div className="relative z-10 px-10 py-24 text-center">
+        <h1 className="text-5xl md:text-7xl font-black leading-[1.1] text-[#2C160D]">
+          당신의 <span className="text-[#D98E3A]">가능성</span>이<br />
+          <span className="font-handwriting text-6xl md:text-8xl text-[#E8A94A]">
+            빛나는
+          </span>{" "}
+          일자리
         </h1>
-
-        {/* 서브 텍스트 */}
-        <p className="text-gray-700 mb-8">
-          누구에게나 열려있는 따뜻한 내일을 함께 만듭니다.
+        <p className="mt-8 text-[#6B4F33] text-lg md:text-xl">
+          누구에게나 열려있는 따뜻한 내일을 함께 만듭니다
         </p>
 
-        {/* 검색창 */}
-        <div className="relative left-1/2 -translate-x-1/2 w-screen max-w-xl px-4">
-          <div className="flex items-center bg-white rounded-full shadow-md overflow-hidden mx-auto">
-            <input
-              type="text"
-              placeholder="어떤 직무를 찾고 계신가요?"
-              className="flex-1 px-6 py-4 outline-none"
-            />
-            <button className="bg-gray-900 text-white px-8 py-3 rounded-full m-1
-              transition duration-150 ease-in-out
-              active:scale-95 active:shadow-inner">
-              검색하기
-            </button>
+        {/* 신뢰 지표 */}
+        <div className="mt-14 inline-flex items-center gap-8 bg-white/80 backdrop-blur px-10 py-6 rounded-full shadow-sm border border-[#F3EAE1]">
+          <div className="text-left">
+            <div className="text-2xl md:text-3xl font-black text-[#2C160D]">
+              1,200+
+            </div>
+            <div className="text-xs text-[#8B6B4A] mt-1">채용 중인 기업</div>
+          </div>
+          <div className="w-px h-10 bg-[#EFE4D8]" />
+          <div className="text-left">
+            <div className="text-2xl md:text-3xl font-black text-[#2C160D]">
+              8,500+
+            </div>
+            <div className="text-xs text-[#8B6B4A] mt-1">함께하는 구직자</div>
+          </div>
+          <div className="w-px h-10 bg-[#EFE4D8]" />
+          <div className="text-left">
+            <div className="text-2xl md:text-3xl font-black text-[#2C160D]">
+              AI
+            </div>
+            <div className="text-xs text-[#8B6B4A] mt-1">맞춤 매칭 추천</div>
           </div>
         </div>
-
-        {/* 하단 버튼들 */}
-        <div className="flex justify-center gap-3 mt-6 flex-wrap">
-          <button className="px-4 py-2 bg-white/70 rounded-full text-sm 
-            transition duration-200 ease-in-out
-            hover:bg-white hover:shadow-md hover:-translate-y-0.5">
-            글자 크게 보기
-          </button>
-          <button className="px-4 py-2 bg-white/70 rounded-full text-sm 
-            transition duration-200 ease-in-out
-            hover:bg-white hover:shadow-md hover:-translate-y-0.5">
-            음성 지원 안내
-          </button>
-          <button className="px-4 py-2 bg-white/70 rounded-full text-sm 
-            transition duration-200 ease-in-out
-            hover:bg-white hover:shadow-md hover:-translate-y-0.5">
-            고대비 모드
-          </button>
-        </div>
-
       </div>
     </section>
   );
