@@ -19,6 +19,7 @@ public class PostLike {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "post_like_id")
     private Long postLikeId;
 
     // 게시글 좋아요
@@ -38,6 +39,7 @@ public class PostLike {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = true;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
 
     @PrePersist

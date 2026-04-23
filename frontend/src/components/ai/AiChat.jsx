@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { sampleJobs } from "../../data/sampleJobs";
-import { chatWithAi, getAiRecommendation } from "../../api/aiApi";
+import { chatWithAi, getAiRecommendation, getDisabilityBasedRecommendations } from "../../api/aiApi";
 import { getQualificationsByCategory, getAllQualifications, getExamSchedules, searchQualifications, getQualificationDetail, getAiQualificationRecommendation } from "../../api/qualificationApi";
 
 export default function AiChat() {
@@ -27,6 +27,14 @@ export default function AiChat() {
   const [recommendations, setRecommendations] = useState([]);
   const [qualifications, setQualifications] = useState([]);
   const [recLoading, setRecLoading] = useState(false);
+
+  // 장애 유형별 추천 상태
+  const [disabilityRecommendations, setDisabilityRecommendations] = useState([]);
+  const [selectedDisabilityForQuestion, setSelectedDisabilityForQuestion] = useState("");
+  const [selectedRegionForDisability, setSelectedRegionForDisability] = useState("");
+  const [showDisabilityTypeSelector, setShowDisabilityTypeSelector] = useState(false);
+
+  const disabilityTypes = ["지체장애", "시각장애", "청각장애", "언어장애", "지적장애", "정신장애"];
 
   // 자격증 상세 정보 관련 상태
   const [qualificationSearchInput, setQualificationSearchInput] = useState("");
@@ -143,6 +151,12 @@ export default function AiChat() {
       requiredFilters: [],
       type: "qualificationDetail",
       template: () => `자격증 상세 일정`
+    },
+    {
+      text: "🏥 장애 유형에 맞는 공고 추천해줘",
+      requiredFilters: ["disabilityType"],
+      type: "disability",
+      template: () => `장애 유형에 맞는 공고 추천`
     },
   ];
 
@@ -354,13 +368,14 @@ ${response.explanation}`;
   const handleSendQuestionWithFilters = async () => {
     if (!selectedQuestion) return;
 
-    // 필수 필터 체크
+     // 필수 필터 체크
     const missingFilters = selectedQuestion.requiredFilters.filter((filterType) => {
       if (filterType === "region") return !tempFilters.region;
       if (filterType === "jobMajor") return !tempFilters.jobMajor;
       if (filterType === "jobMinor") return !tempFilters.jobMinor;
       if (filterType === "workEnvironments") return tempFilters.workEnvironments.length === 0;
       if (filterType === "qualificationCategory") return !tempFilters.qualificationCategory;
+      if (filterType === "disabilityType") return !selectedDisabilityForQuestion;
       return false;
     });
 
@@ -388,8 +403,37 @@ ${response.explanation}`;
     setRecLoading(true);
 
     try {
-      // 자격증 추천
-      if (selectedQuestion.type === "qualification") {
+      // 장애 유형별 추천
+      if (selectedQuestion.type === "disability") {
+        const disabilityResponse = await getDisabilityBasedRecommendations(
+          selectedDisabilityForQuestion,
+          5,
+          selectedRegionForDisability || "전체"
+        );
+
+        if (disabilityResponse && disabilityResponse.success) {
+          const recs = disabilityResponse.recommendations || [];
+          const explanation = disabilityResponse.explanation || "";
+
+          const recsText = recs
+            .map((job, i) => `${i + 1}. ${job.title} @ ${job.company || "미정"} (점수: ${(job.matchScore * 100).toFixed(1)}%)`)
+            .join("\n");
+
+          const fullResponse = `
+🏥 ${selectedDisabilityForQuestion}${selectedRegionForDisability && selectedRegionForDisability !== "전체" ? ` (${selectedRegionForDisability})` : ""} 맞춤 공고 TOP 5:
+
+${recsText}
+
+📊 분석:
+${explanation}`;
+
+          setMessages((prev) => [...prev, { role: "bot", text: fullResponse }]);
+          setDisabilityRecommendations(recs);
+        } else {
+          const errorMsg = disabilityResponse?.error || "추천을 불러올 수 없습니다";
+          setMessages((prev) => [...prev, { role: "bot", text: `죄송합니다. ${errorMsg}` }]);
+        }
+      } else if (selectedQuestion.type === "qualification") {
         // AI 기반 자격증 추천 (depth2 필터링으로 자동 조회)
         const aiRecommendation = await getAiQualificationRecommendation(tempFilters.qualificationCategory);
 
@@ -827,6 +871,44 @@ ${examSchedulesText}
               </div>
             )}
 
+            {/* 장애 유형 필터 */}
+            {selectedQuestion.requiredFilters.includes("disabilityType") && (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 mb-2 block">🏥 장애 유형 선택</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {disabilityTypes.map((type) => (
+                      <button
+                        key={type}
+                        onClick={() => setSelectedDisabilityForQuestion(type)}
+                        className={`px-3 py-2 text-xs font-bold rounded-lg transition ${
+                          selectedDisabilityForQuestion === type
+                            ? "bg-green-600 text-white"
+                            : "bg-green-100 text-green-800 hover:bg-green-200"
+                        }`}
+                      >
+                        {type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-sm font-semibold text-gray-700 mb-2 block">📍 지역 필터 (선택)</label>
+                  <select
+                    value={selectedRegionForDisability}
+                    onChange={(e) => setSelectedRegionForDisability(e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
+                  >
+                    <option value="">지역 선택 안함 (전체)</option>
+                    {regions.map((region) => (
+                      <option key={region} value={region}>{region}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
             {/* 작업환경 필터 */}
             {selectedQuestion.requiredFilters.includes("workEnvironments") && (
               <div>
@@ -906,6 +988,46 @@ ${examSchedulesText}
                     <p className="text-xs text-blue-600 mt-1">
                       필기: {qual.currentExam.docExamStart ? new Date(qual.currentExam.docExamStart).toLocaleDateString() : "미정"}
                     </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 장애 유형별 추천 결과 미리보기 */}
+        {disabilityRecommendations.length > 0 && (
+          <div className="space-y-3 border-t pt-4">
+            <h3 className="text-lg font-bold text-gray-800">🏥 {selectedDisabilityForQuestion} 맞춤 공고 TOP 5</h3>
+            <div className="space-y-2 max-h-[250px] overflow-y-auto">
+              {disabilityRecommendations.map((job, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 bg-green-50 border border-green-200 rounded-lg cursor-pointer hover:shadow-md transition text-sm"
+                  onClick={() => {
+                    const jobId = job.id || job.job_posting_id;
+                    if (jobId) {
+                      navigate(`/jobs/${jobId}`);
+                    }
+                  }}
+                >
+                  <div className="flex justify-between items-start mb-1">
+                    <p className="font-semibold text-gray-800 line-clamp-1 flex-1">{job.title}</p>
+                    <span className="ml-2 text-xs font-bold text-white bg-green-600 px-2 py-1 rounded">
+                      {(job.matchScore * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600 line-clamp-1">{job.company || "미정"}</p>
+                  <p className="text-xs text-gray-500 mt-1">{job.work_region || job.region || "지역 미정"}</p>
+                  {job.jobCategoryVector && Object.keys(job.jobCategoryVector).length > 0 && (
+                    <div className="text-xs text-green-700 mt-2">
+                      <span className="font-semibold">직업: </span>
+                      {Object.entries(job.jobCategoryVector)
+                        .filter(([_, weight]) => weight > 0.2)
+                        .map(([category, weight]) => `${category}(${(weight * 100).toFixed(0)}%)`)
+                        .join(", ")
+                      }
+                    </div>
                   )}
                 </div>
               ))}

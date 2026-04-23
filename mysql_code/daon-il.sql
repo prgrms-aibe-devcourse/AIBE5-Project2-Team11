@@ -609,8 +609,7 @@ END;
     -- 3. 안전 업데이트 모드 원상복구
 SET SQL_SAFE_UPDATES = 1;
 
-
-
+select * from post;
 
 -- post_like 테이블 DB 구조 변경 26.04.23
 ALTER TABLE post_like ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;

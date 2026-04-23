@@ -97,3 +97,50 @@ export const chatWithAiStructured = async (messages) => {
   }
 };
 
+/**
+ * ⭐ NEW: 장애 유형별 공고 추천 (하이브리드 방식)
+ * 
+ * 공고 제목 → 33개 직업군 가중치 변환 → 장애 유형별 가중치와 매칭 → 점수 계산
+ *
+ * @param {string} disabilityType - 장애 유형 ("지체장애", "시각장애", "청각장애", "언어장애", "지적장애", "정신장애")
+ * @param {number} topN - 상위 몇 개 추천 (기본값: 3)
+ * @param {string} region - 지역 필터 (선택, 예: "서울", "경기")
+ * @returns {Object} { success, disabilityType, region, recommendations, explanation, count }
+ * 
+ * 응답 예시:
+ * {
+ *   "success": true,
+ *   "disabilityType": "지체장애",
+ *   "region": "서울",
+ *   "count": 3,
+ *   "totalJobCount": 45,
+ *   "recommendations": [
+ *     {
+ *       "title": "인쇄, 목재, 가구 및 기타 제조 분야 단순 종사원",
+ *       "company": "ABC회사",
+ *       "matchScore": 0.0542,
+ *       "jobCategoryVector": { ... }
+ *     }
+ *   ],
+ *   "explanation": "AI가 생성한 상세 설명..."
+ * }
+ */
+export const getDisabilityBasedRecommendations = async (disabilityType, topN = 3, region = null) => {
+  try {
+    const requestData = {
+      disabilityType: disabilityType,
+      topN: topN,
+    };
+    
+    // 지역 필터 추가 (옵션)
+    if (region && region !== "전체") {
+      requestData.region = region;
+    }
+    
+    const response = await api.post('/api/ai/recommend/disability', requestData);
+    return response.data;
+  } catch (error) {
+    console.error('Error calling disability-based recommendation API:', error);
+    throw error;
+  }
+};

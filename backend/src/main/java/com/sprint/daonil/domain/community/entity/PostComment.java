@@ -20,6 +20,7 @@ public class PostComment {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "comment_id")
     private Long commentId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -33,9 +34,13 @@ public class PostComment {
     @Column(columnDefinition = "TEXT")
     private String content;
 
+    @Column(name = "is_deleted")
     private Boolean isDeleted;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     // DB 테이블에는 존재하지 않는 필드지만 댓글 삭제 시, 연관 된 좋아요도 함께 삭제하기 위해서 추가
