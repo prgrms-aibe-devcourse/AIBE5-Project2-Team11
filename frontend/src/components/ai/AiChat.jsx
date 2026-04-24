@@ -119,13 +119,6 @@ export default function AiChat() {
     "에너지.기상", "에너지.기상(기상)", "에너지.기상(신재생에너지)"
   ];
 
-  // 작업환경
-  const workEnvironmentOptions = [
-    { id: "sitting", label: "앉아서 가능" },
-    { id: "standing", label: "일부 서서 가능" },
-    { id: "moving", label: "많이 이동" },
-  ];
-
   // 가능한 질문 리스트 (필터 요구사항 포함)
   const suggestedQuestions = [
     { 
@@ -133,12 +126,6 @@ export default function AiChat() {
       requiredFilters: ["region", "jobMajor", "jobMinor"],
       type: "job",
       template: (region, jobMajor, jobMinor) => `${region} 지역의 ${jobMinor} 공고 추천해줘`
-    },
-    { 
-      text: "OO작업환경 직무 추천해줘",
-      requiredFilters: ["workEnvironments"],
-      type: "job",
-      template: (_, __, ___, workEnv) => `${workEnv.join(", ")} 환경의 직무 추천해줘`
     },
     {
       text: "OO분야 자격증 추천해줘",
@@ -153,7 +140,7 @@ export default function AiChat() {
       template: () => `자격증 상세 일정`
     },
     {
-      text: "🏥 장애 유형에 맞는 공고 추천해줘",
+      text: "OO장애 유형에 맞는 OO지역 공고 추천해줘",
       requiredFilters: ["disabilityType"],
       type: "disability",
       template: () => `장애 유형에 맞는 공고 추천`
