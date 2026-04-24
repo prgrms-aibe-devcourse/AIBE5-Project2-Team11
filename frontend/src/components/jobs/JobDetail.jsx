@@ -1310,7 +1310,9 @@ export default function JobDetail() {
   const [isLoadingJob, setIsLoadingJob] = useState(true);
   const [jobError, setJobError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const isUnauthenticatedMember = localStorage.getItem('memberType') === 'UNAUTHENTICATED';
+  const memberType = localStorage.getItem('memberType');
+  const isUnauthenticatedMember = memberType === 'UNAUTHENTICATED';
+  const isApplicantBlockedMember = memberType === 'COMPANY' || isUnauthenticatedMember;
   const [isBookmarked, setIsBookmarked] = useState(false);
 
   useEffect(() => {
@@ -1459,8 +1461,12 @@ export default function JobDetail() {
                 </button>
                 <button
                     onClick={() => {
-                      if (isUnauthenticatedMember) {
-                        alert('로그인 회원만 사용 가능한 기능입니다.');
+                      if (isApplicantBlockedMember) {
+                        if (memberType === 'COMPANY') {
+                          alert('구직자 회원만 지원이이 가능합니다.');
+                        } else {
+                          alert('로그인 후 사용 지원이 가능합니다.');
+                        }
                         return;
                       }
                       setIsModalOpen(true);
