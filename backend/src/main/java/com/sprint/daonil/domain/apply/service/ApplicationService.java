@@ -2,6 +2,7 @@ package com.sprint.daonil.domain.apply.service;
 
 import com.sprint.daonil.domain.apply.dto.ApplicationCreateRequestDto;
 import com.sprint.daonil.domain.apply.dto.ApplicationDetailResponseDto;
+import com.sprint.daonil.domain.apply.dto.ApplicationListResponseDto;
 import com.sprint.daonil.domain.apply.entity.Application;
 import com.sprint.daonil.domain.apply.eunmtype.Status;
 import com.sprint.daonil.domain.apply.repository.ApplicationRepository;
@@ -14,6 +15,9 @@ import com.sprint.daonil.domain.member.repository.ProfileRepository;
 import com.sprint.daonil.domain.resume.entity.Resume;
 import com.sprint.daonil.domain.resume.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,7 +34,7 @@ public class ApplicationService {
     private final MemberRepository memberRepository;
     private final ProfileRepository profileRepository;
 
-
+    // 공고 지원
     @Transactional
     public Long apply(Long jobPostingId, ApplicationCreateRequestDto dto, String loginId) {
         // 회원 조회
@@ -63,6 +67,27 @@ public class ApplicationService {
         // 저장
         Application saved = applicationRepository.save(application);
         return saved.getApplicationId();
+    }
+
+
+    // 지원자의 지원 내역 리스트 조회
+    public Page<ApplicationListResponseDto> getMyApplications(String loginId, int page, int size, String status) {
+        // 회원 조회
+        Member member = memberRepository.findByLoginId(loginId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 회원입니다."));
+
+
+        // 조회
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Application> applications;
+
+        if (status != null) {
+            applications = applicationRepository.findByMember_LoginIdAndStatus(loginId, Status.valueOf(status), pageable);
+        } else {
+            applications = applicationRepository.findByMember_LoginId(loginId, pageable);
+        }
+
+        return applications.map(ApplicationListResponseDto::new);
     }
 
 

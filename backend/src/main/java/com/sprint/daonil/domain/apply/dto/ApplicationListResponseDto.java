@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Getter
 @Setter
-public class ApplicationResponseDto {
+public class ApplicationListResponseDto {
     private String companyName;      // 회사명
     private String jobTitle;         // 공고명
     private String jobCategory;      // 직무 대분류
@@ -18,7 +18,7 @@ public class ApplicationResponseDto {
 
 
     // Entity -> DTO
-    public ApplicationResponseDto(Application application) {
+    public ApplicationListResponseDto(Application application) {
         this.companyName = application.getJobPosting().getCompany().getCompanyName();
         this.jobTitle = application.getJobPosting().getTitle();
         this.jobCategory = application.getJobPosting().getMainCategory();
