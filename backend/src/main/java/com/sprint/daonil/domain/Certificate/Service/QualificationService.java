@@ -68,6 +68,16 @@ public class QualificationService {
     }
 
     /**
+     * 직무분야(fieldId)로 자격증 조회
+     * @param fieldId 직무분야 ID
+     * @return 자격증 객체 리스트
+     */
+    public List<Qualification> getQualificationsByField(String fieldId) {
+        log.info("자격증 상세 조회: fieldId={}", fieldId);
+        return qualificationRepository.findByFieldId(fieldId);
+    }
+
+    /**
      * 자격증명으로 자격증 조회
      * @param name 자격증명
      * @return 자격증 객체
@@ -89,7 +99,7 @@ public class QualificationService {
         if (qualification != null) {
             log.info("✓ 자격증 조회 성공: {} (JMCD: {})", qualification.getName(), qualification.getJMCD());
             
-            // date 테이블에서 Native Query로 직접 조회 (컬럼명 명확히 지정)
+            // date 테이블이 camelCase 컬럼을 사용하므로 native 별칭 매핑으로 조회한다.
             List<ExamDate> examDates = examDateRepository.findByJmCdNative(qualification.getJMCD());
             log.info("✓ 시험 일정 조회: {}개 회차", examDates.size());
             

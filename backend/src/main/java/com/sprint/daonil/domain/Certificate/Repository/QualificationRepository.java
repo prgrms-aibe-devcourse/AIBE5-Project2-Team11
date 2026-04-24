@@ -13,10 +13,13 @@ public interface QualificationRepository extends JpaRepository<Qualification, In
     // JPQL JOIN 방식
     @Query("SELECT q FROM Qualification q JOIN q.field f WHERE f.depth2 = :depth2")
     List<Qualification> findByFieldDepth2(@Param("depth2") String depth2);
+
+    @Query("SELECT q FROM Qualification q WHERE q.field.id = :fieldId")
+    List<Qualification> findByFieldId(@Param("fieldId") String fieldId);
     
     // Native SQL 방식 (JPQL이 작동하지 않을 때 사용)
     @Query(value = "SELECT q.* FROM qualification q " +
-                   "INNER JOIN field f ON q.fieldId = f.id " +
+                   "INNER JOIN field f ON q.field_id = f.field_id " +
                    "WHERE f.depth2 = :depth2", nativeQuery = true)
     List<Qualification> findByFieldDepth2Native(@Param("depth2") String depth2);
 

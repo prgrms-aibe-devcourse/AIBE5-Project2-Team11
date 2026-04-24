@@ -55,7 +55,7 @@ public class QualificationController {
     public ResponseEntity<?> getQualificationsByField(@PathVariable String fieldId) {
         try {
             log.info("자격증 조회 요청: fieldId={}", fieldId);
-            List<Qualification> qualifications = qualificationService.getQualificationsByCategory(fieldId);
+            List<Qualification> qualifications = qualificationService.getQualificationsByField(fieldId);
 
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
