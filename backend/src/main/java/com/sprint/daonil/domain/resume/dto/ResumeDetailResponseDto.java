@@ -22,6 +22,7 @@ public class ResumeDetailResponseDto {
     private String birthDate;
 
     // 이력서 정보
+    private Long resumeId;
     private String title;
     private String selfIntroduction;
     private String userPhoto;
@@ -43,6 +44,7 @@ public class ResumeDetailResponseDto {
 
         Member member = resume.getMember();
 
+        dto.setResumeId(resume.getResumeId());
         dto.setName(member.getName());
         dto.setEmail(member.getEmail());
         dto.setPhoneNumber(member.getPhoneNumber());
