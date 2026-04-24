@@ -68,6 +68,16 @@ public class QualificationService {
     }
 
     /**
+     * 직무분야(fieldId)로 자격증 조회
+     * @param fieldId 직무분야 ID
+     * @return 자격증 객체 리스트
+     */
+    public List<Qualification> getQualificationsByField(String fieldId) {
+        log.info("자격증 상세 조회: fieldId={}", fieldId);
+        return qualificationRepository.findByFieldId(fieldId);
+    }
+
+    /**
      * 자격증명으로 자격증 조회
      * @param name 자격증명
      * @return 자격증 객체
