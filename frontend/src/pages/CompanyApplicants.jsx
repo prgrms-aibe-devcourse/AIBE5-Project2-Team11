@@ -1,112 +1,81 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import ApplicantsStatusTabs from "../components/companyApplicants/ApplicantsStatusTabs";
 import ApplicantsSidebar from "../components/companyApplicants/ApplicantsSidebar";
 import ApplicantDetail from "../components/companyApplicants/ApplicantDetail";
+import { applyApi } from "../api/applyApi";
+
+// 상태값 매핑 (한글 <-> 백엔드 Enum)
+const STATUS_MAP = {
+    "SUBMITTED": "검토전",
+    "FINAL_ACCEPTED": "합격",
+    "FINAL_REJECTED": "불합격",
+    "DOCUMENT_PASSED": "합격",     // 단순화를 위해 합격으로 매핑
+    "INTERVIEW_PASSED": "합격",
+    "DOCUMENT_FAILED": "불합격",   // 단순화를 위해 불합격으로 매핑
+    "INTERVIEW_FAILED": "불합격"
+};
+
+const REVERSE_STATUS_MAP = {
+    "검토전": "SUBMITTED",
+    "합격": "FINAL_ACCEPTED",
+    "불합격": "FINAL_REJECTED"
+};
 
 export default function CompanyApplicants() {
-    const applicants = useMemo(
-        () => [
-            {
-                id: 1,
-                name: "김지수",
-                age: 28,
-                gender: "여성",
-                disability: "지체장애",
-                status: "합격",
-                appliedDate: "2026.04.08",
-                phone: "010-2345-6789",
-                email: "jisu.kim@email.com",
-                education: "한양대학교 경영학과 졸업",
-                career: "사무보조 2년",
-                skills: ["Excel", "문서작성", "CS"],
-                intro:
-                    "꼼꼼한 성격과 빠른 업무 적응력을 바탕으로 사무 지원 업무에 강점이 있습니다.",
-                motivation:
-                    "안정적인 환경에서 꾸준히 성장하며 회사에 기여하고 싶습니다.",
-            },
-            {
-                id: 2,
-                name: "박민준",
-                age: 32,
-                gender: "남성",
-                disability: "청각장애 2급",
-                status: "검토 전",
-                appliedDate: "2026.04.09",
-                phone: "010-9876-5432",
-                email: "minjun.park@email.com",
-                education: "서울전문대학 컴퓨터정보과 졸업",
-                career: "프리랜서 데이터 처리 3년",
-                skills: ["Python", "데이터 분석", "Excel", "SQL"],
-                intro:
-                    "청각장애가 있지만 집중력과 꼼꼼함으로 데이터 관련 업무에서 강점을 발휘합니다.",
-                motivation:
-                    "데이터 입력 및 분석 분야에서 3년간의 프리랜서 경험을 바탕으로 귀사에 기여하고 싶습니다.",
-            },
-            {
-                id: 3,
-                name: "이서연",
-                age: 25,
-                gender: "여성",
-                disability: "시각장애",
-                status: "검토 전",
-                appliedDate: "2026.04.10",
-                phone: "010-1122-3344",
-                email: "seoyeon.lee@email.com",
-                education: "부산대학교 국어국문학과 졸업",
-                career: "행정보조 인턴 1년",
-                skills: ["한글", "문서정리", "전화응대"],
-                intro:
-                    "문서 정리와 행정 보조 업무에 익숙하며 책임감 있게 맡은 일을 수행합니다.",
-                motivation:
-                    "행정 및 사무 업무 경험을 바탕으로 회사 운영에 실질적인 도움을 드리고 싶습니다.",
-            },
-            {
-                id: 4,
-                name: "최동현",
-                age: 35,
-                gender: "남성",
-                disability: "지체장애",
-                status: "불합격",
-                appliedDate: "2026.04.07",
-                phone: "010-5566-7788",
-                email: "donghyun.choi@email.com",
-                education: "경기대학교 행정학과 졸업",
-                career: "총무 및 관리 5년",
-                skills: ["총무", "문서관리", "OA"],
-                intro:
-                    "장기간 총무 업무를 수행하며 조직 운영과 문서 관리 능력을 길렀습니다.",
-                motivation:
-                    "실무 경험을 살려 효율적인 사무 운영에 기여하고 싶습니다.",
-            },
-            {
-                id: 5,
-                name: "정하은",
-                age: 29,
-                gender: "여성",
-                disability: "청년장애",
-                status: "합격",
-                appliedDate: "2026.04.06",
-                phone: "010-2233-8899",
-                email: "haeun.jung@email.com",
-                education: "인덕대학교 세무회계과 졸업",
-                career: "회계 보조 2년",
-                skills: ["회계기초", "Excel", "전표입력"],
-                intro:
-                    "회계 보조 경험을 통해 반복적이고 정밀한 업무에 익숙합니다.",
-                motivation:
-                    "정확하고 성실한 업무 수행으로 회사의 회계 지원 업무에 도움이 되고 싶습니다.",
-            },
-        ],
-        []
-    );
-
+    const { jobId } = useParams();
+    const navigate = useNavigate();
+    const [applicants, setApplicants] = useState([]);
+    const [loading, setLoading] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState("전체");
-    const [selectedApplicantId, setSelectedApplicantId] = useState(2);
+    const [selectedApplicantId, setSelectedApplicantId] = useState(null);
+
+    // 데이터 가져오기
+    useEffect(() => {
+        const fetchApplicants = async () => {
+            try {
+                setLoading(true);
+                const data = await applyApi.getApplicants(jobId);
+                
+                // 백엔드 데이터를 프론트 구조에 맞게 가공
+                const formattedData = data.map(app => ({
+                    id: app.applicationId,
+                    name: app.applicantName,
+                    email: app.applicantEmail,
+                    status: STATUS_MAP[app.status] || "검토전",
+                    appliedDate: new Date(app.appliedAt).toLocaleDateString(),
+                    resumeId: app.resumeId,
+                    // 상세 정보는 나중에 이력서 API로 가져오거나 초기값 설정 (하드코딩 제거를 위한 예시 데이터)
+                    age: "확인 필요",
+                    gender: "확인 필요",
+                    disability: "확인 필요",
+                    phone: "관리자 확인 필요",
+                    education: "이력서 상세 확인 필요",
+                    career: "이력서 상세 확인",
+                    skills: [],
+                    intro: "이력서 상세를 확인해주세요.",
+                    motivation: "이력서 상세를 확인해주세요."
+                }));
+                
+                setApplicants(formattedData);
+                if (formattedData.length > 0) {
+                    setSelectedApplicantId(formattedData[0].id);
+                }
+            } catch (error) {
+                console.error("지원자 목록 조회 실패:", error);
+                alert("지원자 목록을 불러오는 중 오류가 발생했습니다.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (jobId) fetchApplicants();
+    }, [jobId]);
 
     const statusCount = {
         전체: applicants.length,
-        검토전: applicants.filter((item) => item.status === "검토 전").length,
+        검토전: applicants.filter((item) => item.status === "검토전").length,
         합격: applicants.filter((item) => item.status === "합격").length,
         불합격: applicants.filter((item) => item.status === "불합격").length,
     };
@@ -114,20 +83,34 @@ export default function CompanyApplicants() {
     const filteredApplicants =
         selectedStatus === "전체"
             ? applicants
-            : applicants.filter((item) =>
-                selectedStatus === "검토전"
-                    ? item.status === "검토 전"
-                    : item.status === selectedStatus
-            );
+            : applicants.filter((item) => item.status === selectedStatus);
 
     const selectedApplicant =
         applicants.find((item) => item.id === selectedApplicantId) ||
         filteredApplicants[0] ||
         applicants[0];
 
-    const handleChangeStatus = (newStatus) => {
-        alert(`${selectedApplicant.name}님의 상태를 "${newStatus}"로 변경하는 로직을 연결하면 됩니다.`);
+    const handleChangeStatus = async (newStatusLabel) => {
+        if (!selectedApplicant) return;
+        
+        const newStatusEnum = REVERSE_STATUS_MAP[newStatusLabel];
+        if (!newStatusEnum) return;
+
+        try {
+            await applyApi.updateStatus(selectedApplicant.id, newStatusEnum);
+            
+            // 로컬 상태 업데이트
+            setApplicants(prev => prev.map(app => 
+                app.id === selectedApplicant.id ? { ...app, status: newStatusLabel } : app
+            ));
+            
+            alert(`${selectedApplicant.name}님의 상태가 "${newStatusLabel}"(으)로 변경되었습니다.`);
+        } catch (error) {
+            console.error("상태 변경 실패:", error);
+            alert("상태 변경 중 오류가 발생했습니다.");
+        }
     };
+
 
     return (
         <div className="min-h-screen flex flex-col bg-[#FDFBF7]">

@@ -16,4 +16,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     // 로그인한 사용자 지원 상태 필터 적용 조회
     Page<Application> findByMember_LoginIdAndStatus(String loginId, Status status, Pageable pageable);
+
+    // 공고별 지원자 목록 조회 (기업용)
+    java.util.List<Application> findByJobPosting_JobPostingIdOrderByAppliedAtDesc(Long jobPostingId);
 }

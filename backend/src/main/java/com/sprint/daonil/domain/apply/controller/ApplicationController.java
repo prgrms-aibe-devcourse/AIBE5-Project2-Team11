@@ -72,4 +72,27 @@ public class ApplicationController {
 
         return ResponseEntity.ok(Map.of("message", "지원 취소 완료", "applicationId", deletedApplicationId));
     }
+
+    // 기업용: 특정 공고의 지원자 목록 조회
+    @GetMapping("/{job_posting_id}/applicants")
+    public ResponseEntity<java.util.List<com.sprint.daonil.domain.apply.dto.ApplicationApplicantResponseDto>> getApplicants(
+            @PathVariable("job_posting_id") Long jobPostingId
+    ) {
+        String loginId = SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(applicationService.getApplicantsByJobPosting(jobPostingId, loginId));
+    }
+
+    // 기업용: 지원자 상태 변경
+    @PatchMapping("/application/{application_id}/status")
+    public ResponseEntity<Map<String, Object>> updateStatus(
+            @PathVariable("application_id") Long applicationId,
+            @RequestBody Map<String, String> statusMap
+    ) {
+        String loginId = SecurityContextHolder.getContext().getAuthentication().getName();
+        String status = statusMap.get("status");
+
+        applicationService.updateApplicationStatus(applicationId, status, loginId);
+
+        return ResponseEntity.ok(Map.of("message", "지원 상태 변경 완료"));
+    }
 }
