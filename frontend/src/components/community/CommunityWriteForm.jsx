@@ -63,7 +63,7 @@ export default function CommunityWriteForm() {
       } catch (e) {
         if (!mounted) return;
         alert(
-          e.response?.data?.message ||
+            e.response?.data?.message ||
             e.message ||
             "게시글 정보를 불러오지 못했습니다."
         );
@@ -76,7 +76,7 @@ export default function CommunityWriteForm() {
       mounted = false;
     };
   }, [isEdit, editPostId]);
-  
+
   // 등록 버튼 처리
   const isValid = title.trim() && content.trim(); // 제목 + 내용 둘 다 입력됐는지 확인
   const handleSubmit = async () => {
@@ -94,8 +94,8 @@ export default function CommunityWriteForm() {
       };
       const formData = new FormData();
       formData.append(
-        "data",
-        new Blob([JSON.stringify(payload)], { type: "application/json" })
+          "data",
+          new Blob([JSON.stringify(payload)], { type: "application/json" })
       );
       // 수정 시 첨부를 건드리지 않았다면 파트를 보내지 않아 서버에서 null로 처리되게 한다.
       if (!isEdit || imageChanged) {
@@ -117,7 +117,7 @@ export default function CommunityWriteForm() {
       navigate("/community");
     } catch (e) {
       alert(
-        e.response?.data?.message ||
+          e.response?.data?.message ||
           e.message ||
           (isEdit ? "게시글 수정에 실패했습니다." : "게시글 등록에 실패했습니다.")
       );
@@ -128,204 +128,204 @@ export default function CommunityWriteForm() {
 
   if (isEdit && !editPostId) {
     return (
-      <div className="max-w-4xl mx-auto px-6 py-10 bg-[#FDFBF7] min-h-screen text-center text-gray-600">
-        수정할 게시글 정보를 찾을 수 없습니다.
-      </div>
+        <div className="max-w-4xl mx-auto px-6 py-10 bg-[#FDFBF7] min-h-screen text-center text-gray-600">
+          수정할 게시글 정보를 찾을 수 없습니다.
+        </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-6 py-10 bg-[#FDFBF7] min-h-screen">
-      {/* 브레드크럼 */}
-      <div className="text-sm text-gray-400 mb-6">
-        커뮤니티 &gt; <span className="text-gray-600 font-medium">글쓰기</span>
-      </div>
-
-      {/* 메인 카드 */}
-      <div className="bg-white rounded-2xl shadow-sm border border-[#F3E8D0] overflow-hidden">
-        {/* 헤더 */}
-        <div className="p-8 border-b border-[#F3E8D0]">
-          <h1 className="text-2xl font-bold text-[#2A1D16] mb-1">{isEdit ? "게시글 수정" : "새 게시글 작성"}</h1>
-          <p className="text-sm text-gray-400">커뮤니티 이용 규칙을 준수하여 작성해주세요.</p>
+      <div className="max-w-4xl mx-auto px-6 py-10 bg-[#FDFBF7] min-h-screen">
+        {/* 브레드크럼 */}
+        <div className="text-sm text-gray-400 mb-6">
+          커뮤니티 &gt; <span className="text-gray-600 font-medium">글쓰기</span>
         </div>
 
-        {/* 폼 섹션 */}
-        <div className="p-8 space-y-8">
-          
-          {/* 카테고리 선택 */}
-          <div>
-            <label className="block text-sm font-bold text-[#2A1D16] mb-3">
-              카테고리 <span className="text-red-500">*</span>
-            </label>
-            <div className="flex gap-3">
-              {categories.map((item) => (
+        {/* 메인 카드 */}
+        <div className="bg-white rounded-2xl shadow-sm border border-[#F3E8D0] overflow-hidden">
+          {/* 헤더 */}
+          <div className="p-8 border-b border-[#F3E8D0]">
+            <h1 className="text-2xl font-bold text-[#2A1D16] mb-1">{isEdit ? "게시글 수정" : "새 게시글 작성"}</h1>
+            <p className="text-sm text-gray-400">커뮤니티 이용 규칙을 준수하여 작성해주세요.</p>
+          </div>
+
+          {/* 폼 섹션 */}
+          <div className="p-8 space-y-8">
+
+            {/* 카테고리 선택 */}
+            <div>
+              <label className="block text-sm font-bold text-[#2A1D16] mb-3">
+                카테고리 <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-3">
+                {categories.map((item) => (
+                    <button
+                        key={item}
+                        onClick={() => setCategory(item)}
+                        className={`px-6 py-2 rounded-full text-sm font-medium border transition-all
+                    ${category === item
+                            ? "bg-[#2A1D16] text-white border-[#2A1D16]"
+                            : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"}`}
+                    >
+                      {item}
+                    </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 제목 입력 */}
+            <div>
+              <label className="block text-sm font-bold text-[#2A1D16] mb-2">
+                제목 <span className="text-red-500">*</span>
+              </label>
+              <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value.slice(0, 100))}
+                  placeholder="제목을 입력하세요"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#2A1D16] text-sm"
+              />
+              <div className="text-right text-xs text-gray-400 mt-1">{title.length}/100</div>
+            </div>
+
+            {/* 내용 입력 */}
+            <div>
+              <label className="block text-sm font-bold text-[#2A1D16] mb-2">
+                내용 <span className="text-red-500">*</span>
+              </label>
+              <textarea
+                  rows="10"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value.slice(0, 500))}
+                  placeholder="내용을 입력하세요 (최대 500자)"
+                  className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#2A1D16] text-sm resize-none"
+              />
+              <div className="text-right text-xs text-gray-400 mt-1">{content.length}/500</div>
+            </div>
+
+            {/* 첨부파일 섹션 */}
+            <div className="space-y-4">
+
+              {/* ===== 이미지 첨부 ===== */}
+              <div>
+                <p className="text-sm font-bold text-[#2A1D16] mb-2">이미지 첨부</p>
+
+                {/* 숨겨진 input */}
+                <input
+                    type="file"
+                    accept="image/*"
+                    id="imageInput"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const picked = e.target.files?.[0] || null;
+                      if (picked && picked.size > MAX_UPLOAD_BYTES) {
+                        alert("이미지는 50MB 이하만 업로드할 수 있습니다.");
+                        e.target.value = "";
+                        return;
+                      }
+                      setImage(picked);
+                      setImageChanged(true);
+                    }}
+                />
+
+                {/* 버튼 */}
                 <button
-                  key={item}
-                  onClick={() => setCategory(item)}
-                  className={`px-6 py-2 rounded-full text-sm font-medium border transition-all
-                    ${category === item 
-                      ? "bg-[#2A1D16] text-white border-[#2A1D16]" 
-                      : "bg-white text-gray-400 border-gray-200 hover:border-gray-300"}`}
+                    onClick={() => document.getElementById("imageInput").click()}
+                    className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg text-xs text-orange-500 bg-orange-50/30 hover:bg-orange-50 transition-colors"
                 >
-                  {item}
+                  <span>🖼️</span> 이미지 추가 (최대 50MB)
                 </button>
-              ))}
-            </div>
-          </div>
 
-          {/* 제목 입력 */}
-          <div>
-            <label className="block text-sm font-bold text-[#2A1D16] mb-2">
-              제목 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value.slice(0, 100))}
-              placeholder="제목을 입력하세요"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#2A1D16] text-sm"
-            />
-            <div className="text-right text-xs text-gray-400 mt-1">{title.length}/100</div>
-          </div>
+                {/* 이미지 미리보기 */}
+                {image && (
+                    <div className="flex gap-2 mt-3 flex-wrap">
+                      <img
+                          src={URL.createObjectURL(image)}
+                          alt="preview"
+                          className="w-20 h-20 object-cover rounded-lg border"
+                      />
+                    </div>
+                )}
+                {!image && isEdit && existingImageUrl && (
+                    <div className="mt-3 text-xs text-gray-600">
+                      <p className="mb-2">현재 이미지</p>
+                      <img
+                          src={toAbsoluteUrl(existingImageUrl)}
+                          alt="current"
+                          className="w-20 h-20 object-cover rounded-lg border"
+                      />
+                    </div>
+                )}
+              </div>
 
-          {/* 내용 입력 */}
-          <div>
-            <label className="block text-sm font-bold text-[#2A1D16] mb-2">
-              내용 <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              rows="10"
-              value={content}
-              onChange={(e) => setContent(e.target.value.slice(0, 500))}
-              placeholder="내용을 입력하세요 (최대 500자)"
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:outline-none focus:ring-1 focus:ring-[#2A1D16] text-sm resize-none"
-            />
-            <div className="text-right text-xs text-gray-400 mt-1">{content.length}/500</div>
-          </div>
+              {/* ===== 파일 첨부 ===== */}
+              <div>
+                <p className="text-sm font-bold text-[#2A1D16] mb-2">파일 첨부</p>
 
-          {/* 첨부파일 섹션 */}
-          <div className="space-y-4">
+                {/* 숨겨진 input */}
+                <input
+                    type="file"
+                    id="fileInput"
+                    style={{ display: "none" }}
+                    onChange={(e) => {
+                      const picked = e.target.files?.[0] || null;
+                      if (picked && picked.size > MAX_UPLOAD_BYTES) {
+                        alert("파일은 50MB 이하만 업로드할 수 있습니다.");
+                        e.target.value = "";
+                        return;
+                      }
+                      setFile(picked);
+                      setFileChanged(true);
+                    }}
+                />
 
-            {/* ===== 이미지 첨부 ===== */}
-            <div>
-              <p className="text-sm font-bold text-[#2A1D16] mb-2">이미지 첨부</p>
+                {/* 버튼 */}
+                <button
+                    onClick={() => document.getElementById("fileInput").click()}
+                    className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 bg-gray-50/50 hover:bg-gray-50 transition-colors"
+                >
+                  <span>📎</span> 파일 추가 (최대 50MB)
+                </button>
 
-              {/* 숨겨진 input */}
-              <input
-                type="file"
-                accept="image/*"
-                id="imageInput"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const picked = e.target.files?.[0] || null;
-                  if (picked && picked.size > MAX_UPLOAD_BYTES) {
-                    alert("이미지는 50MB 이하만 업로드할 수 있습니다.");
-                    e.target.value = "";
-                    return;
-                  }
-                  setImage(picked);
-                  setImageChanged(true);
-                }}
-              />
+                {/* 파일 목록 */}
+                {file && (
+                    <ul className="mt-3 text-xs text-gray-600 space-y-1">
+                      <li className="flex items-center gap-2">
+                        📎 {file.name}
+                      </li>
+                    </ul>
+                )}
+                {!file && isEdit && existingFileUrl && (
+                    <ul className="mt-3 text-xs text-gray-600 space-y-1">
+                      <li className="flex items-center gap-2">
+                        📎 현재 파일: {existingFileUrl.split("/").pop() || existingFileUrl}
+                      </li>
+                    </ul>
+                )}
+              </div>
 
-              {/* 버튼 */}
-              <button
-                onClick={() => document.getElementById("imageInput").click()}
-                className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg text-xs text-orange-500 bg-orange-50/30 hover:bg-orange-50 transition-colors"
-              >
-                <span>🖼️</span> 이미지 추가 (최대 50MB)
-              </button>
-
-              {/* 이미지 미리보기 */}
-              {image && (
-                <div className="flex gap-2 mt-3 flex-wrap">
-                  <img
-                    src={URL.createObjectURL(image)}
-                    alt="preview"
-                    className="w-20 h-20 object-cover rounded-lg border"
-                  />
-                </div>
-              )}
-              {!image && isEdit && existingImageUrl && (
-                <div className="mt-3 text-xs text-gray-600">
-                  <p className="mb-2">현재 이미지</p>
-                  <img
-                    src={toAbsoluteUrl(existingImageUrl)}
-                    alt="current"
-                    className="w-20 h-20 object-cover rounded-lg border"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* ===== 파일 첨부 ===== */}
-            <div>
-              <p className="text-sm font-bold text-[#2A1D16] mb-2">파일 첨부</p>
-
-              {/* 숨겨진 input */}
-              <input
-                type="file"
-                id="fileInput"
-                style={{ display: "none" }}
-                onChange={(e) => {
-                  const picked = e.target.files?.[0] || null;
-                  if (picked && picked.size > MAX_UPLOAD_BYTES) {
-                    alert("파일은 50MB 이하만 업로드할 수 있습니다.");
-                    e.target.value = "";
-                    return;
-                  }
-                  setFile(picked);
-                  setFileChanged(true);
-                }}
-              />
-
-              {/* 버튼 */}
-              <button
-                onClick={() => document.getElementById("fileInput").click()}
-                className="flex items-center gap-2 px-4 py-2 border border-dashed border-gray-300 rounded-lg text-xs text-gray-500 bg-gray-50/50 hover:bg-gray-50 transition-colors"
-              >
-                <span>📎</span> 파일 추가 (최대 50MB)
-              </button>
-
-              {/* 파일 목록 */}
-              {file && (
-                <ul className="mt-3 text-xs text-gray-600 space-y-1">
-                  <li className="flex items-center gap-2">
-                    📎 {file.name}
-                  </li>
-                </ul>
-              )}
-              {!file && isEdit && existingFileUrl && (
-                <ul className="mt-3 text-xs text-gray-600 space-y-1">
-                  <li className="flex items-center gap-2">
-                    📎 현재 파일: {existingFileUrl.split("/").pop() || existingFileUrl}
-                  </li>
-                </ul>
-              )}
             </div>
 
           </div>
 
-        </div>
-
-        {/* 하단 버튼 */}
-        <div className="p-8 bg-[#FDFBF7] border-t border-[#F3E8D0] flex justify-end gap-3">
-          <button
-            onClick={() => navigate(-1)}
-            className="px-8 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-600 text-sm font-medium hover:bg-gray-50"
-          >
-            취소
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={!isValid || submitting || initialLoading} // 조건 안되면 클릭 막기
-            className={`px-8 py-2.5 rounded-lg text-white text-sm font-medium transition-colors
+          {/* 하단 버튼 */}
+          <div className="p-8 bg-[#FDFBF7] border-t border-[#F3E8D0] flex justify-end gap-3">
+            <button
+                onClick={() => navigate(-1)}
+                className="px-8 py-2.5 rounded-lg border border-gray-300 bg-white text-gray-600 text-sm font-medium hover:bg-gray-50"
+            >
+              취소
+            </button>
+            <button
+                onClick={handleSubmit}
+                disabled={!isValid || submitting || initialLoading} // 조건 안되면 클릭 막기
+                className={`px-8 py-2.5 rounded-lg text-white text-sm font-medium transition-colors
               ${isValid && !submitting && !initialLoading ? "bg-[#2A1D16] hover:bg-[#5A3E2B]" : "bg-gray-300 cursor-not-allowed"} `}
-          >
-            {submitting || initialLoading ? "처리 중..." : isEdit ? "수정하기" : "등록하기"}
-          </button>
+            >
+              {submitting || initialLoading ? "처리 중..." : isEdit ? "수정하기" : "등록하기"}
+            </button>
+          </div>
         </div>
       </div>
-    </div>
   );
 }
