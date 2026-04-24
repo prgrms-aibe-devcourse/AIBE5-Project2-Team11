@@ -76,7 +76,6 @@ export default function Header() {
   const navItems = [
     { label: "채용공고", path: "/jobs", icon: "ri-file-list-3-line" },
     { label: "커뮤니티", path: "/community", icon: "ri-discuss-line" },
-    { label: "AI추천", path: "/ai-recommend", icon: "ri-sparkling-2-line" },
     { label: "공지사항", path: "/notice", icon: "ri-notification-3-line" },
   ];
 
