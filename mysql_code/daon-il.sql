@@ -620,4 +620,18 @@ select * from qualification;
 -- post_like 테이블 DB 구조 변경 26.04.23
 ALTER TABLE post_like ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;
 
+-- resume_certificate 테이블 DB 구조 변경 26.04.24
+-- certificate_id → qualification_id로 변경
+
+-- 1단계: 기존 외래키 삭제
+ALTER TABLE resume_certificate DROP FOREIGN KEY FK_resume_certificate_certificate;
+
+-- 2단계: certificate_id 컬럼을 qualification_id로 이름 변경 및 타입 변경 (BIGINT → INT)
+ALTER TABLE resume_certificate CHANGE COLUMN certificate_id qualification_id INT NOT NULL;
+
+-- 3단계: 새로운 외래키 추가 (qualification 테이블 참조)
+ALTER TABLE resume_certificate
+ADD CONSTRAINT FK_resume_certificate_qualification
+FOREIGN KEY (qualification_id) REFERENCES qualification(id);
+
 

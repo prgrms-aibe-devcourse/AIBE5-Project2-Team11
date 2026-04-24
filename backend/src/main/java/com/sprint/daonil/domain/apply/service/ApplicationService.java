@@ -83,9 +83,9 @@ public class ApplicationService {
         Page<Application> applications;
 
         if (status != null) { // 지원상태 필터링
-            applications = applicationRepository.findByMember_LoginIdAndStatus(loginId, Status.valueOf(status), pageable);
+            applications = applicationRepository.findByMember_LoginIdAndStatusOrderByAppliedAtDesc(loginId, Status.valueOf(status), pageable);
         } else { // 전체 조회
-            applications = applicationRepository.findByMember_LoginId(loginId, pageable);
+            applications = applicationRepository.findByMember_LoginIdOrderByAppliedAtDesc(loginId, pageable);
         }
 
         return applications.map(ApplicationListResponseDto::new);

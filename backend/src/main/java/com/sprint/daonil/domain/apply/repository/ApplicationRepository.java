@@ -12,9 +12,10 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     boolean existsByMember_MemberIdAndJobPosting_JobPostingId(Long memberId, Long jobPostingId);
 
     // 로그인한 사용자의 모든 지원 목록 조회
-    Page<Application> findByMember_LoginId(String loginId, Pageable pageable);
+    Page<Application> findByMember_LoginIdOrderByAppliedAtDesc(String loginId, Pageable pageable);
 
     // 로그인한 사용자 지원 상태 필터 적용 조회
+    Page<Application> findByMember_LoginIdAndStatusOrderByAppliedAtDesc(String loginId, Status status, Pageable pageable);
     Page<Application> findByMember_LoginIdAndStatus(String loginId, Status status, Pageable pageable);
 
     // 공고별 지원자 목록 조회 (기업용) - Fetch Join 적용
@@ -27,4 +28,5 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
 
     // 공고별 지원자 수 조회
     int countByJobPosting_JobPostingId(Long jobPostingId);
+
 }
