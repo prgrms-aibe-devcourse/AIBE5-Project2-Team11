@@ -1047,13 +1047,54 @@ const ApplicationModal = ({ isOpen, onClose, job }) => {
   };
 
   const handleApply = async () => {
+    if (!selectedResume?.id) {
+      alert('지원할 이력서를 먼저 선택해주세요.');
+      return;
+    }
+
+    if (!job?.id) {
+      alert('공고 정보를 확인할 수 없습니다. 다시 시도해주세요.');
+      return;
+    }
+
+    const token = getAccessToken();
+    if (!token) {
+      alert('로그인 후 이용할 수 있습니다.');
+      return;
+    }
+
     setIsSubmitting(true);
-    // [백엔드 연동 POST 요청 부분]
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      const response = await fetch(
+          `${RESUME_API_BASE}/jobs/${encodeURIComponent(job.id)}/application`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              resumeId: selectedResume.id
+            })
+          }
+      );
+
+      if (!response.ok) {
+        const serverMessage = await extractErrorMessage(
+            response,
+            '지원에 실패했습니다. 다시 시도해주세요.'
+        );
+        throw new Error(serverMessage);
+      }
+
       alert('지원이 완료되었습니다!');
       handleClose();
-    }, 800);
+    } catch (error) {
+      console.error('지원 요청 실패:', error);
+      alert(error.message || '지원에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleCreateSave = async () => {
@@ -1428,7 +1469,10 @@ export default function JobDetail() {
                 >
                   지금 지원하기
                 </button>
-                <Link to="/jobs" className="w-full sm:w-auto px-6 py-3.5 bg-white border border-gray-300 hover:bg-gray-50 transition-colors text-gray-700 font-bold rounded-xl text-center">목록으로</Link>
+                <Link to="/jobs" className="w-full sm:w-auto px-6 py-3.5 bg-white border border-[#E8D5C4] text-[#8B6B4A] font-bold rounded-xl text-center hover:bg-[#FFF9F3] hover:text-[#5D4037] transition-all duration-200 hover:shadow-sm flex items-center justify-center gap-2 group">
+                  <i className="ri-sparkling-2-line group-hover:scale-110 transition-transform duration-200"></i>
+                  목록으로
+                </Link>
               </div>
             </div>
           </div>

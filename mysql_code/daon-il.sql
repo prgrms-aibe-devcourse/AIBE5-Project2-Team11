@@ -415,7 +415,8 @@ CREATE TABLE field (
     depth2 VARCHAR(255),
     PRIMARY KEY (id)
 );
-select * from member;
+
+select * from job_posting;
 CREATE TABLE qualification (
     id INT NOT NULL AUTO_INCREMENT,
     name VARCHAR(255) NOT NULL,
@@ -478,7 +479,7 @@ MODIFY COLUMN field_id VARCHAR(50) NULL;
 select * from member;
 select * from field;
 select * from qualification;
-select * from profile_lang_qualification;
+select * from profile__qualification;
 select * from profile_disability;
 select * from disability;
 select * from profile_certificate;
@@ -553,7 +554,7 @@ ALTER TABLE bookmark
     ADD CONSTRAINT FK_bookmark_job_posting 
         FOREIGN KEY (job_posting_id) REFERENCES job_posting (job_posting_id) ON DELETE CASCADE;
 
-select * from industry_type;
+select * from date;
 select * from detail_industry_type;
 
 use daonil;
@@ -614,7 +615,7 @@ END;
     -- 3. 안전 업데이트 모드 원상복구
 SET SQL_SAFE_UPDATES = 1;
 
-select * from post;
+select * from qualification;
 
 -- post_like 테이블 DB 구조 변경 26.04.23
 ALTER TABLE post_like ADD COLUMN is_active BOOLEAN NOT NULL DEFAULT TRUE;
