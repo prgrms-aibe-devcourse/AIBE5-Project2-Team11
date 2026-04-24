@@ -52,7 +52,7 @@ export default function CompanyJobpostManageContent() {
   const totalCount = postings.length;
   const activeCount = postings.filter(job => !job.is_closed).length;
   const closedCount = postings.filter(job => job.is_closed).length;
-  const totalApplicants = postings.reduce((acc, job) => acc + Math.floor(job.view_count / 5), 0);
+  const totalApplicants = postings.reduce((acc, job) => acc + (job.applicantCount || 0), 0);
 
   // 필터링된 리스트
   const filteredPostings = postings.filter((job) => {
@@ -182,11 +182,11 @@ export default function CompanyJobpostManageContent() {
           <table className="w-full text-sm border-collapse">
             <thead>
               <tr className="bg-[#F3EFE5] text-[#8C7E69]">
-                <th className="px-6 py-4 rounded-l-xl font-bold text-left">공고 제목</th>
-                <th className="px-4 py-4 font-bold text-center">작성일 / 수정일</th>
-                <th className="px-4 py-4 font-bold text-center">마감일</th>
-                <th className="px-4 py-4 font-bold text-center">지원자</th>
-                <th className="px-4 py-4 font-bold text-center">지원 상태</th>
+                <th className="px-6 py-4 rounded-l-xl font-bold text-left whitespace-nowrap">공고 제목</th>
+                <th className="px-4 py-4 font-bold text-center whitespace-nowrap">작성일 / 수정일</th>
+                <th className="px-4 py-4 font-bold text-center whitespace-nowrap">마감일</th>
+                <th className="px-4 py-4 font-bold text-center whitespace-nowrap">지원자</th>
+                <th className="px-4 py-4 font-bold text-center whitespace-nowrap">지원 상태</th>
                 <th className="px-6 py-4 rounded-r-xl w-10"></th>
               </tr>
             </thead>
@@ -207,7 +207,7 @@ export default function CompanyJobpostManageContent() {
                     <p>수정 {formatDate(job.updated_at)}</p>
                   </td>
                   <td className="px-4 py-6 text-center text-[12px] text-[#A3A3A3] whitespace-nowrap">{job.application_end_date?.replace(/-/g, '.')}</td>
-                  <td className="px-4 py-6 text-center whitespace-nowrap font-bold text-gray-900">{Math.floor(job.view_count / 5)}명</td>
+                  <td className="px-4 py-6 text-center whitespace-nowrap font-bold text-gray-900">{job.applicantCount || 0}명</td>
                   <td className="px-4 py-6 text-center whitespace-nowrap">
                     <button 
                       onClick={(e) => handleCloseClick(e, job)}

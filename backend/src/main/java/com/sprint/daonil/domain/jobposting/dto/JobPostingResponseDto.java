@@ -40,7 +40,13 @@ public class JobPostingResponseDto {
     private String envLstnTalk;
     private String envStndWalk;
 
+    private Integer applicantCount;
+
     public static JobPostingResponseDto fromEntity(JobPosting jobPosting) {
+        return fromEntity(jobPosting, 0);
+    }
+
+    public static JobPostingResponseDto fromEntity(JobPosting jobPosting, Integer applicantCount) {
         return JobPostingResponseDto.builder()
                 .jobPostingId(jobPosting.getJobPostingId())
                 .companyId(jobPosting.getCompany().getCompanyId())
@@ -68,6 +74,7 @@ public class JobPostingResponseDto {
                 .envLiftPower(jobPosting.getEnvLiftPower())
                 .envLstnTalk(jobPosting.getEnvLstnTalk())
                 .envStndWalk(jobPosting.getEnvStndWalk())
+                .applicantCount(applicantCount)
                 .build();
     }
 }

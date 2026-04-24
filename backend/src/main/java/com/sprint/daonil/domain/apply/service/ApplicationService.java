@@ -155,9 +155,14 @@ public class ApplicationService {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 공고의 지원자 목록을 볼 권한이 없습니다.");
         }
 
-        return applicationRepository.findByJobPosting_JobPostingIdOrderByAppliedAtDesc(jobPostingId)
+        return applicationRepository.findByJobPosting_JobPostingIdWithMemberAndResume(jobPostingId)
                 .stream()
-                .map(ApplicationApplicantResponseDto::from)
+                .map(app -> {
+                    String birthDate = profileRepository.findByMemberId(app.getMember().getMemberId())
+                            .map(Profile::getBirthDate)
+                            .orElse("정보 없음");
+                    return ApplicationApplicantResponseDto.from(app, birthDate);
+                })
                 .collect(java.util.stream.Collectors.toList());
     }
 
