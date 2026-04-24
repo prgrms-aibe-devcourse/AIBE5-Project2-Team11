@@ -40,6 +40,7 @@ const OAuth2Callback = () => {
            localStorage.setItem('loginId', loginId);
            localStorage.setItem('name', name);
            localStorage.setItem('role', role);
+           localStorage.setItem('memberType', role);  // ✅ memberType으로도 저장
            localStorage.setItem('provider', provider);
            localStorage.setItem('isLogin', 'true');
 
@@ -103,4 +104,3 @@ const OAuth2Callback = () => {
 };
 
 export default OAuth2Callback;
-
