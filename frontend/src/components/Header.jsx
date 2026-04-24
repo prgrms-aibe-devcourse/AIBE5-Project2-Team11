@@ -76,6 +76,7 @@ export default function Header() {
   const navItems = [
     { label: "채용공고", path: "/jobs", icon: "ri-file-list-3-line" },
     { label: "커뮤니티", path: "/community", icon: "ri-discuss-line" },
+    { label: "AI추천", path: "/ai-recommend", icon: "ri-sparkling-2-line" },
     { label: "공지사항", path: "/notice", icon: "ri-notification-3-line" },
   ];
 
@@ -137,9 +138,9 @@ export default function Header() {
           <div className="flex items-center gap-8">
             <Link to="/" className="flex items-center gap-2">
               <img
-                src={daonilLogo}
-                alt="다온일"
-                className="h-14 w-auto object-contain mt-2"
+                  src={daonilLogo}
+                  alt="다온일"
+                  className="h-14 w-auto object-contain mt-2"
               />
             </Link>
 
