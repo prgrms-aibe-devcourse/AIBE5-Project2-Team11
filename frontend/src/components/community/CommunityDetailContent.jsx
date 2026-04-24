@@ -409,10 +409,10 @@ export default function CommunityDetailContent() {
             <button
               type="button"
               onClick={() => navigate("/community")}
-              className="flex items-center gap-2 px-5 py-2 border border-gray-200 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+              className="flex items-center gap-2 px-5 py-2.5 bg-white border border-[#E8D5C4] rounded-lg text-sm font-medium text-[#8B6B4A] hover:bg-[#FFF9F3] hover:text-[#5D4037] transition-all duration-200 hover:shadow-sm group"
             >
-              <i className="ri-list-check"></i>
-              목록
+              <i className="ri-sparkling-2-line group-hover:scale-110 transition-transform duration-200"></i>
+              목록으로
             </button>
 
             {hasCommunityActionToken && (

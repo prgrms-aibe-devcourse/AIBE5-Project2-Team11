@@ -343,13 +343,98 @@ export default function ResumeForm() {
       return { ...prev, certificates: arr };
     });
 
-  const removeCertificate = (idx) =>
-    setResume((prev) => ({
-      ...prev,
-      certificates: prev.certificates.filter((_, i) => i !== idx),
-    }));
+   const removeCertificate = (idx) =>
+     setResume((prev) => ({
+       ...prev,
+       certificates: prev.certificates.filter((_, i) => i !== idx),
+     }));
 
-  const handleSave = async () => {
+   const addLanguage = () =>
+     setResume((prev) => ({
+       ...prev,
+       languages: [
+         ...prev.languages,
+         { languageName: "", testName: "", score: "", acquiredDate: "", expirationDate: "" },
+       ],
+     }));
+
+   const removeLanguage = (idx) =>
+     setResume((prev) => ({
+       ...prev,
+       languages: prev.languages.filter((_, i) => i !== idx),
+     }));
+
+   const updateLanguage = (idx, field, value) =>
+     setResume((prev) => {
+       const arr = [...prev.languages];
+       arr[idx] = { ...arr[idx], [field]: value };
+       return { ...prev, languages: arr };
+     });
+
+   const getCertificateSuggestions = (query) => {
+     const normalized = (query || "").trim().toLowerCase();
+     if (!normalized) return CERTIFICATE_OPTIONS.slice(0, 20);
+     return CERTIFICATE_OPTIONS.filter((option) =>
+       option.toLowerCase().includes(normalized)
+     ).slice(0, 20);
+   };
+
+   const updateCertificateQuery = (idx, value) => {
+     setResume((prev) => ({
+       ...prev,
+       certificates: prev.certificates.map((cert, i) =>
+         i === idx ? { ...cert, nameQuery: value, selectedName: "" } : cert
+       ),
+     }));
+     setActiveCertificateDropdown(idx);
+   };
+
+   const selectCertificateCandidate = (idx, selectedName) => {
+     setResume((prev) => ({
+       ...prev,
+       certificates: prev.certificates.map((cert, i) =>
+         i === idx ? { ...cert, selectedName, nameQuery: selectedName } : cert
+       ),
+     }));
+     setActiveCertificateDropdown(null);
+   };
+
+   const toggleCertificateSearchMode = (idx) => {
+     setResume((prev) => ({
+       ...prev,
+       certificates: prev.certificates.map((cert, i) => {
+         if (i !== idx) return cert;
+         const nextMode = !cert.isSearchMode;
+         return {
+           ...cert,
+           isSearchMode: nextMode,
+           nameQuery: cert.name || cert.nameQuery || "",
+           selectedName: "",
+         };
+       }),
+     }));
+     setActiveCertificateDropdown((prev) => (prev === idx ? null : idx));
+   };
+
+   const applyCertificateSelection = (idx) => {
+     const cert = resume.certificates[idx];
+     const selectedValue = cert?.selectedName || cert?.nameQuery || "";
+     if (!CERTIFICATE_OPTIONS.includes(selectedValue)) {
+       alert("드롭다운에서 자격증명을 선택해주세요.");
+       return;
+     }
+     setResume((prev) => ({
+       ...prev,
+       certificates: prev.certificates.map((item, i) =>
+         i === idx
+           ? { ...item, name: selectedValue, nameQuery: selectedValue, selectedName: "", isSearchMode: false }
+           : item
+       ),
+     }));
+     setActiveCertificateDropdown(null);
+   };
+
+   const handleSave = async () => {
     if (!resume.title.trim()) {
       alert("이력서 제목을 입력해주세요.");
       return;
@@ -515,9 +600,10 @@ export default function ResumeForm() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate("/memberMypage")}
-              className="text-[#8D6E63] hover:text-[#5D4037] text-sm flex items-center gap-1"
+              className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-sm font-medium text-[#8B6B4A] hover:text-[#5D4037] border border-[#E8D5C4] rounded-lg hover:bg-[#FFF9F3] transition-all duration-200 hover:shadow-sm group"
             >
-              <i className="ri-arrow-left-line"></i> 목록
+              <i className="ri-sparkling-2-line group-hover:scale-110 transition-transform duration-200"></i>
+              목록
             </button>
             <h1 className="text-lg font-extrabold text-[#5D4037]">
               {isEdit ? "이력서 수정" : "새 이력서 작성"}

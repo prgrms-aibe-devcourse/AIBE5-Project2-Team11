@@ -1469,7 +1469,10 @@ export default function JobDetail() {
                 >
                   지금 지원하기
                 </button>
-                <Link to="/jobs" className="w-full sm:w-auto px-6 py-3.5 bg-white border border-gray-300 hover:bg-gray-50 transition-colors text-gray-700 font-bold rounded-xl text-center">목록으로</Link>
+                <Link to="/jobs" className="w-full sm:w-auto px-6 py-3.5 bg-white border border-[#E8D5C4] text-[#8B6B4A] font-bold rounded-xl text-center hover:bg-[#FFF9F3] hover:text-[#5D4037] transition-all duration-200 hover:shadow-sm flex items-center justify-center gap-2 group">
+                  <i className="ri-sparkling-2-line group-hover:scale-110 transition-transform duration-200"></i>
+                  목록으로
+                </Link>
               </div>
             </div>
           </div>

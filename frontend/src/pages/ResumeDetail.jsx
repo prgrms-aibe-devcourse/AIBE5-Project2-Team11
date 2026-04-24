@@ -95,9 +95,10 @@ export default function ResumeDetail() {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/memberMypage")}
-            className="text-[#8D6E63] hover:text-[#5D4037] text-sm flex items-center gap-1"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white text-sm font-medium text-[#8B6B4A] hover:text-[#5D4037] border border-[#E8D5C4] rounded-lg hover:bg-[#FFF9F3] transition-all duration-200 hover:shadow-sm group"
           >
-            <i className="ri-arrow-left-line"></i> 목록
+            <i className="ri-sparkling-2-line group-hover:scale-110 transition-transform duration-200"></i>
+            목록
           </button>
           <span className="text-gray-300">|</span>
           <span className="text-sm font-medium text-[#5D4037]">{resume.title}</span>

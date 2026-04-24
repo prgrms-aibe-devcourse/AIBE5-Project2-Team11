@@ -92,9 +92,10 @@ export default function Hero() {
         <div className="mt-10 flex flex-wrap justify-center gap-3">
           <a
             href="/ai-recommend"
-            className="px-7 py-3 bg-[#2C160D] text-white font-bold rounded-full shadow-lg hover:bg-[#3A2317] transition"
+            className="px-7 py-3 bg-[#2C160D] text-white font-bold rounded-full shadow-lg hover:bg-[#3A2317] transition inline-flex items-center justify-center gap-2 group"
           >
-            AI 추천 받기 →
+            <i className="ri-sparkling-2-line group-hover:scale-110 transition-transform duration-200"></i>
+            AI 추천 받기
           </a>
           <a
             href="/jobs"
