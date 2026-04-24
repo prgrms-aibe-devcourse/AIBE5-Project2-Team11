@@ -50,6 +50,7 @@ public class ApplicationController {
         return ResponseEntity.ok( applicationService.getMyApplications(loginId, page, size, status) );
     }
 
+
     // 지원 상세 조회
     @GetMapping("/application/{application_id}")
     public ResponseEntity<ApplicationDetailResponseDto> getDetail(@PathVariable("application_id") Long applicationId) {

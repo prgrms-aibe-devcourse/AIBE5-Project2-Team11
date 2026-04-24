@@ -81,9 +81,9 @@ public class ApplicationService {
         Pageable pageable = PageRequest.of(page, size);
         Page<Application> applications;
 
-        if (status != null) {
+        if (status != null) { // 지원상태 필터링
             applications = applicationRepository.findByMember_LoginIdAndStatus(loginId, Status.valueOf(status), pageable);
-        } else {
+        } else { // 전체 조회
             applications = applicationRepository.findByMember_LoginId(loginId, pageable);
         }
 
