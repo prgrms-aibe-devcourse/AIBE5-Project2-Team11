@@ -17,7 +17,7 @@ import java.util.List;
 public class Field {
 
     @Id
-    @Column(length = 50)
+    @Column(name = "field_id", length = 50)
     private String id;
 
     private String depth1;

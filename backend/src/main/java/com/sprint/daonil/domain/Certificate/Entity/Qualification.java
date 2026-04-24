@@ -27,7 +27,7 @@ public class Qualification {
     private String JMCD;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "fieldId")
+    @JoinColumn(name = "field_id")
     private Field field;
 
     @OneToMany(mappedBy = "qualification", fetch = FetchType.LAZY)
