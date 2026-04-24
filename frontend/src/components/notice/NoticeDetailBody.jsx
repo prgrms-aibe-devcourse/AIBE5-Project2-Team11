@@ -59,9 +59,10 @@ export default function NoticeDetailBody() {
         <section className="max-w-4xl mx-auto px-6 py-10">
             <button
                 onClick={() => navigate("/notice")}
-                className="text-sm text-[#8B6B4A] mb-5"
+                className="inline-flex items-center gap-2 px-4 py-2.5 mb-6 bg-white text-sm font-medium text-[#8B6B4A] hover:text-[#5D4037] border border-[#E8D5C4] rounded-lg hover:bg-[#FFF9F3] transition-all duration-200 hover:shadow-sm group"
             >
-                ← 목록으로
+                <i className="ri-sparkling-2-line text-base group-hover:scale-110 transition-transform duration-200"></i>
+                목록으로
             </button>
 
             <div className="bg-white rounded-2xl border border-[#EADFD3] overflow-hidden shadow-sm">
