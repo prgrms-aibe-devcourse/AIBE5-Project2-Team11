@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import video1 from "../assets/video/video1.mp4";
 
 export default function Hero() {
@@ -91,19 +90,18 @@ export default function Hero() {
 
         {/* CTA 버튼 */}
         <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <Link
-            to="/ai-recommend"
-            className="px-7 py-3 bg-gradient-to-r from-[#E8A04A] to-[#D98E3A] text-white font-bold rounded-full shadow-lg hover:shadow-xl transition flex items-center gap-2"
+          <a
+            href="/ai-recommend"
+            className="px-7 py-3 bg-[#2C160D] text-white font-bold rounded-full shadow-lg hover:bg-[#3A2317] transition"
           >
-            <i className="ri-sparkling-2-line text-base"></i>
-            AI추천
-          </Link>
-          <Link
-            to="/jobs"
-            className="px-7 py-3 bg-white/70 backdrop-blur text-[#2C160D] font-bold rounded-full shadow-md border border-white/50 hover:bg-white transition"
+            AI 추천 받기 →
+          </a>
+          <a
+            href="/jobs"
+            className="px-7 py-3 bg-white text-[#2C160D] font-bold rounded-full border-2 border-[#2C160D]/10 hover:border-[#2C160D]/30 transition"
           >
             채용공고 보기
-          </Link>
+          </a>
         </div>
       </div>
     </section>

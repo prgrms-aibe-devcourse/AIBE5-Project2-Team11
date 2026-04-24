@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 
-// 인라인 SVG 아이콘 (외부 아이콘 라이브러리 의존성 제거)
 const IconUserPlus = ({ className }) => (
   <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
     <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h10M17 14v6m-3-3h6" />
@@ -76,7 +75,6 @@ export default function HowItWorks() {
   return (
     <section className="bg-[#FFF4F1] py-20">
       <div className="max-w-6xl mx-auto px-4">
-        {/* 헤더 */}
         <div className="text-center mb-16">
           <span className="inline-block px-4 py-1 bg-[#F4D19B] text-[#8a5a1f] text-xs font-bold rounded-full mb-4 tracking-wider">
             HOW IT WORKS
@@ -89,9 +87,7 @@ export default function HowItWorks() {
           </p>
         </div>
 
-        {/* 4단계 플로우 */}
         <div className="relative">
-          {/* 점선 연결선 (데스크탑에서만 표시) */}
           <div
             className="hidden md:block absolute top-12 left-[12.5%] right-[12.5%] h-0.5 z-0"
             style={{
@@ -132,7 +128,6 @@ export default function HowItWorks() {
           </div>
         </div>
 
-        {/* CTA 버튼 */}
         <div className="text-center mt-14">
           <Link
             to="/login"
