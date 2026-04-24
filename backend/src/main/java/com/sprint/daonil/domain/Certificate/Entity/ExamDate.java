@@ -20,38 +20,38 @@ public class ExamDate {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("jmCd") // 복합키의 jmCd와 연결
-    @JoinColumn(name = "jmCd", referencedColumnName = "JMCD")
+    @JoinColumn(name = "`jmCd`", referencedColumnName = "JMCD")
     private Qualification qualification;
 
     // 필기시험 정보
-    @Column(name = "docRegStart")
+    @Column(name = "`docRegStart`")
     private LocalDateTime docRegStart;
-    @Column(name = "docRegEnd")
+    @Column(name = "`docRegEnd`")
     private LocalDateTime docRegEnd;
-    @Column(name = "docVacancyStart")
+    @Column(name = "`docVacancyStart`")
     private LocalDateTime docVacancyStart;
-    @Column(name = "docVacancyEnd")
+    @Column(name = "`docVacancyEnd`")
     private LocalDateTime docVacancyEnd;
-    @Column(name = "docExamStart")
+    @Column(name = "`docExamStart`")
     private LocalDateTime docExamStart;
-    @Column(name = "docExamEnd")
+    @Column(name = "`docExamEnd`")
     private LocalDateTime docExamEnd;
-    @Column(name = "docPass")
+    @Column(name = "`docPass`")
     private LocalDateTime docPass;
 
     // 실기시험 정보
-    @Column(name = "pracRegStart")
+    @Column(name = "`pracRegStart`")
     private LocalDateTime pracRegStart;
-    @Column(name = "pracRegEnd")
+    @Column(name = "`pracRegEnd`")
     private LocalDateTime pracRegEnd;
-    @Column(name = "pracVacancyStart")
+    @Column(name = "`pracVacancyStart`")
     private LocalDateTime pracVacancyStart;
-    @Column(name = "pracVacancyEnd")
+    @Column(name = "`pracVacancyEnd`")
     private LocalDateTime pracVacancyEnd;
-    @Column(name = "pracExamStart")
+    @Column(name = "`pracExamStart`")
     private LocalDateTime pracExamStart;
-    @Column(name = "pracExamEnd")
+    @Column(name = "`pracExamEnd`")
     private LocalDateTime pracExamEnd;
-    @Column(name = "pracPass")
+    @Column(name = "`pracPass`")
     private LocalDateTime pracPass;
 }

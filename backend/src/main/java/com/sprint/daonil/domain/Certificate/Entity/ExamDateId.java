@@ -1,6 +1,7 @@
 package com.sprint.daonil.domain.Certificate.Entity;
 
 import jakarta.persistence.Embeddable;
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,8 +15,11 @@ import java.util.Objects;
 @AllArgsConstructor
 public class ExamDateId implements Serializable { // 복합키 클래스
 
+    @Column(name = "`jmCd`")
     private String jmCd;
+    @Column(name = "`year`")
     private Integer year;
+    @Column(name = "`period`")
     private Integer period;
 
 
