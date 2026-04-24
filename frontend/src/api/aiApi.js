@@ -44,19 +44,20 @@ export const getTextEmbedding = async (text) => {
  * 5. GPT로 추천 이유 설명
  *
  * @param {string} query - 사용자 질문
- * @param {Array} jobs - 전체 공고 리스트 (전체를 넘김, 서버가 필터링)
+ * @param {Array} jobs - 전체 공고 리스트 (버전 호환성을 위해 유지하지만 사용하지 않음)
  * @param {string} region - 지역 필터 (선택)
  * @param {string} subCategory - 소분류 필터 (선택)
  * @returns {Object} { query, topJobs, explanation, count }
  */
 export const getAiRecommendation = async (query, jobs, region, subCategory) => {
   try {
-    const response = await api.post('/api/ai/recommend', {
+    const requestData = {
       query: query,
-      jobs: jobs,  // 전체 공고 리스트
       region: region,  // 지역 필터
       subCategory: subCategory,  // 소분류 필터
-    });
+    };
+
+    const response = await api.post('/api/ai/recommend', requestData);
     return response.data;  // { topJobs, explanation, count, filtered_count }
   } catch (error) {
     console.error('Error calling recommendation API:', error);
