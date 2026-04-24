@@ -33,6 +33,13 @@ export default function MemberSidebar({ activeMenu, onChangeMenu }) {
                 >
                     스크랩 목록
                 </button>
+
+                <button
+                    className={menuClass("application")}
+                    onClick={() => onChangeMenu("application")}
+                >
+                    지원 현황
+                </button>
             </div>
         </aside>
     );
