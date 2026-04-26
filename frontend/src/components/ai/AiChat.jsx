@@ -94,6 +94,12 @@ export default function AiChat() {
     "단순노무 종사자": ["제조 단순직"]
   };
 
+  // 작업환경 옵션
+  const workEnvironmentOptions = [
+    { id: "sitting", label: "앉아서 하는 일" },
+    { id: "standing", label: "서서 하는 일" }
+  ];
+
   // 자격증 추천용 직무 카테고리 (기존 depth2 값)
   const qualificationCategories = [
     "전체", "사업관리", "경영", "경영(사회조사분석)", "경영(소비자전문상담)", "경영(컨벤션기획)",
@@ -140,10 +146,17 @@ export default function AiChat() {
       template: () => `자격증 상세 일정`
     },
     {
-      text: "OO장애 유형에 맞는 OO지역 공고 추천해줘",
-      requiredFilters: ["disabilityType"],
-      type: "disability",
-      template: () => `장애 유형에 맞는 공고 추천`
+       text: "OO장애 유형에 맞는 OO지역 공고 추천해줘",
+       requiredFilters: ["disabilityType"],
+       type: "disability",
+       template: (_, __, ___, ____, _____, disabilityType, region) => {
+         let msg = `${disabilityType} 유형에 맞는`;
+         if (region && region !== "전체") {
+           msg += ` ${region} 지역`;
+         }
+         msg += ` 공고 추천`;
+         return msg;
+       }
     },
   ];
 
@@ -380,7 +393,9 @@ ${response.explanation}`;
         const opt = workEnvironmentOptions.find((o) => o.id === id);
         return opt?.label;
       }),
-      tempFilters.qualificationCategory
+      tempFilters.qualificationCategory,
+      selectedDisabilityForQuestion,
+      selectedRegionForDisability
     );
 
     setMessages((prev) => [...prev, { role: "user", text: finalQuestion }]);
@@ -420,20 +435,20 @@ ${explanation}`;
           const errorMsg = disabilityResponse?.error || "추천을 불러올 수 없습니다";
           setMessages((prev) => [...prev, { role: "bot", text: `죄송합니다. ${errorMsg}` }]);
         }
-      } else if (selectedQuestion.type === "qualification") {
-        // AI 기반 자격증 추천 (depth2 필터링으로 자동 조회)
-        const aiRecommendation = await getAiQualificationRecommendation(tempFilters.qualificationCategory);
+       } else if (selectedQuestion.type === "qualification") {
+         // AI 기반 자격증 추천 (depth2 필터링으로 자동 조회)
+         const aiRecommendation = await getAiQualificationRecommendation(tempFilters.qualificationCategory);
 
-        if (aiRecommendation && aiRecommendation.success) {
-          const qualifications = aiRecommendation.qualifications || [];
-          const explanation = aiRecommendation.explanation || "";
+         if (aiRecommendation && aiRecommendation.success) {
+           const qualifications = aiRecommendation.qualifications || [];
+           const explanation = aiRecommendation.explanation || "";
 
-          const qualiText = qualifications
-            .slice(0, 10)
-            .map((name, i) => `${i + 1}. ${name}`)
-            .join("\n");
+           const qualiText = qualifications
+             .slice(0, 10)
+             .map((name, i) => `${i + 1}. ${name}`)
+             .join("\n");
 
-          const fullResponse = `
+           const fullResponse = `
 ✨ 자격증 추천 결과:
 
 ${qualiText}
@@ -443,19 +458,41 @@ ${explanation}
 
 각 자격증의 상세 정보를 알고 싶으시면 자격증 이름을 입력하여 검색하실 수 있습니다.`;
 
-          setMessages((prev) => [...prev, { role: "bot", text: fullResponse }]);
+           setMessages((prev) => [...prev, { role: "bot", text: fullResponse }]);
 
-          // 기존 자격증 리스트로도 저장 (하위 호환성)
-          const qualiList = qualifications.map((name, i) => ({
-            id: i,
-            name: name,
-            jmcd: ""
-          }));
-          setQualifications(qualiList);
-        } else {
-          const errorMsg = aiRecommendation?.error || "자격증을 불러올 수 없습니다";
-          setMessages((prev) => [...prev, { role: "bot", text: `죄송합니다. ${errorMsg}` }]);
-        }
+           // 각 자격증에 대해 검색해서 jmcd 정보 추가
+           const qualiList = [];
+           for (const name of qualifications) {
+             try {
+               const searchResults = await searchQualifications(name);
+               if (searchResults && searchResults.length > 0) {
+                 const qual = searchResults[0];
+                 qualiList.push({
+                   id: qualifications.indexOf(name),
+                   name: name,
+                   jmcd: qual.jmcd || ""
+                 });
+               } else {
+                 qualiList.push({
+                   id: qualifications.indexOf(name),
+                   name: name,
+                   jmcd: ""
+                 });
+               }
+             } catch (err) {
+               console.error(`자격증 검색 오류 (${name}):`, err);
+               qualiList.push({
+                 id: qualifications.indexOf(name),
+                 name: name,
+                 jmcd: ""
+               });
+             }
+           }
+           setQualifications(qualiList);
+         } else {
+           const errorMsg = aiRecommendation?.error || "자격증을 불러올 수 없습니다";
+           setMessages((prev) => [...prev, { role: "bot", text: `죄송합니다. ${errorMsg}` }]);
+         }
       } else if (selectedQuestion.type === "qualificationDetail") {
         // 자격증 상세 정보 검색 모드
         setMessages((prev) => [...prev, { role: "bot", text: "자격증 이름을 입력하세요. 예: 정보처리, 리눅스" }]);
@@ -950,9 +987,11 @@ ${examSchedulesText}
                 >
                   <p className="font-semibold text-gray-800 line-clamp-1">{job.title || job.jobNm}</p>
                   <p className="text-xs text-gray-600 line-clamp-1">{job.company || job.busplaName}</p>
-                  <p className="text-xs text-yellow-600 mt-1">
-                    {Math.round(parseFloat(job.similarity) * 100)}% 유사
-                  </p>
+                  {job.similarity && !isNaN(parseFloat(job.similarity)) && (
+                    <p className="text-xs text-yellow-600 mt-1">
+                      {Math.round(parseFloat(job.similarity) * 100)}% 유사
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
