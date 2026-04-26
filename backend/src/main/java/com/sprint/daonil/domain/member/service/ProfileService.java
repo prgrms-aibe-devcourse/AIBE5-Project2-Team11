@@ -42,6 +42,7 @@ public class ProfileService {
                     });
 
             // 프로필 정보 업데이트
+            profile.setBirthDate(requestDto.getBirthDate());
             profile.setCareer(requestDto.getCareer());
             profile.setPreferredJob(requestDto.getPreferredJob());
             profile.setPreferredRegion(requestDto.getPreferredRegion());

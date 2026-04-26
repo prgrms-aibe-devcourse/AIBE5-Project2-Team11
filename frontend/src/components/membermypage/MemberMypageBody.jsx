@@ -34,6 +34,7 @@ export default function MemberMypageBody() {
     });
 
     const [profileInfo, setProfileInfo] = useState({
+        birthDate: "",
         career: "",
         preferredJob: "",
         preferredRegion: "",
@@ -137,6 +138,7 @@ export default function MemberMypageBody() {
                 if (data.success && data.data) {
                     const profileData = data.data;
                     setProfileInfo({
+                        birthDate: profileData.birthDate || "",
                         career: profileData.career || "",
                         preferredJob: profileData.preferredJob || "",
                         preferredRegion: profileData.preferredRegion || "",
@@ -358,6 +360,7 @@ export default function MemberMypageBody() {
             }
 
             const payload = {
+                birthDate: profileInfo.birthDate,
                 career: profileInfo.career,
                 preferredJob: profileInfo.preferredJob,
                 preferredRegion: profileInfo.preferredRegion,
@@ -696,6 +699,19 @@ export default function MemberMypageBody() {
                     {/* 기본 프로필 정보 */}
                     <div className="space-y-4 pb-6 border-b">
                         <h3 className="text-lg font-semibold text-gray-800">기본 정보</h3>
+
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <label className="font-medium text-gray-700">생년월일</label>
+                            <input
+                                type="date"
+                                className={`col-span-3 border p-2 rounded ${
+                                    !isEditingProfile ? "bg-gray-100 text-gray-500 cursor-not-allowed" : ""
+                                }`}
+                                value={profileInfo.birthDate}
+                                onChange={(e) => handleProfileChange("birthDate", e.target.value)}
+                                disabled={!isEditingProfile}
+                            />
+                        </div>
 
                         <div className="grid grid-cols-4 items-center gap-4">
                             <label className="font-medium text-gray-700">경력</label>
