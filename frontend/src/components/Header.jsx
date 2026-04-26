@@ -1,8 +1,11 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import AlarmPopover from "./alarm";
 import daonilLogo from "../assets/images/logo/daonil-logo.jpg";
 import { fetchAlarms, markAlarmAsRead } from "../api/alarmApi";
+
+// 알림 재조회 최소 간격 (밀리초) - 중복 API 호출 방지
+const ALARM_COOLDOWN_MS = 60_000;
 
 export default function Header() {
   const location = useLocation();
@@ -25,10 +28,21 @@ export default function Header() {
   const [alarms, setAlarms] = useState([]);
   const [isLoadingAlarms, setIsLoadingAlarms] = useState(false);
 
-  // ✅ 알림 조회 함수
-  const loadAlarms = async () => {
+  // 마지막 알림 조회 시간 (쿨다운 캐싱)
+  const lastFetchedRef = useRef(0);
+
+  // ✅ 알림 조회 함수 (쿨다운 적용)
+  const loadAlarms = useCallback(async (force = false) => {
+    const now = Date.now();
+
+    // 쿨다운 내 중복 호출 방지 (force=true면 무시)
+    if (!force && now - lastFetchedRef.current < ALARM_COOLDOWN_MS) {
+      return;
+    }
+
     try {
       setIsLoadingAlarms(true);
+      lastFetchedRef.current = now;
       const alarmsData = await fetchAlarms();
       setAlarms(alarmsData);
     } catch (error) {
@@ -38,7 +52,7 @@ export default function Header() {
     } finally {
       setIsLoadingAlarms(false);
     }
-  };
+  }, []);
 
   // ✅ localStorage 변경 감지 (OAuth2 로그인 후 업데이트)
   useEffect(() => {
@@ -62,14 +76,22 @@ export default function Header() {
     };
   }, []);
 
-  // ✅ 로그인 상태일 때 알림 조회
+  // ✅ 로그인 상태일 때 알림 조회 (최초 1회만, 폴링 없음)
+  useEffect(() => {
+    if (isLogin) {
+      loadAlarms(true);
+    } else {
+      setAlarms([]);
+      lastFetchedRef.current = 0;
+    }
+  }, [isLogin, loadAlarms]);
+
+  // ✅ 페이지 이동 시 알림 갱신 (쿨다운 적용 — 빈번한 이동 시 중복 호출 방지)
   useEffect(() => {
     if (isLogin) {
       loadAlarms();
-    } else {
-      setAlarms([]);
     }
-  }, [isLogin]);
+  }, [location.pathname, isLogin, loadAlarms]);
 
   const alarmRef = useRef(null);
 
@@ -101,22 +123,41 @@ export default function Header() {
   const unreadCount = alarms.filter((alarm) => !alarm.isRead).length;
 
   const handleAlarmClick = (alarm) => {
+    // 이미 읽은 알림이면 API 호출 생략
+    if (alarm.isRead) return;
+
     // 클릭한 알림 읽음 처리 (Backend 호출)
-    markAlarmAsRead(alarm.alarmId).then(() => {
-      // UI 업데이트
+    // 낙관적 UI 업데이트: API 호출 전에 먼저 UI 반영
+    setAlarms((prev) =>
+        prev.map((item) =>
+            item.alarmId === alarm.alarmId
+                ? { ...item, isRead: true }
+                : item
+        )
+    );
+
+    markAlarmAsRead(alarm.alarmId).catch((error) => {
+      console.error("알림 읽음 처리 실패:", error);
+      // 실패 시 롤백
       setAlarms((prev) =>
           prev.map((item) =>
               item.alarmId === alarm.alarmId
-                  ? { ...item, isRead: true }
+                  ? { ...item, isRead: false }
                   : item
           )
       );
-    }).catch((error) => {
-      console.error("알림 읽음 처리 실패:", error);
     });
+  };
 
-    // 필요 시 여기서 페이지 이동
-    // navigate("/notice");
+  // 알림 팝오버 토글 (열 때만 쿨다운 기반으로 새로고침)
+  const handleAlarmToggle = () => {
+    setIsAlarmOpen((prev) => {
+      const willOpen = !prev;
+      if (willOpen) {
+        loadAlarms(); // 쿨다운 내라면 자동 스킵됨
+      }
+      return willOpen;
+    });
   };
 
   useEffect(() => {
@@ -169,7 +210,7 @@ export default function Header() {
                   <div className="relative" ref={alarmRef}>
                     <button
                         type="button"
-                        onClick={() => setIsAlarmOpen((prev) => !prev)}
+                        onClick={handleAlarmToggle}
                         className="relative w-9 h-9 flex items-center justify-center rounded-md hover:bg-gray-100 transition"
                     >
                       <i className="ri-notification-3-line text-xl text-gray-600"></i>
