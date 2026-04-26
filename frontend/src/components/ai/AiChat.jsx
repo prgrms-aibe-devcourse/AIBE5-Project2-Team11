@@ -231,7 +231,7 @@ export default function AiChat() {
     setCharLoading(true);
 
      try {
-       const isSearchQuery = /공고|직무|일자리|추천|찾아|알려/.test(userMsg);
+       const isSearchQuery = /공고|직무|일자리|추천|알려/.test(userMsg);
 
        if (isSearchQuery) {
          // 백엔드에서 실제 job_posting 데이터 조회
