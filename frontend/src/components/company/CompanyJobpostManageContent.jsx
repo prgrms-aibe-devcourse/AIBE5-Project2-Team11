@@ -71,6 +71,11 @@ export default function CompanyJobpostManageContent() {
   // 폼 모달 열기 (등록/수정 공통)
   const handleOpenForm = (e, job = null) => {
     if (e) e.stopPropagation();
+    if (job?.is_closed) {
+      alert('마감된 공고는 수정할 수 없습니다.');
+      setOpenMenuId(null);
+      return;
+    }
     setSelectedJob(job);
     setIsFormModalOpen(true);
     setOpenMenuId(null);
@@ -242,12 +247,18 @@ export default function CompanyJobpostManageContent() {
           >
             공고 보기
           </button>
-          <button 
-            onClick={(e) => handleOpenForm(e, postings.find(j => j.job_posting_id === openMenuId))}
-            className="w-full px-4 py-3 text-left text-xs text-gray-700 hover:bg-gray-50 border-b border-gray-50"
-          >
-            공고 수정
-          </button>
+          {(() => {
+            const menuJob = postings.find(j => j.job_posting_id === openMenuId);
+            if (menuJob?.is_closed) return null;
+            return (
+              <button
+                onClick={(e) => handleOpenForm(e, menuJob)}
+                className="w-full px-4 py-3 text-left text-xs text-gray-700 hover:bg-gray-50 border-b border-gray-50"
+              >
+                공고 수정
+              </button>
+            );
+          })()}
         </div>,
         document.body
       )}

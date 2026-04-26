@@ -117,10 +117,20 @@ export default function CompanyApplicants() {
         return applicants.filter((item) => item.status === selectedStatus);
     }, [applicants, selectedStatus]);
 
+    useEffect(() => {
+        const isSelectedInFiltered = filteredApplicants.some(
+            (item) => item.id === selectedApplicantId
+        );
+
+        if (!isSelectedInFiltered) {
+            setSelectedApplicantId(filteredApplicants[0]?.id ?? null);
+        }
+    }, [selectedStatus, filteredApplicants, selectedApplicantId]);
+
     const selectedApplicant =
-        applicants.find((item) => item.id === selectedApplicantId) ||
+        filteredApplicants.find((item) => item.id === selectedApplicantId) ||
         filteredApplicants[0] ||
-        applicants[0];
+        null;
 
     const handleChangeStatus = async (newStatusLabel) => {
         if (!selectedApplicant) return;
@@ -153,9 +163,11 @@ export default function CompanyApplicants() {
                     <div className="mb-6">
                         <button
                             type="button"
-                            className="text-sm text-[#8A6E5A] hover:text-[#5B4636] transition"
+                            onClick={() => navigate("/company-jobpost-manage")}
+                            className="group inline-flex items-center gap-2 text-sm text-[#8A6E5A] hover:text-[#5B4636] transition"
                         >
-                            ← 공고 관리
+                            <i className="ri-sparkling-2-line group-hover:scale-110 transition-transform duration-200"></i>
+                            공고 관리
                         </button>
                     </div>
 

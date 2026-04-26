@@ -170,12 +170,6 @@ export default function PersonalMembership() {
                             placeholder="'-' 없이 입력"
                             className="flex-1 px-5 py-4 bg-[#ffede8] border-2 border-[#cca499] rounded-2xl text-base md:text-lg focus:border-[#f97f06] focus:outline-none transition-all"
                         />
-                        <button
-                            type="button"
-                            className="px-5 md:px-7 bg-[#feb300] text-[#382400] font-bold rounded-2xl whitespace-nowrap hover:brightness-95 transition"
-                        >
-                            인증번호 전송
-                        </button>
                     </div>
                 </div>
 
