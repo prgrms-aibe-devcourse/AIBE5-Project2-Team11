@@ -112,6 +112,14 @@ const formatEnv = (env) => {
   return env.length > 15 ? env.slice(0, 15) + '...' : env;
 };
 
+const formatLocation = (loc) => {
+  if (!loc) return '-';
+  const cleaned = loc.replace(/\(.*?\)/g, '').replace(/[,·]/g, ' ').trim();
+  const parts = cleaned.split(/\s+/);
+  if (parts.length >= 2) return `${parts[0]} ${parts[1]}`;
+  return parts[0] || '-';
+};
+
 export const InfoItem = ({ label, value }) => (
     <div className="flex flex-col gap-1">
       <span className="text-xs font-medium text-gray-500">{label}</span>
@@ -1307,6 +1315,12 @@ const ApplicationModal = ({ isOpen, onClose, job }) => {
 export default function JobDetail() {
   const { id } = useParams();
   const [job, setJob] = useState(null);
+  const [popularJobs, setPopularJobs] = useState([]);
+  const [similarJobs, setSimilarJobs] = useState([]);
+  const [isPopularExpanded, setIsPopularExpanded] = useState(false);
+  const [isSimilarExpanded, setIsSimilarExpanded] = useState(false);
+  const [isLoadingPopularJobs, setIsLoadingPopularJobs] = useState(true);
+  const [isLoadingSimilarJobs, setIsLoadingSimilarJobs] = useState(true);
   const [isLoadingJob, setIsLoadingJob] = useState(true);
   const [jobError, setJobError] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -1369,6 +1383,103 @@ export default function JobDetail() {
     }
   }, [id]);
 
+  useEffect(() => {
+    setIsPopularExpanded(false);
+    setIsSimilarExpanded(false);
+  }, [id]);
+
+  useEffect(() => {
+    const fetchPopularJobs = async () => {
+      setIsLoadingPopularJobs(true);
+      try {
+        const data = await jobPostingApi.getJobPostings({
+          size: 100,
+          page: 0
+        });
+
+        if (data?.content?.length) {
+          const popularJobsList = data.content
+            .map((apiJob) => ({
+              id: apiJob.jobPostingId,
+              company: apiJob.companyName || '미상',
+              title: apiJob.title || '제목 없음',
+              location: apiJob.workRegion || '전국',
+              date: apiJob.applicationEndDate ? apiJob.applicationEndDate.toString() : '상시',
+              employmentType: apiJob.employmentType,
+              mainCategory: apiJob.mainCategory,
+              subCategory: apiJob.subCategory,
+              viewCount: apiJob.viewCount || 0
+            }))
+            .filter((item) => String(item.id) !== String(id))
+            .sort((a, b) => b.viewCount - a.viewCount)
+            .slice(0, 5);
+
+          setPopularJobs(popularJobsList);
+        } else {
+          setPopularJobs([]);
+        }
+      } catch (error) {
+        console.error('인기 공고 데이터 조회 실패:', error);
+        setPopularJobs([]);
+      } finally {
+        setIsLoadingPopularJobs(false);
+      }
+    };
+
+    fetchPopularJobs();
+  }, [id]);
+
+  useEffect(() => {
+    const mainCategory = job?.original?.mainCategory;
+    const subCategory = job?.original?.subCategory;
+    if (!mainCategory || !subCategory) {
+      setSimilarJobs([]);
+      setIsLoadingSimilarJobs(false);
+      return;
+    }
+
+    const fetchSimilarJobs = async () => {
+      setIsLoadingSimilarJobs(true);
+      try {
+        const data = await jobPostingApi.getJobPostings({
+          mainCategory,
+          subCategory,
+          size: 100,
+          page: 0
+        });
+
+        if (data?.content?.length) {
+          const similarJobsList = data.content
+            .map((apiJob) => ({
+              id: apiJob.jobPostingId,
+              company: apiJob.companyName || '미상',
+              title: apiJob.title || '제목 없음',
+              location: apiJob.workRegion || '전국',
+              date: apiJob.applicationEndDate ? apiJob.applicationEndDate.toString() : '상시',
+              employmentType: apiJob.employmentType,
+              mainCategory: apiJob.mainCategory,
+              subCategory: apiJob.subCategory,
+              viewCount: apiJob.viewCount || 0
+            }))
+            .filter((item) => String(item.id) !== String(id))
+            .sort((a, b) => b.viewCount - a.viewCount)
+            .slice(0, 5);
+
+          setSimilarJobs(similarJobsList);
+        } else {
+          setSimilarJobs([]);
+        }
+      } catch (error) {
+        console.error('유사 공고 데이터 조회 실패:', error);
+        setSimilarJobs([]);
+      } finally {
+        setIsLoadingSimilarJobs(false);
+      }
+    };
+
+    fetchSimilarJobs();
+  }, [id, job?.original?.mainCategory, job?.original?.subCategory]);
+
   const toggleBookmark = async () => {
     if (isUnauthenticatedMember) {
       alert('로그인 후 이용할 수 있습니다.');
@@ -1419,9 +1530,14 @@ export default function JobDetail() {
                       <i className="ri-map-pin-line text-gray-400"></i>{orig.compAddr || job.location || '위치 미상'}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      {job.tags?.map((t, i) => <span key={`tag-${i}`} className="px-3 py-1 bg-orange-50 text-orange-600 text-xs font-bold rounded-full border border-orange-100 whitespace-nowrap">{t}</span>)}
-                      {job.workEnv?.map((env, i) => <span key={`env-${i}`} className="px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-full border border-emerald-100 whitespace-nowrap">{formatEnv(env)}</span>)}
-                      {job.tech?.map((tech, i) => <span key={`tech-${i}`} className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-full border border-gray-200 whitespace-nowrap">#{tech}</span>)}
+                      {job.tags?.map((t, i) => (
+                        <span
+                          key={`tag-${i}`}
+                          className="px-3 py-1 bg-orange-50 text-orange-600 text-xs font-bold rounded-full border border-orange-100 whitespace-nowrap"
+                        >
+                          {t}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -1444,6 +1560,32 @@ export default function JobDetail() {
                 <InfoItem label="근무 기간" value={formatTermDate(orig.termDate || job.date)} />
                 <InfoItem label="담당자" value={orig.regagnName} />
                 <InfoItem label="연락처" value={orig.cntctNo} />
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <p className="text-xs font-medium text-gray-500 mb-2">근무 환경</p>
+                {job.workEnv?.length || job.tech?.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {job.workEnv?.map((env, i) => (
+                      <span
+                        key={`detail-env-${i}`}
+                        className="px-3 py-1 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-full border border-emerald-100 whitespace-nowrap"
+                      >
+                        {formatEnv(env)}
+                      </span>
+                    ))}
+                    {job.tech?.map((tech, i) => (
+                      <span
+                        key={`detail-tech-${i}`}
+                        className="px-3 py-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-full border border-gray-200 whitespace-nowrap"
+                      >
+                        #{tech}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm font-semibold text-gray-900">-</p>
+                )}
               </div>
 
               {/* 버튼 영역 */}
@@ -1482,6 +1624,162 @@ export default function JobDetail() {
               </div>
             </div>
           </div>
+
+          <div className="mt-10 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 to-gray-200"></div>
+              <span className="px-3 py-1 rounded-full border border-gray-200 bg-gray-50 text-xs font-bold tracking-wide text-gray-500">
+                추천 공고
+              </span>
+              <div className="h-px flex-1 bg-gradient-to-r from-gray-200 via-gray-300 to-transparent"></div>
+            </div>
+          </div>
+
+          <section className="mt-8 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+            <div className="flex items-center mb-4">
+              <div className="flex items-center gap-2">
+                <i className="ri-fire-line text-[#E66235] text-lg"></i>
+                <h2 className="text-lg sm:text-xl font-extrabold text-gray-900">지금 인기 공고</h2>
+              </div>
+            </div>
+
+            {isLoadingPopularJobs ? (
+              <div className="py-8 flex items-center justify-center">
+                <div className="animate-spin w-6 h-6 border-2 border-[#E66235] border-t-transparent rounded-full"></div>
+              </div>
+            ) : popularJobs.length === 0 ? (
+              <p className="text-sm text-gray-500 py-4">표시할 인기 공고가 없습니다.</p>
+            ) : (
+              <>
+                <div className="divide-y divide-gray-100">
+                  {popularJobs.slice(0, isPopularExpanded ? 5 : 2).map((popularJob) => (
+                    <Link
+                      key={popularJob.id}
+                      to={`/jobs/${popularJob.id}`}
+                      className="group flex items-center justify-between gap-4 py-4 first:pt-2 last:pb-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          {popularJob.employmentType && (
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-md">
+                              {popularJob.employmentType}
+                            </span>
+                          )}
+                          {popularJob.mainCategory && (
+                            <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-xs font-bold rounded-md">
+                              {popularJob.mainCategory}
+                            </span>
+                          )}
+                          {popularJob.subCategory && (
+                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-md">
+                              {popularJob.subCategory}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-base font-bold text-gray-900 truncate group-hover:text-[#5D4037] transition-colors">
+                          {popularJob.title}
+                        </p>
+                        <p className="text-sm text-gray-500 truncate mt-0.5">
+                          {popularJob.company} . {formatLocation(popularJob.location)}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className={`text-sm font-bold ${formatTermDate(popularJob.date) === '상시' ? 'text-blue-500' : 'text-orange-500'}`}>
+                          {formatTermDate(popularJob.date)}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">조회 {popularJob.viewCount.toLocaleString()}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                {popularJobs.length > 2 && (
+                  <div className="pt-4 mt-2 text-center border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => setIsPopularExpanded((prev) => !prev)}
+                      className="inline-flex items-center gap-1.5 text-sm font-bold text-[#E66235] hover:text-[#D45326] transition-colors"
+                    >
+                      {isPopularExpanded ? '접기' : '펼치기'}
+                      <i className={`ri-arrow-${isPopularExpanded ? 'up' : 'down'}-s-line`}></i>
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
+
+          <section className="mt-8 bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+            <div className="flex items-center mb-4">
+              <div className="flex items-center gap-2">
+                <i className="ri-briefcase-4-line text-[#E66235] text-lg"></i>
+                <h2 className="text-lg sm:text-xl font-extrabold text-gray-900">유사한 공고</h2>
+              </div>
+            </div>
+
+            {isLoadingSimilarJobs ? (
+              <div className="py-8 flex items-center justify-center">
+                <div className="animate-spin w-6 h-6 border-2 border-[#E66235] border-t-transparent rounded-full"></div>
+              </div>
+            ) : similarJobs.length === 0 ? (
+              <p className="text-sm text-gray-500 py-4">같은 직무 분류의 유사 공고가 없습니다.</p>
+            ) : (
+              <>
+                <div className="divide-y divide-gray-100">
+                  {similarJobs.slice(0, isSimilarExpanded ? 5 : 2).map((similarJob) => (
+                    <Link
+                      key={similarJob.id}
+                      to={`/jobs/${similarJob.id}`}
+                      className="group flex items-center justify-between gap-4 py-4 first:pt-2 last:pb-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                          {similarJob.employmentType && (
+                            <span className="px-2 py-0.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-md">
+                              {similarJob.employmentType}
+                            </span>
+                          )}
+                          {similarJob.mainCategory && (
+                            <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-xs font-bold rounded-md">
+                              {similarJob.mainCategory}
+                            </span>
+                          )}
+                          {similarJob.subCategory && (
+                            <span className="px-2 py-0.5 bg-emerald-50 text-emerald-600 text-xs font-bold rounded-md">
+                              {similarJob.subCategory}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-base font-bold text-gray-900 truncate group-hover:text-[#5D4037] transition-colors">
+                          {similarJob.title}
+                        </p>
+                        <p className="text-sm text-gray-500 truncate mt-0.5">
+                          {similarJob.company} . {formatLocation(similarJob.location)}
+                        </p>
+                      </div>
+                      <div className="shrink-0 text-right">
+                        <p className={`text-sm font-bold ${formatTermDate(similarJob.date) === '상시' ? 'text-blue-500' : 'text-orange-500'}`}>
+                          {formatTermDate(similarJob.date)}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">조회 {similarJob.viewCount.toLocaleString()}</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+                {similarJobs.length > 2 && (
+                  <div className="pt-4 mt-2 text-center border-t border-gray-100">
+                    <button
+                      type="button"
+                      onClick={() => setIsSimilarExpanded((prev) => !prev)}
+                      className="inline-flex items-center gap-1.5 text-sm font-bold text-[#E66235] hover:text-[#D45326] transition-colors"
+                    >
+                      {isSimilarExpanded ? '접기' : '펼치기'}
+                      <i className={`ri-arrow-${isSimilarExpanded ? 'up' : 'down'}-s-line`}></i>
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+          </section>
         </div>
 
         {/* 모달 렌더링 영역 */}
