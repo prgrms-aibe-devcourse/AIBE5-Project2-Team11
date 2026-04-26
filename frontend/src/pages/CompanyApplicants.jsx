@@ -33,6 +33,7 @@ export default function CompanyApplicants() {
     const navigate = useNavigate();
     const [applicants, setApplicants] = useState([]);
     const [jobTitle, setJobTitle] = useState("불러오는 중...");
+    const [isJobClosed, setIsJobClosed] = useState(false);
     const [loading, setLoading] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState("전체");
     const [selectedApplicantId, setSelectedApplicantId] = useState(null);
@@ -64,6 +65,7 @@ export default function CompanyApplicants() {
                 ]);
 
                 setJobTitle(jobDetail.title || "제목 없음");
+                setIsJobClosed(Boolean(jobDetail.isClosed));
                 
                 const formattedData = applicantsData.map(app => ({
                     id: app.applicationId,
@@ -134,6 +136,10 @@ export default function CompanyApplicants() {
 
     const handleChangeStatus = async (newStatusLabel) => {
         if (!selectedApplicant) return;
+        if (isJobClosed) {
+            alert("마감된 공고는 지원자 상태를 변경할 수 없습니다.");
+            return;
+        }
         
         const newStatusEnum = REVERSE_STATUS_MAP[newStatusLabel];
         if (!newStatusEnum) return;
@@ -196,6 +202,7 @@ export default function CompanyApplicants() {
                         <ApplicantDetail
                             applicant={selectedApplicant}
                             onChangeStatus={handleChangeStatus}
+                            isJobClosed={isJobClosed}
                         />
                     </div>
                 </div>
