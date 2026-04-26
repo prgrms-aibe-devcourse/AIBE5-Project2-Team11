@@ -28,9 +28,15 @@ export default function ApplicantCard({ applicant, isSelected, onClick }) {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-[#3C2A21]">{applicant.name}</div>
-                    <div className="text-sm text-[#8C715D] truncate">
-                        {applicant.birthDate ? `${applicant.birthDate} (${applicant.age}세, 만)` : ""}{applicant.birthDate ? " · " : ""}{applicant.disability}
+                    <div className="font-semibold text-[#3C2A21]">
+                        {applicant.name}
+                        {applicant.age != null ? ` (${applicant.age}세)` : ""}
+                    </div>
+                    <div className="text-sm text-[#8C715D] whitespace-normal break-words leading-snug">
+                        {applicant.birthDate || ""}
+                    </div>
+                    <div className="text-sm text-[#8C715D] whitespace-normal break-words leading-snug">
+                        {applicant.disability || ""}
                     </div>
                 </div>
 
