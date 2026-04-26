@@ -113,12 +113,12 @@ export default function Hero() {
               <i className="ri-sparkling-2-line group-hover:scale-110 transition-transform duration-200"></i>
               AI 추천 받기
             </button>
-            <a
-              href="/jobs"
-              className="px-7 py-3 bg-white text-[#2C160D] font-bold rounded-full border-2 border-[#2C160D]/10 hover:border-[#2C160D]/30 transition"
+            <button
+              onClick={() => navigate("/jobs")}
+              className="px-7 py-3 bg-white text-[#2C160D] font-bold rounded-full border-2 border-[#2C160D]/10 hover:border-[#2C160D]/30 transition cursor-pointer"
             >
               채용공고 보기
-            </a>
+            </button>
           </div>
         </div>
       </section>
