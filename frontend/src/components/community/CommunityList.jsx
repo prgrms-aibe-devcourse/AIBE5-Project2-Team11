@@ -115,13 +115,76 @@ export default function CommunityList() {
     if (e.key === "Enter") runSearch();
   };
 
-  const pageButtons =
-    totalPages > 0
-      ? Array.from({ length: totalPages }, (_, i) => i + 1)
-      : [];
+   const pageButtons =
+     totalPages > 0
+       ? Array.from({ length: totalPages }, (_, i) => i + 1)
+       : [];
 
-  return (
-    <div className="max-w-7xl mx-auto px-10 py-8 bg-[#FDFBF7]">
+   const renderPagination = () => {
+     if (totalPages <= 1) return null;
+     let startPage = Math.max(1, currentPage - 2);
+     let endPage = Math.min(totalPages, currentPage + 2);
+
+     if (endPage - startPage < 4) {
+       if (startPage === 1) {
+         endPage = Math.min(totalPages, 5);
+       } else if (endPage === totalPages) {
+         startPage = Math.max(1, totalPages - 4);
+       }
+     }
+
+     return (
+       <div className="mt-12 flex items-center justify-center gap-2">
+         <button
+           onClick={() => currentPage > 1 && setCurrentPage(currentPage - 1)}
+           disabled={currentPage === 1}
+           className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+         >
+           <i className="ri-arrow-left-s-line"></i>
+         </button>
+         {startPage > 1 && (
+           <>
+             <button onClick={() => setCurrentPage(1)} className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-all">1</button>
+             {startPage > 2 && <span className="text-gray-400">...</span>}
+           </>
+         )}
+
+         {Array.from({ length: endPage - startPage + 1 }).map((_, i) => {
+           const p = startPage + i;
+           return (
+             <button
+               key={p}
+               onClick={() => setCurrentPage(p)}
+               className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold transition-all ${
+                 currentPage === p 
+                   ? 'bg-[#E66235] text-white shadow-md' 
+                   : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+               }`}
+             >
+               {p}
+             </button>
+           );
+         })}
+
+         {endPage < totalPages && (
+           <>
+             {endPage < totalPages - 1 && <span className="text-gray-400">...</span>}
+             <button onClick={() => setCurrentPage(totalPages)} className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-all">{totalPages}</button>
+           </>
+         )}
+         <button
+           onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
+           disabled={currentPage === totalPages}
+           className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+         >
+           <i className="ri-arrow-right-s-line"></i>
+         </button>
+       </div>
+     );
+   };
+
+   return (
+     <div className="max-w-7xl mx-auto px-10 py-8 bg-[#FDFBF7]">
       <div className="flex items-center justify-between mb-8">
         <div className="flex gap-2">
           {tabs.map((tab) => (
@@ -160,10 +223,10 @@ export default function CommunityList() {
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-sm text-gray-600 font-medium">
-          총 <span className="text-[#E66235]">{totalElements}</span>개의 게시글
-        </span>
+       <div className="flex justify-between items-center mb-4">
+         <span className="text-sm text-gray-600 font-medium">
+           총 <span className="text-[#E66235]">{totalElements}</span>개의 게시글 (전체 페이지: {totalPages})
+         </span>
 
         <div className="flex border border-gray-200 rounded-md overflow-hidden">
           {["latest", "popular"].map((type) => (
@@ -272,24 +335,7 @@ export default function CommunityList() {
         </table>
       </div>
 
-      {!loading && pageButtons.length > 0 && (
-        <div className="flex justify-center items-center gap-2 mt-8">
-          {pageButtons.map((num) => (
-            <button
-              key={num}
-              type="button"
-              onClick={() => setCurrentPage(num)}
-              className={`w-8 h-8 rounded-full text-sm font-bold transition-colors ${
-                currentPage === num
-                  ? "bg-[#2A1D16] text-white"
-                  : "text-gray-400 hover:bg-gray-100"
-              }`}
-            >
-              {num}
-            </button>
-          ))}
-        </div>
-      )}
+       {!loading && totalPages > 0 && renderPagination()}
     </div>
   );
 }

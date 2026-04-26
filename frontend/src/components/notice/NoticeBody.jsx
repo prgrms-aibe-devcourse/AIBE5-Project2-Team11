@@ -65,6 +65,69 @@ export default function NoticeBody() {
         fetchNotices(page, searchKeyword);
     };
 
+    const renderPagination = () => {
+        if (totalPages <= 1) return null;
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+
+        if (endPage - startPage < 4) {
+            if (startPage === 1) {
+                endPage = Math.min(totalPages, 5);
+            } else if (endPage === totalPages) {
+                startPage = Math.max(1, totalPages - 4);
+            }
+        }
+
+        return (
+            <div className="mt-12 flex items-center justify-center gap-2">
+                <button
+                    onClick={() => currentPage > 1 && handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                    <i className="ri-arrow-left-s-line"></i>
+                </button>
+                {startPage > 1 && (
+                    <>
+                        <button onClick={() => handlePageChange(1)} className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-all">1</button>
+                        {startPage > 2 && <span className="text-gray-400">...</span>}
+                    </>
+                )}
+
+                {Array.from({ length: endPage - startPage + 1 }).map((_, i) => {
+                    const p = startPage + i;
+                    return (
+                        <button
+                            key={p}
+                            onClick={() => handlePageChange(p)}
+                            className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold transition-all ${
+                                currentPage === p 
+                                    ? 'bg-[#E66235] text-white shadow-md' 
+                                    : 'bg-white border border-gray-200 text-gray-700 hover:bg-gray-50'
+                            }`}
+                        >
+                            {p}
+                        </button>
+                    );
+                })}
+
+                {endPage < totalPages && (
+                    <>
+                        {endPage < totalPages - 1 && <span className="text-gray-400">...</span>}
+                        <button onClick={() => handlePageChange(totalPages)} className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-700 hover:bg-gray-50 font-medium transition-all">{totalPages}</button>
+                    </>
+                )}
+                <button
+                    onClick={() => currentPage < totalPages && handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="w-10 h-10 rounded-lg flex items-center justify-center border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                    <i className="ri-arrow-right-s-line"></i>
+                </button>
+            </div>
+        );
+    };
+
     return (
         <>
             <section className="w-full bg-[#2C160D] text-white">
@@ -85,7 +148,7 @@ export default function NoticeBody() {
             <section className="max-w-5xl mx-auto px-6 py-10">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-5">
                     <p className="text-sm text-[#8B6B4A]">
-                        총 <span className="font-semibold">{notices.length}</span>개의 공지사항
+                        총 <span className="font-semibold">{notices.length}</span>개의 공지사항 (전체 페이지: {totalPages})
                     </p>
 
                     <div className="flex items-center gap-2">
@@ -132,21 +195,7 @@ export default function NoticeBody() {
                     ))}
                 </div>
 
-                <div className="flex justify-center items-center gap-2 mt-8">
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                        <button
-                            key={page}
-                            onClick={() => handlePageChange(page)}
-                            className={`w-8 h-8 rounded-md text-sm ${
-                                currentPage === page
-                                    ? "bg-[#3A2317] text-white"
-                                    : "text-[#8B6B4A]"
-                            }`}
-                        >
-                            {page}
-                        </button>
-                    ))}
-                </div>
+                {renderPagination()}
             </section>
             )}
         </>
