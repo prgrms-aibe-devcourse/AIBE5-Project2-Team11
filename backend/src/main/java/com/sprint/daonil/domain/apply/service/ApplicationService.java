@@ -6,6 +6,7 @@ import com.sprint.daonil.domain.apply.dto.ApplicationDetailResponseDto;
 import com.sprint.daonil.domain.apply.dto.ApplicationListResponseDto;
 import com.sprint.daonil.domain.apply.entity.Application;
 import com.sprint.daonil.domain.apply.eunmtype.Status;
+import com.sprint.daonil.domain.apply.event.ApplicationStatusChangedEvent;
 import com.sprint.daonil.domain.apply.repository.ApplicationRepository;
 import com.sprint.daonil.domain.jobposting.entity.JobPosting;
 import com.sprint.daonil.domain.jobposting.repository.JobPostingRepository;
@@ -16,6 +17,8 @@ import com.sprint.daonil.domain.member.repository.ProfileRepository;
 import com.sprint.daonil.domain.resume.entity.Resume;
 import com.sprint.daonil.domain.resume.repository.ResumeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -34,6 +38,7 @@ public class ApplicationService {
     private final ResumeRepository resumeRepository;
     private final MemberRepository memberRepository;
     private final ProfileRepository profileRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
     // 공고 지원
     @Transactional
@@ -178,8 +183,21 @@ public class ApplicationService {
         }
 
         try {
-            Status status = Status.valueOf(statusStr);
-            application.setStatus(status);
+            Status newStatus = Status.valueOf(statusStr);
+            Status oldStatus = application.getStatus();
+            application.setStatus(newStatus);
+
+            // 상태가 실제로 변경된 경우에만 이벤트 발행
+            // → 이벤트는 트랜잭션 커밋 후 비동기로 처리됨 (ApplicationStatusEventListener)
+            if (oldStatus != newStatus) {
+                eventPublisher.publishEvent(new ApplicationStatusChangedEvent(
+                        application.getApplicationId(),
+                        application.getMember().getMemberId(),
+                        application.getJobPosting().getTitle(),
+                        oldStatus,
+                        newStatus
+                ));
+            }
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "유효하지 않은 상태 값입니다.");
         }

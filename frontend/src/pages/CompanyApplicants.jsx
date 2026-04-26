@@ -37,10 +37,11 @@ export default function CompanyApplicants() {
     const [selectedStatus, setSelectedStatus] = useState("전체");
     const [selectedApplicantId, setSelectedApplicantId] = useState(null);
 
-    // 나이 계산 함수
+    // 나이 계산 함수 (만 나이)
     const calculateAge = (birthDateStr) => {
-        if (!birthDateStr) return "정보 없음";
+        if (!birthDateStr || birthDateStr === "정보 없음") return null;
         const birthDate = new Date(birthDateStr);
+        if (isNaN(birthDate.getTime())) return null;
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
         const m = today.getMonth() - birthDate.getMonth();
@@ -72,6 +73,7 @@ export default function CompanyApplicants() {
                     appliedDate: new Date(app.appliedAt).toLocaleDateString(),
                     resumeId: app.resumeId,
                     age: calculateAge(app.birthDate),
+                    birthDate: app.birthDate || null,
                     gender: app.gender || "정보 없음",
                     disability: app.disability || "정보 없음",
                     phone: app.phone || app.phoneNumber || "연락처 미등록",
