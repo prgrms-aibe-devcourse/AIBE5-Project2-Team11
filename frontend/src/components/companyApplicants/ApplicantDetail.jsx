@@ -80,7 +80,7 @@ export default function ApplicantDetail({ applicant, onChangeStatus }) {
                         <div className="flex-1">
                             <h2 className="text-2xl font-bold text-[#3C2A21]">{applicant.name}</h2>
                             <p className="mt-1 text-sm text-[#8C715D]">
-                                {applicant.age}세 · {applicant.gender} · {applicant.disability}
+                                {applicant.birthDate ? `${applicant.birthDate} (${applicant.age}세, 만)` : ""}{applicant.birthDate ? " · " : ""}{applicant.disability}
                             </p>
                             <p className="mt-1 text-sm text-[#A08670]">
                                 지원일 {applicant.appliedDate}
