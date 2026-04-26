@@ -11,6 +11,7 @@ import java.util.List;
 @Builder
 public class ProfileRequestDto {
 
+    private String birthDate;
     private String career;
     private String preferredJob;
     private String preferredRegion;
