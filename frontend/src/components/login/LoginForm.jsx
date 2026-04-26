@@ -34,6 +34,7 @@ export default function LoginForm({ setMemberType}) {
                 body: JSON.stringify({
                     loginId: form.username,
                     password: form.password,
+                    role: "JOB_SEEKER",  // 개인회원 (구직자)
                 }),
             });
 
