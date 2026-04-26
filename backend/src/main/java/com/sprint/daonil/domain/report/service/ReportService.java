@@ -42,6 +42,11 @@ public class ReportService {
         Post post =  postRepository.findById(postId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 게시글입니다."));
 
+        // 중복 신고 체크
+        if (reportRepository.existsByReporterMemberIdAndTargetTypeAndTargetId(
+                memberId, TargetType.POST, postId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "회원님께서 이미 신고한 게시글입니다.");
+        }
 
         // 신고 생성
         Report report = new Report();
@@ -79,6 +84,12 @@ public class ReportService {
         // 댓글 조회
         PostComment comment = commentRepository.findById(commentId).orElseThrow(() ->
                 new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 댓글입니다."));
+
+        // 중복 신고 체크
+        if (reportRepository.existsByReporterMemberIdAndTargetTypeAndTargetId(
+                memberId, TargetType.COMMENT, commentId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "이미 신고한 댓글입니다.");
+        }
 
         // 신고 생성
         Report report = new Report();
