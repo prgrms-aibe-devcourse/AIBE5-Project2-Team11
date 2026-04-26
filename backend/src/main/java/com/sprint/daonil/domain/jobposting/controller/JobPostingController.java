@@ -33,12 +33,13 @@ public class JobPostingController {
             @RequestParam(required = false) String envLiftPower,
             @RequestParam(required = false) String envLstnTalk,
             @RequestParam(required = false) String envStndWalk,
-            @PageableDefault(size = 10) Pageable pageable) {
+            @RequestParam(required = false, defaultValue = "latest") String sortBy,
+            @PageableDefault(size = 12) Pageable pageable) {
 
         Page<JobPostingResponseDto> result = jobPostingService.getJobPostings(
             keyword, mainCategory, subCategory, workRegion,
             envBothHands, envEyesight, envHandWork, envLiftPower, envLstnTalk, envStndWalk,
-            pageable);
+            sortBy, pageable);
         return ResponseEntity.ok(result);
     }
 

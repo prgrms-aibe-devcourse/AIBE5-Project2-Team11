@@ -58,10 +58,10 @@ export default function JobsPage() {
     envBothHands: '',
     envEyesight: '',
     envHandWork: '',
-    envLiftPower: '',
     envLstnTalk: '',
     envStndWalk: ''
   });
+  const [sortBy, setSortBy] = useState('latest');
 
   // 활성화된 필터 개수 계산
   const activeFilterCount = Object.values(filters).filter(val => val !== '').length;
@@ -138,6 +138,7 @@ export default function JobsPage() {
         envLiftPower: filters.envLiftPower || undefined,
         envLstnTalk: filters.envLstnTalk || undefined,
         envStndWalk: filters.envStndWalk || undefined,
+        sortBy: sortBy,
         page: currentPage,
         size: 12
       });
@@ -170,7 +171,7 @@ export default function JobsPage() {
       fetchJobs(0);
     }, 300);
     return () => clearTimeout(timeoutId);
-  }, [searchTerm, filters]);
+  }, [searchTerm, filters, sortBy]);
 
   const handlePageChange = (pageNum) => {
     if (pageNum >= 0 && pageNum < totalPages) {
@@ -458,8 +459,24 @@ export default function JobsPage() {
           )}
 
           {/* 검색 결과 카운트 */}
-          <div className="mb-6 text-gray-600 font-medium">
-            총 <span className="text-[#E66235] font-bold">{totalElements}</span>건의 공고가 있습니다.
+          <div className="mb-6 flex items-center justify-between">
+            <div className="text-gray-600 font-medium">
+              총 <span className="text-[#E66235] font-bold">{totalElements}</span>건의 공고가 있습니다.
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <i className="ri-sort-desc text-gray-400"></i>
+              <select 
+                value={sortBy} 
+                onChange={(e) => setSortBy(e.target.value)}
+                className="bg-transparent border-none text-sm font-semibold text-gray-700 focus:ring-0 cursor-pointer"
+              >
+                <option value="latest">최신순</option>
+                <option value="views">조회순</option>
+                <option value="deadline">마감임박순</option>
+                <option value="applicants">지원자순</option>
+              </select>
+            </div>
           </div>
 
           {filteredJobs.length > 0 ? (

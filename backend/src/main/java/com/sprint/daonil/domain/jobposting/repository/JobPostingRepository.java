@@ -23,7 +23,7 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
      */
     @EntityGraph(attributePaths = {"company"})
     @Query("SELECT jp FROM JobPosting jp WHERE jp.isClosed = :isClosed " +
-            "AND (:keyword IS NULL OR jp.title LIKE %:keyword% OR jp.content LIKE %:keyword%) " +
+            "AND (:keyword IS NULL OR jp.title LIKE %:keyword% OR jp.content LIKE %:keyword% OR jp.company.companyName LIKE %:keyword%) " +
             "AND (:mainCategory IS NULL OR jp.mainCategory = :mainCategory) " +
             "AND (:subCategory IS NULL OR jp.subCategory = :subCategory) " +
             "AND (:workRegion IS NULL OR jp.workRegion LIKE %:workRegion%) " +
@@ -32,7 +32,8 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
             "AND (:envHandWork IS NULL OR jp.envHandWork = :envHandWork) " +
             "AND (:envLiftPower IS NULL OR jp.envLiftPower = :envLiftPower) " +
             "AND (:envLstnTalk IS NULL OR jp.envLstnTalk = :envLstnTalk) " +
-            "AND (:envStndWalk IS NULL OR jp.envStndWalk = :envStndWalk)")
+            "AND (:envStndWalk IS NULL OR jp.envStndWalk = :envStndWalk) " +
+            "AND (jp.applicationEndDate IS NULL OR jp.applicationEndDate >= CURRENT_DATE)")
     Page<JobPosting> findByFilters(@Param("keyword") String keyword,
                                    @Param("mainCategory") String mainCategory,
                                    @Param("subCategory") String subCategory,
@@ -45,6 +46,38 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Long> {
                                    @Param("envStndWalk") String envStndWalk,
                                    @Param("isClosed") Boolean isClosed,
                                    Pageable pageable);
+
+    /**
+     * 3. 지원자순 정렬 검색
+     */
+    @EntityGraph(attributePaths = {"company"})
+    @Query("SELECT jp FROM JobPosting jp LEFT JOIN Application a ON a.jobPosting = jp " +
+            "WHERE jp.isClosed = :isClosed " +
+            "AND (:keyword IS NULL OR jp.title LIKE %:keyword% OR jp.content LIKE %:keyword% OR jp.company.companyName LIKE %:keyword%) " +
+            "AND (:mainCategory IS NULL OR jp.mainCategory = :mainCategory) " +
+            "AND (:subCategory IS NULL OR jp.subCategory = :subCategory) " +
+            "AND (:workRegion IS NULL OR jp.workRegion LIKE %:workRegion%) " +
+            "AND (:envBothHands IS NULL OR jp.envBothHands = :envBothHands) " +
+            "AND (:envEyesight IS NULL OR jp.envEyesight = :envEyesight) " +
+            "AND (:envHandWork IS NULL OR jp.envHandWork = :envHandWork) " +
+            "AND (:envLiftPower IS NULL OR jp.envLiftPower = :envLiftPower) " +
+            "AND (:envLstnTalk IS NULL OR jp.envLstnTalk = :envLstnTalk) " +
+            "AND (:envStndWalk IS NULL OR jp.envStndWalk = :envStndWalk) " +
+            "AND (jp.applicationEndDate IS NULL OR jp.applicationEndDate >= CURRENT_DATE) " +
+            "GROUP BY jp " +
+            "ORDER BY COUNT(a) DESC, jp.createdAt DESC")
+    Page<JobPosting> findByFiltersOrderByApplicants(@Param("keyword") String keyword,
+                                                   @Param("mainCategory") String mainCategory,
+                                                   @Param("subCategory") String subCategory,
+                                                   @Param("workRegion") String workRegion,
+                                                   @Param("envBothHands") String envBothHands,
+                                                   @Param("envEyesight") String envEyesight,
+                                                   @Param("envHandWork") String envHandWork,
+                                                   @Param("envLiftPower") String envLiftPower,
+                                                   @Param("envLstnTalk") String envLstnTalk,
+                                                   @Param("envStndWalk") String envStndWalk,
+                                                   @Param("isClosed") Boolean isClosed,
+                                                   Pageable pageable);
 
     /**
      * 2. 채용공고 조회수 증가 (상세 조회용)
