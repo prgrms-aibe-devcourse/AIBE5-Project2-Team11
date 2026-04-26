@@ -3,7 +3,7 @@ export default function ApplicantsStatusTabs({
                                                  setSelectedStatus,
                                                  statusCount,
                                              }) {
-    const tabs = ["전체", "검토전", "합격", "불합격"];
+    const tabs = ["전체", "검토전", "면접검토", "최종합격", "불합격"];
 
     return (
         <div className="flex flex-wrap gap-2">

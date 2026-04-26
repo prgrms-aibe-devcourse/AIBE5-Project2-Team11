@@ -19,6 +19,7 @@ public class JobPostingService {
 
     private final JobPostingRepository jobPostingRepository;
     private final CompanyRepository companyRepository;
+    private final com.sprint.daonil.domain.apply.repository.ApplicationRepository applicationRepository;
 
     // 채용공고 목록 조회 (다중 필터 + 페이징)
     @Transactional(readOnly = true)
@@ -31,14 +32,20 @@ public class JobPostingService {
         return jobPostingRepository.findByFilters(keyword, mainCategory, subCategory, workRegion, 
                 envBothHands, envEyesight, envHandWork, envLiftPower, envLstnTalk, envStndWalk,
                 false, pageable)
-                .map(JobPostingResponseDto::fromEntity);
+                .map(job -> {
+                    int count = applicationRepository.countByJobPosting_JobPostingId(job.getJobPostingId());
+                    return JobPostingResponseDto.fromEntity(job, count);
+                });
     }
 
     // 특정 회사 채용공고 목록 조회
     @Transactional(readOnly = true)
     public Page<JobPostingResponseDto> getJobPostingsByCompanyId(String loginId, Pageable pageable) {
         return jobPostingRepository.findByCompany_Member_LoginId(loginId, pageable)
-                .map(JobPostingResponseDto::fromEntity);
+                .map(job -> {
+                    int count = applicationRepository.countByJobPosting_JobPostingId(job.getJobPostingId());
+                    return JobPostingResponseDto.fromEntity(job, count);
+                });
     }
 
     // 채용공고 상세 조회 (조회수 증가 포함)
@@ -50,7 +57,9 @@ public class JobPostingService {
         JobPosting jobPosting = jobPostingRepository.findById(jobPostingId)
                 .orElseThrow(() -> new IllegalArgumentException("채용공고를 찾을 수 없습니다."));
 
-        return JobPostingResponseDto.fromEntity(jobPosting);
+        int count = applicationRepository.countByJobPosting_JobPostingId(jobPostingId);
+
+        return JobPostingResponseDto.fromEntity(jobPosting, count);
     }
 
     // 채용공고 등록 (Builder 패턴 적용)

@@ -1,5 +1,6 @@
 package com.sprint.daonil.domain.apply.service;
 
+import com.sprint.daonil.domain.apply.dto.ApplicationApplicantResponseDto;
 import com.sprint.daonil.domain.apply.dto.ApplicationCreateRequestDto;
 import com.sprint.daonil.domain.apply.dto.ApplicationDetailResponseDto;
 import com.sprint.daonil.domain.apply.dto.ApplicationListResponseDto;
@@ -141,5 +142,46 @@ public class ApplicationService {
         // 삭제
         applicationRepository.delete(application);
         return applicationId;
+    }
+
+    // 기업용: 특정 공고의 지원자 목록 조회
+    @Transactional(readOnly = true)
+    public java.util.List<ApplicationApplicantResponseDto> getApplicantsByJobPosting(Long jobPostingId, String loginId) {
+        JobPosting jobPosting = jobPostingRepository.findById(jobPostingId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "존재하지 않는 공고입니다."));
+
+        // 권한 체크: 요청자가 해당 공고를 올린 기업인지 확인
+        if (!jobPosting.getCompany().getMember().getLoginId().equals(loginId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "해당 공고의 지원자 목록을 볼 권한이 없습니다.");
+        }
+
+        return applicationRepository.findByJobPosting_JobPostingIdWithMemberAndResume(jobPostingId)
+                .stream()
+                .map(app -> {
+                    String birthDate = profileRepository.findByMemberId(app.getMember().getMemberId())
+                            .map(Profile::getBirthDate)
+                            .orElse("정보 없음");
+                    return ApplicationApplicantResponseDto.from(app, birthDate);
+                })
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    // 기업용: 지원자 상태 변경
+    @Transactional
+    public void updateApplicationStatus(Long applicationId, String statusStr, String loginId) {
+        Application application = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "지원 내역이 존재하지 않습니다."));
+
+        // 권한 체크: 요청자가 해당 공고를 올린 기업인지 확인
+        if (!application.getJobPosting().getCompany().getMember().getLoginId().equals(loginId)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "지원자 상태를 변경할 권한이 없습니다.");
+        }
+
+        try {
+            Status status = Status.valueOf(statusStr);
+            application.setStatus(status);
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "유효하지 않은 상태 값입니다.");
+        }
     }
 }
