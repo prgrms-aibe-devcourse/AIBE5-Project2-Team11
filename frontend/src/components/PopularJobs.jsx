@@ -158,7 +158,7 @@ export default function PopularJobs() {
 
   if (isLoading) {
     return (
-      <section className="bg-white py-16">
+      <section className="bg-[#FDFBF7] py-16">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin w-8 h-8 border-3 border-[#E66235] border-t-transparent rounded-full"></div>
@@ -178,7 +178,7 @@ export default function PopularJobs() {
   const canNext = currentIndex < maxIndex;
 
   return (
-    <section className="bg-white py-16">
+    <section className="bg-[#FDFBF7] py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         {/* 헤더 */}
         <div className="mb-10 text-center">

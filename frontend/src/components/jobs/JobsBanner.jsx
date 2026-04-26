@@ -300,7 +300,7 @@ export default function JobsPage() {
   const filteredJobs = jobs;
 
   return (
-      <div className="min-h-screen bg-gray-50 pb-20">
+      <div className="min-h-screen bg-[#FDFBF7] pb-20">
         {/* --- 배너 및 검색 영역 --- */}
         <div className="w-full bg-[#2A1D16] py-10">
           <div className="max-w-7xl mx-auto px-6 sm:px-10 flex flex-col gap-8">
