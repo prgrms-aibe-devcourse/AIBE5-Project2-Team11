@@ -175,13 +175,13 @@ export default function NoticeBody() {
                         <div className="text-right">작성일</div>
                     </div>
 
-                    {notices.map((notice) => (
+                    {notices.map((notice, index) => (
                         <div
                             key={notice.id}
                             onClick={() => navigate(`/notice/${notice.id}`)}
                             className="grid grid-cols-[80px_1fr_140px] items-center px-6 py-4 text-sm border-b border-[#F3EAE1] hover:bg-[#FFFCF8] cursor-pointer"
                         >
-                            <div className="text-[#9C866F]">{notice.id}</div>
+                            <div className="text-[#9C866F]">{(currentPage - 1) * itemsPerPage + index + 1}</div>
 
                             <div className="flex items-center gap-3">
                 <span className="px-2 py-1 text-xs rounded-md bg-[#FFF3DD] text-[#D18A1D] font-semibold">
