@@ -19,7 +19,6 @@ import java.util.Map;
 public class ReportController {
 
     private final ReportService reportService;
-    private final AlarmService alarmService;
 
     // 게시글 신고
     @PostMapping("/posts/{postId}/report")

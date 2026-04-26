@@ -503,17 +503,19 @@ export default function CommunityDetailContent() {
                         삭제
                       </button>
                     )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPostMenuOpen(false);
-                        setModalType("reportPost");
-                        setTargetId(detail.postId);
-                      }}
-                      className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                    >
-                      신고
-                    </button>
+                    {!isPostOwner && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPostMenuOpen(false);
+                          setModalType("reportPost");
+                          setTargetId(detail.postId);
+                        }}
+                        className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                      >
+                        신고
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -617,17 +619,19 @@ export default function CommunityDetailContent() {
                                 삭제
                               </button>
                             )}
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCommentMenuOpen(null);
-                                setModalType("reportComment");
-                                setTargetId(comment.commentId);
-                              }}
-                              className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
-                            >
-                              신고
-                            </button>
+                            {!isCommentOwner && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setCommentMenuOpen(null);
+                                  setModalType("reportComment");
+                                  setTargetId(comment.commentId);
+                                }}
+                                className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-sm"
+                              >
+                                신고
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
