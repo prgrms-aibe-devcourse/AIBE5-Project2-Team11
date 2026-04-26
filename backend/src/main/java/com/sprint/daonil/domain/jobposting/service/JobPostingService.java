@@ -28,14 +28,34 @@ public class JobPostingService {
                                                       String envBothHands, String envEyesight, 
                                                       String envHandWork, String envLiftPower, 
                                                       String envLstnTalk, String envStndWalk,
-                                                      Pageable pageable) {
-        return jobPostingRepository.findByFilters(keyword, mainCategory, subCategory, workRegion, 
-                envBothHands, envEyesight, envHandWork, envLiftPower, envLstnTalk, envStndWalk,
-                false, pageable)
-                .map(job -> {
-                    int count = applicationRepository.countByJobPosting_JobPostingId(job.getJobPostingId());
-                    return JobPostingResponseDto.fromEntity(job, count);
-                });
+                                                      String sortBy, Pageable pageable) {
+        
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.by("createdAt").descending();
+        
+        if ("views".equals(sortBy)) {
+            sort = org.springframework.data.domain.Sort.by("viewCount").descending();
+        } else if ("deadline".equals(sortBy)) {
+            sort = org.springframework.data.domain.Sort.by("applicationEndDate").ascending();
+        }
+        
+        org.springframework.data.domain.Pageable sortedPageable = org.springframework.data.domain.PageRequest.of(
+            pageable.getPageNumber(), pageable.getPageSize(), sort);
+
+        Page<JobPosting> result;
+        if ("applicants".equals(sortBy)) {
+            result = jobPostingRepository.findByFiltersOrderByApplicants(keyword, mainCategory, subCategory, workRegion, 
+                    envBothHands, envEyesight, envHandWork, envLiftPower, envLstnTalk, envStndWalk,
+                    false, pageable);
+        } else {
+            result = jobPostingRepository.findByFilters(keyword, mainCategory, subCategory, workRegion, 
+                    envBothHands, envEyesight, envHandWork, envLiftPower, envLstnTalk, envStndWalk,
+                    false, sortedPageable);
+        }
+
+        return result.map(job -> {
+            int count = applicationRepository.countByJobPosting_JobPostingId(job.getJobPostingId());
+            return JobPostingResponseDto.fromEntity(job, count);
+        });
     }
 
     // 특정 회사 채용공고 목록 조회
