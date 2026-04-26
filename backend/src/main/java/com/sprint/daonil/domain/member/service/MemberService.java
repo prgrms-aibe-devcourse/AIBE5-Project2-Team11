@@ -126,6 +126,26 @@ public class MemberService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
+        // 탈퇴한 계정 확인
+        if (member.getIsDeleted()) {
+            throw new IllegalArgumentException("삭제된 계정입니다. 관리자에게 문의해주세요.");
+        }
+
+        // 역할(Role) 확인
+        if (requestDto.getRole() != null && !requestDto.getRole().isEmpty()) {
+            try {
+                Role requestedRole = Role.valueOf(requestDto.getRole().toUpperCase());
+                if (!member.getRole().equals(requestedRole)) {
+                    throw new IllegalArgumentException("입력하신 역할과 계정의 역할이 일치하지 않습니다.");
+                }
+            } catch (IllegalArgumentException e) {
+                if (e.getMessage().contains("입력하신 역할과 계정의 역할이 일치하지 않습니다")) {
+                    throw e;
+                }
+                throw new IllegalArgumentException("유효하지 않은 역할입니다.");
+            }
+        }
+
         return member;
     }
 

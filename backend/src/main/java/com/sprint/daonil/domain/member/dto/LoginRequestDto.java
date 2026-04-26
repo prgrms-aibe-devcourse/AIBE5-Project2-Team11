@@ -11,4 +11,5 @@ public class LoginRequestDto {
 
     private String loginId;
     private String password;
+    private String role;  // JOB_SEEKER 또는 COMPANY
 }
