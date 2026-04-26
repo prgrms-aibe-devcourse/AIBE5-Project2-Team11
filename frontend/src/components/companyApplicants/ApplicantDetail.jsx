@@ -1,4 +1,4 @@
-export default function ApplicantDetail({ applicant, onChangeStatus }) {
+export default function ApplicantDetail({ applicant, onChangeStatus, isJobClosed = false }) {
     if (!applicant) {
         return (
             <section className="flex-1">
@@ -17,24 +17,24 @@ export default function ApplicantDetail({ applicant, onChangeStatus }) {
         if (currentStatus === "검토전") {
             return (
                 <>
-                    <button onClick={() => onChangeStatus("서류합격")} className="px-4 py-2 rounded-full text-sm font-medium bg-[#6F8E9D] text-white hover:bg-[#5A7482] transition">서류 합격</button>
-                    <button onClick={() => onChangeStatus("서류탈락")} className="px-4 py-2 rounded-full text-sm font-medium bg-white text-[#D9534F] border border-[#D9534F] hover:bg-[#FFF5F5] transition">서류 탈락</button>
+                    <button disabled={isJobClosed} onClick={() => onChangeStatus("서류합격")} className="px-4 py-2 rounded-full text-sm font-medium bg-[#6F8E9D] text-white hover:bg-[#5A7482] transition disabled:opacity-50 disabled:cursor-not-allowed">서류 합격</button>
+                    <button disabled={isJobClosed} onClick={() => onChangeStatus("서류탈락")} className="px-4 py-2 rounded-full text-sm font-medium bg-white text-[#D9534F] border border-[#D9534F] hover:bg-[#FFF5F5] transition disabled:opacity-50 disabled:cursor-not-allowed">서류 탈락</button>
                 </>
             );
         }
         if (currentStatus === "서류합격") {
             return (
                 <>
-                    <button onClick={() => onChangeStatus("면접합격")} className="px-4 py-2 rounded-full text-sm font-medium bg-[#6F8E9D] text-white hover:bg-[#5A7482] transition">면접 합격</button>
-                    <button onClick={() => onChangeStatus("면접탈락")} className="px-4 py-2 rounded-full text-sm font-medium bg-white text-[#D9534F] border border-[#D9534F] hover:bg-[#FFF5F5] transition">면접 탈락</button>
+                    <button disabled={isJobClosed} onClick={() => onChangeStatus("면접합격")} className="px-4 py-2 rounded-full text-sm font-medium bg-[#6F8E9D] text-white hover:bg-[#5A7482] transition disabled:opacity-50 disabled:cursor-not-allowed">면접 합격</button>
+                    <button disabled={isJobClosed} onClick={() => onChangeStatus("면접탈락")} className="px-4 py-2 rounded-full text-sm font-medium bg-white text-[#D9534F] border border-[#D9534F] hover:bg-[#FFF5F5] transition disabled:opacity-50 disabled:cursor-not-allowed">면접 탈락</button>
                 </>
             );
         }
         if (currentStatus === "면접합격") {
             return (
                 <>
-                    <button onClick={() => onChangeStatus("최종합격")} className="px-4 py-2 rounded-full text-sm font-medium bg-[#E66235] text-white hover:bg-[#D45326] transition">최종 합격</button>
-                    <button onClick={() => onChangeStatus("최종탈락")} className="px-4 py-2 rounded-full text-sm font-medium bg-white text-[#D9534F] border border-[#D9534F] hover:bg-[#FFF5F5] transition">최종 탈락</button>
+                    <button disabled={isJobClosed} onClick={() => onChangeStatus("최종합격")} className="px-4 py-2 rounded-full text-sm font-medium bg-[#E66235] text-white hover:bg-[#D45326] transition disabled:opacity-50 disabled:cursor-not-allowed">최종 합격</button>
+                    <button disabled={isJobClosed} onClick={() => onChangeStatus("최종탈락")} className="px-4 py-2 rounded-full text-sm font-medium bg-white text-[#D9534F] border border-[#D9534F] hover:bg-[#FFF5F5] transition disabled:opacity-50 disabled:cursor-not-allowed">최종 탈락</button>
                 </>
             );
         }
@@ -49,6 +49,11 @@ export default function ApplicantDetail({ applicant, onChangeStatus }) {
         <section className="flex-1">
             <div className="bg-white border border-[#EADFCC] rounded-2xl overflow-hidden shadow-sm">
                 <div className="px-6 py-4 bg-[#EEF2F5] border-b border-[#E0E6EA] flex flex-col md:flex-row md:items-center md:justify-end gap-3">
+                    {isJobClosed && (
+                        <p className="text-xs font-semibold text-[#A08670]">
+                            마감된 공고는 지원자 상태를 변경할 수 없습니다.
+                        </p>
+                    )}
                     <div className="flex items-center gap-2 flex-wrap">
                         {renderStatusButtons()}
                     </div>

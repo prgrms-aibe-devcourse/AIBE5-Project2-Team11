@@ -33,6 +33,7 @@ export default function CompanyApplicants() {
     const navigate = useNavigate();
     const [applicants, setApplicants] = useState([]);
     const [jobTitle, setJobTitle] = useState("불러오는 중...");
+    const [isJobClosed, setIsJobClosed] = useState(false);
     const [loading, setLoading] = useState(true);
     const [selectedStatus, setSelectedStatus] = useState("전체");
     const [selectedApplicantId, setSelectedApplicantId] = useState(null);
@@ -64,6 +65,7 @@ export default function CompanyApplicants() {
                 ]);
 
                 setJobTitle(jobDetail.title || "제목 없음");
+                setIsJobClosed(Boolean(jobDetail.isClosed));
                 
                 const formattedData = applicantsData.map(app => ({
                     id: app.applicationId,
@@ -117,13 +119,27 @@ export default function CompanyApplicants() {
         return applicants.filter((item) => item.status === selectedStatus);
     }, [applicants, selectedStatus]);
 
+    useEffect(() => {
+        const isSelectedInFiltered = filteredApplicants.some(
+            (item) => item.id === selectedApplicantId
+        );
+
+        if (!isSelectedInFiltered) {
+            setSelectedApplicantId(filteredApplicants[0]?.id ?? null);
+        }
+    }, [selectedStatus, filteredApplicants, selectedApplicantId]);
+
     const selectedApplicant =
-        applicants.find((item) => item.id === selectedApplicantId) ||
+        filteredApplicants.find((item) => item.id === selectedApplicantId) ||
         filteredApplicants[0] ||
-        applicants[0];
+        null;
 
     const handleChangeStatus = async (newStatusLabel) => {
         if (!selectedApplicant) return;
+        if (isJobClosed) {
+            alert("마감된 공고는 지원자 상태를 변경할 수 없습니다.");
+            return;
+        }
         
         const newStatusEnum = REVERSE_STATUS_MAP[newStatusLabel];
         if (!newStatusEnum) return;
@@ -153,9 +169,11 @@ export default function CompanyApplicants() {
                     <div className="mb-6">
                         <button
                             type="button"
-                            className="text-sm text-[#8A6E5A] hover:text-[#5B4636] transition"
+                            onClick={() => navigate("/company-jobpost-manage")}
+                            className="group inline-flex items-center gap-2 text-sm text-[#8A6E5A] hover:text-[#5B4636] transition"
                         >
-                            ← 공고 관리
+                            <i className="ri-sparkling-2-line group-hover:scale-110 transition-transform duration-200"></i>
+                            공고 관리
                         </button>
                     </div>
 
@@ -184,6 +202,7 @@ export default function CompanyApplicants() {
                         <ApplicantDetail
                             applicant={selectedApplicant}
                             onChangeStatus={handleChangeStatus}
+                            isJobClosed={isJobClosed}
                         />
                     </div>
                 </div>
