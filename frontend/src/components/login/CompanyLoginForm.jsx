@@ -30,6 +30,7 @@ export default function CompanyLoginForm( {setMemberType}) {
                 body: JSON.stringify({
                     loginId: form.username,
                     password: form.password,
+                    role: "COMPANY",  // 기업회원
                 }),
             });
 
