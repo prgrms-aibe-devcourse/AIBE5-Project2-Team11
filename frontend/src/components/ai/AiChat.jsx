@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { sampleJobs } from "../../data/sampleJobs";
-import { chatWithAi, getAiRecommendation, getDisabilityBasedRecommendations } from "../../api/aiApi";
+import { chatWithAi, getAiRecommendation, getDisabilityBasedRecommendations, getResumeBasedRecommendations, getUserResumes } from "../../api/aiApi";
 import { getQualificationsByCategory, getAllQualifications, getExamSchedules, searchQualifications, getQualificationDetail, getAiQualificationRecommendation } from "../../api/qualificationApi";
 
 export default function AiChat() {
@@ -23,16 +23,24 @@ export default function AiChat() {
     workEnvironments: [],
   });
 
+  // 사용자 정보 (이력서 기반 추천용)
+  const [memberId, setMemberId] = useState(null);
+
   // 추천 결과
   const [recommendations, setRecommendations] = useState([]);
   const [qualifications, setQualifications] = useState([]);
   const [recLoading, setRecLoading] = useState(false);
 
-  // 장애 유형별 추천 상태
+   // 장애 유형별 추천 상태
   const [disabilityRecommendations, setDisabilityRecommendations] = useState([]);
   const [selectedDisabilityForQuestion, setSelectedDisabilityForQuestion] = useState("");
   const [selectedRegionForDisability, setSelectedRegionForDisability] = useState("");
   const [showDisabilityTypeSelector, setShowDisabilityTypeSelector] = useState(false);
+
+  // 이력서 기반 추천 상태
+  const [resumeList, setResumeList] = useState([]);
+  const [selectedResumeForQuestion, setSelectedResumeForQuestion] = useState(null);
+  const [isLoadingResumes, setIsLoadingResumes] = useState(false);
 
   const disabilityTypes = ["지체장애", "시각장애", "청각장애", "언어장애", "지적장애", "정신장애"];
 
@@ -158,6 +166,18 @@ export default function AiChat() {
          return msg;
        }
     },
+    {
+       text: "📄 내 이력서와 비슷한 공고 추천",
+       requiredFilters: ["region"],
+       type: "resume",
+       template: (region) => {
+         let msg = "내 이력서 내용과 비슷한 공고 추천해줘";
+         if (region && region !== "전체") {
+           msg = `${region} 지역 내 이력서와 비슷한 공고 추천해줘`;
+         }
+         return msg;
+       }
+    },
   ];
 
   // 필터 선택 상태 (질문 선택용)
@@ -170,43 +190,48 @@ export default function AiChat() {
     qualificationCategory: "",
   });
 
-  // 프로필 데이터 로드
-  useEffect(() => {
-    const fetchProfileData = async () => {
-      try {
-        const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
-        if (!token) return;
+   // 프로필 데이터 로드
+   useEffect(() => {
+     const fetchProfileData = async () => {
+       try {
+         const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
+         if (!token) return;
 
-        const response = await fetch("/members/profile", {
-          method: "GET",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+         const response = await fetch("/members/profile", {
+           method: "GET",
+           headers: {
+             "Authorization": `Bearer ${token}`,
+             "Content-Type": "application/json",
+           },
+         });
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success && data.data) {
-            const profile = data.data;
-            const defaultEnvs = [];
-            if (profile.envBothHands === "1") defaultEnvs.push("sitting");
-            if (profile.envStndWalk === "1") defaultEnvs.push("standing");
+         if (response.ok) {
+           const data = await response.json();
+           if (data.success && data.data) {
+             const profile = data.data;
+             const defaultEnvs = [];
+             if (profile.envBothHands === "1") defaultEnvs.push("sitting");
+             if (profile.envStndWalk === "1") defaultEnvs.push("standing");
 
-            setFilters({
-              region: profile.preferredRegion || "",
-              jobMinor: profile.preferredJob || "",
-              workEnvironments: defaultEnvs,
-            });
-          }
-        }
-      } catch (err) {
-        console.error("프로필 로드 오류:", err);
-      }
-    };
+             setFilters({
+               region: profile.preferredRegion || "",
+               jobMinor: profile.preferredJob || "",
+               workEnvironments: defaultEnvs,
+             });
 
-    fetchProfileData();
-  }, []);
+             // memberId 설정
+             if (profile.memberId) {
+               setMemberId(profile.memberId);
+             }
+           }
+         }
+       } catch (err) {
+         console.error("프로필 로드 오류:", err);
+       }
+     };
+
+     fetchProfileData();
+   }, []);
 
   // 스크롤 자동
   useEffect(() => {
@@ -333,19 +358,36 @@ ${response.explanation}`;
     }
   };
 
-  // 질문 선택 (필터 입력 페이지 표시)
-  const handleSelectQuestion = (question) => {
-    setSelectedQuestion(question);
-    setRecommendations([]);  // 이전 추천 결과 초기화
-    setQualifications([]);   // 이전 자격증 추천 초기화
-    setTempFilters({
-      region: "",
-      jobMajor: "",
-      jobMinor: "",
-      workEnvironments: [],
-      qualificationCategory: "",
-    });
-  };
+   // 질문 선택 (필터 입력 페이지 표시)
+   const handleSelectQuestion = async (question) => {
+     setSelectedQuestion(question);
+     setRecommendations([]);  // 이전 추천 결과 초기화
+     setQualifications([]);   // 이전 자격증 추천 초기화
+     setTempFilters({
+       region: "",
+       jobMajor: "",
+       jobMinor: "",
+       workEnvironments: [],
+       qualificationCategory: "",
+     });
+
+     // 이력서 기반 추천 질문인 경우, 이력서 목록 로드
+     if (question.type === "resume") {
+       setIsLoadingResumes(true);
+       setSelectedResumeForQuestion(null);
+       try {
+         const resumes = await getUserResumes();
+         setResumeList(resumes);
+         console.log("이력서 목록:", resumes);
+       } catch (err) {
+         console.error("이력서 목록 로드 오류:", err);
+         alert("이력서를 불러올 수 없습니다. 이력서를 먼저 작성해주세요.");
+         setSelectedQuestion(null);
+       } finally {
+         setIsLoadingResumes(false);
+       }
+     }
+   };
 
   // 임시 필터 변경
   const handleTempFilterChange = (key, value) => {
@@ -368,60 +410,74 @@ ${response.explanation}`;
   const handleSendQuestionWithFilters = async () => {
     if (!selectedQuestion) return;
 
-     // 필수 필터 체크
-    const missingFilters = selectedQuestion.requiredFilters.filter((filterType) => {
-      if (filterType === "region") return !tempFilters.region;
-      if (filterType === "jobMajor") return !tempFilters.jobMajor;
-      if (filterType === "jobMinor") return !tempFilters.jobMinor;
-      if (filterType === "workEnvironments") return tempFilters.workEnvironments.length === 0;
-      if (filterType === "qualificationCategory") return !tempFilters.qualificationCategory;
-      if (filterType === "disabilityType") return !selectedDisabilityForQuestion;
-      return false;
-    });
+      // 필수 필터 체크
+     const missingFilters = selectedQuestion.requiredFilters.filter((filterType) => {
+       if (filterType === "region") return !tempFilters.region;
+       if (filterType === "jobMajor") return !tempFilters.jobMajor;
+       if (filterType === "jobMinor") return !tempFilters.jobMinor;
+       if (filterType === "workEnvironments") return tempFilters.workEnvironments.length === 0;
+       if (filterType === "qualificationCategory") return !tempFilters.qualificationCategory;
+       if (filterType === "disabilityType") return !selectedDisabilityForQuestion;
+       return false;
+     });
 
-    if (missingFilters.length > 0) {
-      alert(`다음 필터를 선택해주세요: ${missingFilters.join(", ")}`);
-      return;
-    }
+     // resume 타입은 선택된 이력서가 있으면 통과 (필수 필터 체크 후 별도 확인)
+     if (selectedQuestion.type === "resume") {
+       if (!selectedResumeForQuestion) {
+         alert("이력서를 선택해주세요.");
+         return;
+       }
+     } else if (missingFilters.length > 0) {
+       alert(`다음 필터를 선택해주세요: ${missingFilters.join(", ")}`);
+       return;
+     }
 
-    // 질문 생성
-    const finalQuestion = selectedQuestion.template(
-      tempFilters.region,
-      tempFilters.jobMajor,
-      tempFilters.jobMinor,
-      tempFilters.workEnvironments.map((id) => {
-        const opt = workEnvironmentOptions.find((o) => o.id === id);
-        return opt?.label;
-      }),
-      tempFilters.qualificationCategory,
-      selectedDisabilityForQuestion,
-      selectedRegionForDisability
-    );
+     // 질문 생성
+     const finalQuestion = selectedQuestion.template(
+       tempFilters.region,
+       tempFilters.jobMajor,
+       tempFilters.jobMinor,
+       tempFilters.workEnvironments.map((id) => {
+         const opt = workEnvironmentOptions.find((o) => o.id === id);
+         return opt?.label;
+       }),
+       tempFilters.qualificationCategory,
+       selectedDisabilityForQuestion,
+       selectedRegionForDisability
+     );
 
-    setMessages((prev) => [...prev, { role: "user", text: finalQuestion }]);
-    setSelectedQuestion(null);
-    setRecommendations([]);  // 새 추천 전 초기화
-    setQualifications([]);   // 새 추천 전 초기화
-    setRecLoading(true);
+     // resume 타입이 아닌 경우만 메시지 추가
+     if (selectedQuestion.type !== "resume") {
+       setMessages((prev) => [...prev, { role: "user", text: finalQuestion }]);
+     } else {
+       // resume 타입의 경우 사용자 질문 메시지 추가
+       const resumeQuestion = `'${selectedResumeForQuestion.title}' 이력서로 제 경력과 맞는 공고를 추천받고 싶습니다.`;
+       setMessages((prev) => [...prev, { role: "user", text: resumeQuestion }]);
+     }
 
-    try {
-      // 장애 유형별 추천
-      if (selectedQuestion.type === "disability") {
-        const disabilityResponse = await getDisabilityBasedRecommendations(
-          selectedDisabilityForQuestion,
-          5,
-          selectedRegionForDisability || "전체"
-        );
+     setSelectedQuestion(null);
+     setRecommendations([]);  // 새 추천 전 초기화
+     setQualifications([]);   // 새 추천 전 초기화
+     setRecLoading(true);
 
-        if (disabilityResponse && disabilityResponse.success) {
-          const recs = disabilityResponse.recommendations || [];
-          const explanation = disabilityResponse.explanation || "";
+     try {
+       // 장애 유형별 추천
+       if (selectedQuestion.type === "disability") {
+         const disabilityResponse = await getDisabilityBasedRecommendations(
+           selectedDisabilityForQuestion,
+           5,
+           selectedRegionForDisability || "전체"
+         );
 
-          const recsText = recs
-            .map((job, i) => `${i + 1}. ${job.title} @ ${job.company || "미정"} (점수: ${(job.matchScore * 100).toFixed(1)}%)`)
-            .join("\n");
+         if (disabilityResponse && disabilityResponse.success) {
+           const recs = disabilityResponse.recommendations || [];
+           const explanation = disabilityResponse.explanation || "";
 
-          const fullResponse = `
+           const recsText = recs
+             .map((job, i) => `${i + 1}. ${job.title} @ ${job.company || "미정"} (점수: ${(job.matchScore * 100).toFixed(1)}%)`)
+             .join("\n");
+
+           const fullResponse = `
 🏥 ${selectedDisabilityForQuestion}${selectedRegionForDisability && selectedRegionForDisability !== "전체" ? ` (${selectedRegionForDisability})` : ""} 맞춤 공고 TOP 5:
 
 ${recsText}
@@ -429,13 +485,63 @@ ${recsText}
 📊 분석:
 ${explanation}`;
 
-          setMessages((prev) => [...prev, { role: "bot", text: fullResponse }]);
-          setDisabilityRecommendations(recs);
-        } else {
-          const errorMsg = disabilityResponse?.error || "추천을 불러올 수 없습니다";
-          setMessages((prev) => [...prev, { role: "bot", text: `죄송합니다. ${errorMsg}` }]);
-        }
-       } else if (selectedQuestion.type === "qualification") {
+           setMessages((prev) => [...prev, { role: "bot", text: fullResponse }]);
+           setDisabilityRecommendations(recs);
+         } else {
+           const errorMsg = disabilityResponse?.error || "추천을 불러올 수 없습니다";
+           setMessages((prev) => [...prev, { role: "bot", text: `죄송합니다. ${errorMsg}` }]);
+         }
+         } else if (selectedQuestion.type === "resume") {
+         // 이력서 기반 추천
+         if (!selectedResumeForQuestion) {
+           setMessages((prev) => [...prev, { role: "bot", text: "이력서를 선택해주세요." }]);
+           setRecLoading(false);
+           return;
+         }
+
+         try {
+           const resumeResponse = await getResumeBasedRecommendations(
+             selectedResumeForQuestion.resumeId,
+             5,
+             tempFilters.region || "전체"
+           );
+
+           console.log("📊 Resume Recommendation Response:", resumeResponse);
+           
+           if (resumeResponse && resumeResponse.success) {
+             const recs = resumeResponse.topJobs || [];
+             const explanation = resumeResponse.explanation || "";
+
+             console.log("✅ Recommendations received:", recs);
+             console.log("🔍 First rec details:", recs[0]);
+
+             const recsText = recs
+               .map((job, i) => {
+                 const sim = parseFloat(job.similarity);
+                 console.log(`Job ${i+1}: similarity=${job.similarity}, parsed=${sim}, isNaN=${isNaN(sim)}`);
+                 return `${i + 1}. ${job.title || job.jobNm} @ ${job.company || job.busplaName || "미정"} (유사도: ${isNaN(sim) ? "계산중" : (sim * 100).toFixed(1)}%)`;
+               })
+               .join("\n");
+
+             const fullResponse = `
+📄 '${selectedResumeForQuestion.title}' 이력서와 비슷한 공고 TOP 5:
+
+${recsText}
+
+💡 분석:
+${explanation}`;
+
+             setMessages((prev) => [...prev, { role: "bot", text: fullResponse }]);
+             setRecommendations(recs);
+           } else {
+             const errorMsg = resumeResponse?.error || "추천을 불러올 수 없습니다";
+             setMessages((prev) => [...prev, { role: "bot", text: `죄송합니다. ${errorMsg}` }]);
+           }
+         } catch (err) {
+           console.error("이력서 기반 추천 오류:", err);
+           setMessages((prev) => [...prev, { role: "bot", text: "죄송합니다. 이력서 기반 추천을 처리할 수 없습니다." }]);
+         }
+        } else if (selectedQuestion.type === "qualification") {
          // AI 기반 자격증 추천 (depth2 필터링으로 자동 조회)
          const aiRecommendation = await getAiQualificationRecommendation(tempFilters.qualificationCategory);
 
@@ -644,10 +750,85 @@ ${response.explanation}`;
               ))}
             </div>
           </div>
-        ) : (
-          // 필터 선택 모드 또는 자격증 상세 검색 모드
-          <>
-            {selectedQuestion.type === "qualificationDetail" ? (
+         ) : (
+           // 필터 선택 모드 또는 자격증 상세 검색 모드 또는 이력서 선택
+           <>
+             {selectedQuestion.type === "resume" ? (
+               // 이력서 선택 모드
+               <div className="space-y-4 bg-purple-50 p-4 rounded-lg border border-purple-200">
+                 <div className="flex items-center justify-between">
+                   <h3 className="font-bold text-gray-800">📄 이력서 선택</h3>
+                   <button
+                     onClick={() => setSelectedQuestion(null)}
+                     className="text-sm text-gray-600 hover:text-gray-800"
+                   >
+                     ✕
+                   </button>
+                 </div>
+
+                 {isLoadingResumes ? (
+                   <div className="text-center py-4">
+                     <p className="text-gray-600">이력서를 불러오는 중...</p>
+                   </div>
+                 ) : resumeList.length === 0 ? (
+                   <div className="text-center py-4 text-red-600">
+                     <p>작성된 이력서가 없습니다.</p>
+                     <p className="text-sm text-gray-600 mt-2">먼저 이력서를 작성해주세요.</p>
+                   </div>
+                 ) : (
+                   <div className="space-y-3">
+                     <label className="text-sm font-semibold text-gray-700 block">추천에 사용할 이력서 선택</label>
+                     <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                       {resumeList.map((resume) => (
+                         <button
+                           key={resume.resumeId}
+                           onClick={() => setSelectedResumeForQuestion(resume)}
+                           className={`w-full text-left px-4 py-3 rounded-lg border-2 transition ${
+                             selectedResumeForQuestion?.resumeId === resume.resumeId
+                               ? "bg-purple-100 border-purple-600"
+                               : "bg-white border-gray-200 hover:border-purple-300"
+                           }`}
+                         >
+                           <div className="font-semibold text-gray-800">{resume.title}</div>
+                           <div className="text-xs text-gray-500 mt-1">
+                             업데이트: {new Date(resume.updatedAt).toLocaleDateString('ko-KR')}
+                           </div>
+                           {resume.isPublic && (
+                             <div className="text-xs text-blue-600 mt-1">🌐 공개</div>
+                           )}
+                         </button>
+                       ))}
+                     </div>
+                   </div>
+                 )}
+
+                 {/* 지역 필터 (선택) */}
+                 {selectedResumeForQuestion && (
+                   <div>
+                     <label className="text-sm font-semibold text-gray-700 mb-2 block">📍 지역 필터 (선택)</label>
+                     <select
+                       value={tempFilters.region}
+                       onChange={(e) => handleTempFilterChange("region", e.target.value)}
+                       className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                     >
+                       <option value="">지역 선택 안함 (전체)</option>
+                       {regions.map((region) => (
+                         <option key={region} value={region}>{region}</option>
+                       ))}
+                     </select>
+                   </div>
+                 )}
+
+                 {/* 전송 버튼 */}
+                 <button
+                   onClick={handleSendQuestionWithFilters}
+                   disabled={recLoading || !selectedResumeForQuestion}
+                   className="w-full px-4 py-2 bg-purple-500 text-white text-sm font-bold rounded-lg hover:bg-purple-600 disabled:opacity-50 transition"
+                 >
+                   {recLoading ? "처리 중..." : "이 이력서로 추천받기"}
+                 </button>
+               </div>
+             ) : selectedQuestion.type === "qualificationDetail" ? (
               // 자격증 상세 정보 검색 모드
               <div className="space-y-4 bg-blue-50 p-4 rounded-lg border border-blue-200">
                 <div className="flex items-center justify-between">

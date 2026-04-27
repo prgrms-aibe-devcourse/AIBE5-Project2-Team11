@@ -145,3 +145,56 @@ export const getDisabilityBasedRecommendations = async (disabilityType, topN = 3
     throw error;
   }
 };
+
+/**
+ * 사용자의 이력서 목록 조회
+ * 
+ * @returns {Array} 이력서 목록 (id, title, createdAt, updatedAt, isPublic)
+ */
+export const getUserResumes = async () => {
+  try {
+    const response = await api.get('/resumes?size=100');
+    // Page 객체의 content 추출
+    return response.data.content || response.data || [];
+  } catch (error) {
+    console.error('Error fetching user resumes:', error);
+    throw error;
+  }
+};
+
+/**
+ * ⭐ 새 기능: 이력서 기반 공고 추천 (text-embedding-3-small 사용)
+ * 
+ * 사용자가 선택한 이력서를 기반으로 공고 추천
+ * 
+ * @param {number} resumeId - 이력서 ID (선택한 이력서)
+ * @param {number} topN - 상위 몇 개 추천 (기본값: 5)
+ * @param {string} region - 지역 필터 (선택, 예: "서울", "경기")
+ * @returns {Object} { success, topJobs, explanation, count }
+ */
+export const getResumeBasedRecommendations = async (resumeId, topN = 5, region = null) => {
+  try {
+    const token = localStorage.getItem("authToken") || localStorage.getItem("accessToken");
+    
+    const requestData = {
+      resumeId: resumeId,
+      topN: topN,
+    };
+    
+    // 지역 필터 추가 (옵션)
+    if (region && region !== "전체") {
+      requestData.region = region;
+    }
+    
+    const response = await api.post('/api/ai/recommend/resume', requestData, {
+      headers: {
+        "Authorization": token ? `Bearer ${token}` : undefined,
+      }
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error calling resume-based recommendation API:', error);
+    throw error;
+  }
+};

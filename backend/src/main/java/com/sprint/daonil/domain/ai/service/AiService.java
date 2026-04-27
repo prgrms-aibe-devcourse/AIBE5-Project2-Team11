@@ -9,6 +9,8 @@ import com.sprint.daonil.domain.ai.util.DisabilityJobWeights;
 import com.sprint.daonil.domain.ai.util.WorkEnvironmentMatcher;
 import com.sprint.daonil.domain.ai.util.JobDetailAnalyzer;
 import com.sprint.daonil.domain.Certificate.Service.QualificationService;
+import com.sprint.daonil.domain.resume.repository.ResumeRepository;
+import com.sprint.daonil.domain.resume.entity.Resume;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,12 +28,13 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AiService {
 
-    @Value("${openai.api.key}")
-    private String openAiApiKey;
+     @Value("${openai.api.key}")
+     private String openAiApiKey;
 
-    private final JobEmbeddingRepository jobEmbeddingRepository;
-    private final QualificationService qualificationService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+     private final JobEmbeddingRepository jobEmbeddingRepository;
+     private final QualificationService qualificationService;
+     private final ResumeRepository resumeRepository;
+     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final String OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
     private static final String EMBEDDING_API_URL = "https://api.openai.com/v1/embeddings";
@@ -267,27 +270,71 @@ public class AiService {
      */
     public List<Map<String, Object>> getTopRecommendations(String query, List<Map<String, Object>> allJobs, int topN) {
         try {
+            log.info("========================================");
+            log.info("🔍 Starting TOP N recommendations");
+            log.info("📝 Query length: {} 문자", query.length());
+            log.info("📊 Total jobs: {}", allJobs.size());
+            log.info("🎯 Top N: {}", topN);
+            log.info("========================================");
+
             // 1단계: 질문 임베딩 생성 (1회만)
-            log.info("Step 1: Generating query embedding");
+            log.info("Step 1️⃣: Generating query embedding...");
             List<Double> queryEmbedding = getEmbedding(query);
             if (queryEmbedding.isEmpty()) {
-                log.warn("Failed to generate query embedding");
+                log.warn("❌ Failed to generate query embedding");
                 return allJobs.stream().limit(topN).collect(Collectors.toList());
             }
-            log.info("Query embedding generated: {} dimensions", queryEmbedding.size());
+            log.info("✅ Query embedding generated: {} dimensions", queryEmbedding.size());
 
             // 2단계: DB에서 모든 공고 임베딩 로드 (이미 저장됨!)
-            log.info("Step 2: Loading job embeddings from DB");
+            log.info("Step 2️⃣: Loading job embeddings from DB...");
             List<JobEmbedding> jobEmbeddingsFromDb = jobEmbeddingRepository.findAll();
-            log.info("Loaded {} job embeddings from DB", jobEmbeddingsFromDb.size());
+            log.info("✅ Loaded {} job embeddings from DB", jobEmbeddingsFromDb.size());
+
+            // 2-1단계: 임베딩이 없는 공고에 대해 자동 생성
+            if (jobEmbeddingsFromDb.size() < allJobs.size()) {
+                log.warn("⚠️ Some jobs don't have embeddings! Creating missing embeddings...");
+                log.info("  DB embeddings: {}, Total jobs: {}", jobEmbeddingsFromDb.size(), allJobs.size());
+                
+                Set<Long> embeddedJobIds = jobEmbeddingsFromDb.stream()
+                        .map(JobEmbedding::getJobId)
+                        .collect(Collectors.toSet());
+                
+                List<Map<String, Object>> missingJobs = allJobs.stream()
+                        .filter(job -> !embeddedJobIds.contains(extractJobId(job)))
+                        .collect(Collectors.toList());
+                
+                log.info("📝 {} jobs missing embeddings", missingJobs.size());
+                
+                // 누락된 공고들의 임베딩 생성
+                for (Map<String, Object> job : missingJobs) {
+                    try {
+                        Long jobId = extractJobId(job);
+                        String title = (String) job.getOrDefault("title", "");
+                        String content = (String) job.getOrDefault("content", "");
+                        
+                        if (jobId != null && !title.isEmpty()) {
+                            log.info("  🔄 Generating embedding for job_id={}: {}", jobId, title);
+                            saveJobEmbedding(jobId, title, content);
+                        }
+                    } catch (Exception e) {
+                        log.warn("  ⚠️ Failed to generate embedding for job", e);
+                    }
+                }
+                
+                // 다시 로드
+                log.info("  🔄 Reloading job embeddings...");
+                jobEmbeddingsFromDb = jobEmbeddingRepository.findAll();
+                log.info("  ✅ Now have {} job embeddings", jobEmbeddingsFromDb.size());
+            }
 
             if (jobEmbeddingsFromDb.isEmpty()) {
-                log.warn("No job embeddings found in database. Using fallback method.");
+                log.warn("⚠️ Still no job embeddings found. Using fallback.");
                 return allJobs.stream().limit(topN).collect(Collectors.toList());
             }
 
             // 3단계: 각 공고의 DB 임베딩과 유사도 계산
-            log.info("Step 3: Calculating cosine similarity");
+            log.info("Step 3️⃣: Calculating cosine similarity...");
             List<Map<String, Object>> scoredJobs = jobEmbeddingsFromDb.stream()
                     .map(jobEmb -> {
                         try {
@@ -307,23 +354,31 @@ public class AiService {
                                         return jobId != null && jobId.equals(jobEmb.getJobId());
                                     })
                                     .findFirst()
-                                    .orElse(new HashMap<>());
+                                    .orElse(null);
 
-                            // 유사도 추가
-                            jobInfo.put("similarity", String.format("%.4f", similarity));
+                            if (jobInfo == null) {
+                                log.warn("  ⚠️ No job info found for job_id: {}", jobEmb.getJobId());
+                                return null;
+                            }
+
+                            // 유사도 추가 (String으로 포맷)
+                            String similarityStr = String.format("%.4f", similarity);
+                            jobInfo.put("similarity", similarityStr);
                             jobInfo.put("jobId", jobEmb.getJobId());
 
                             return jobInfo;
                         } catch (Exception e) {
-                            log.error("Error processing job embedding for job_id: {}", jobEmb.getJobId(), e);
+                            log.error("❌ Error processing job embedding for job_id: {}", jobEmb.getJobId(), e);
                             return null;
                         }
                     })
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
+            log.info("✅ Calculated similarity for {} jobs", scoredJobs.size());
+
             // 4단계: 유사도 순으로 정렬하여 상위 topN 반환
-            log.info("Step 4: Selecting top {} jobs", topN);
+            log.info("Step 4️⃣: Selecting top {} jobs...", topN);
             List<Map<String, Object>> result = scoredJobs.stream()
                     .sorted((a, b) -> {
                         double simA = Double.parseDouble((String) a.getOrDefault("similarity", "0"));
@@ -333,11 +388,20 @@ public class AiService {
                     .limit(topN)
                     .collect(Collectors.toList());
 
-            log.info("Successfully returned {} recommended jobs", result.size());
+            log.info("========================================");
+            log.info("✅ Successfully returned {} recommended jobs", result.size());
+            for (int i = 0; i < result.size(); i++) {
+                Map<String, Object> job = result.get(i);
+                log.info("  {}. {} - similarity: {}", 
+                    i + 1, 
+                    job.getOrDefault("title", "?"), 
+                    job.getOrDefault("similarity", "?"));
+            }
+            log.info("========================================");
             return result;
 
         } catch (Exception e) {
-            log.error("Error in getTopRecommendations", e);
+            log.error("❌ Error in getTopRecommendations", e);
             return allJobs.stream().limit(topN).collect(Collectors.toList());
         }
     }
@@ -720,5 +784,164 @@ public class AiService {
             log.error("Error generating disability recommendation explanation", e);
         }
         return "추천 설명을 생성할 수 없습니다.";
+    }
+
+    // ===== 12️⃣ 이력서 텍스트 추출 (임베딩용) =====
+    /**
+     * resume_id를 기반으로 해당 이력서를 조회하여 텍스트로 변환
+     * 
+     * 이력서에 포함되는 정보:
+     * - 제목, 자기소개
+     * - 경력 (회사명, 직급, 근무 내용)
+     * - 학력 (학교명, 전공, 학위)
+     * - 스킬 (기술 스택)
+     * - 자격증
+     * - 장애 유형
+     * 
+     * @param resumeId 이력서 ID
+     * @return 이력서 전체 내용을 문자열로 변환한 결과 (NULL이면 이력서 없음)
+     */
+    public String buildResumeTextFromResumeId(Long resumeId) {
+        try {
+            log.info("========================================");
+            log.info("📥 Building resume text for resumeId: {}", resumeId);
+            log.info("========================================");
+
+            // 1단계: 해당 이력서 조회
+            Optional<Resume> optionalResume = resumeRepository.findById(resumeId);
+            
+            if (!optionalResume.isPresent()) {
+                log.warn("❌ No resume found for resumeId: {}", resumeId);
+                return null;
+            }
+
+            Resume resume = optionalResume.get();
+            log.info("✅ Resume found: {} (ID: {})", resume.getTitle(), resume.getResumeId());
+
+            // 2단계: 이력서 데이터를 문자열로 구성
+            StringBuilder resumeText = new StringBuilder();
+
+            // 이력서 제목과 자기소개
+            resumeText.append("【이력서】\n");
+            if (resume.getTitle() != null && !resume.getTitle().isEmpty()) {
+                log.info("  제목: {}", resume.getTitle());
+                resumeText.append("제목: ").append(resume.getTitle()).append("\n");
+            }
+            if (resume.getSelfIntroduction() != null && !resume.getSelfIntroduction().isEmpty()) {
+                log.info("  자기소개: {}", resume.getSelfIntroduction().substring(0, Math.min(100, resume.getSelfIntroduction().length())));
+                resumeText.append("자기소개: ").append(resume.getSelfIntroduction()).append("\n");
+            }
+            resumeText.append("\n");
+
+            // 경력
+            if (resume.getCareers() != null && !resume.getCareers().isEmpty()) {
+                log.info("  경력 {}개 포함", resume.getCareers().size());
+                resumeText.append("【 경력 】\n");
+                resume.getCareers().forEach(career -> {
+                    if (career.getCompanyName() != null) {
+                        log.info("    - 회사: {}, 직급: {}", career.getCompanyName(), career.getPosition());
+                        resumeText.append("- ").append(career.getCompanyName());
+                    }
+                    if (career.getPosition() != null) {
+                        resumeText.append(" / ").append(career.getPosition());
+                    }
+                    if (career.getStartDate() != null && career.getEndDate() != null) {
+                        resumeText.append(" (").append(career.getStartDate()).append(" ~ ").append(career.getEndDate()).append(")");
+                    }
+                    if (career.getContent() != null && !career.getContent().isEmpty()) {
+                        resumeText.append("\n  내용: ").append(career.getContent());
+                    }
+                    resumeText.append("\n");
+                });
+                resumeText.append("\n");
+            } else {
+                log.info("  경력: 없음");
+            }
+
+            // 학력
+            if (resume.getEducations() != null && !resume.getEducations().isEmpty()) {
+                log.info("  학력 {}개 포함", resume.getEducations().size());
+                resumeText.append("【 학력 】\n");
+                resume.getEducations().forEach(education -> {
+                    if (education.getSchoolName() != null) {
+                        resumeText.append("- ").append(education.getSchoolName());
+                    }
+                    if (education.getDegree() != null) {
+                        resumeText.append(" (").append(education.getDegree()).append(")");
+                    }
+                    if (education.getMajor() != null) {
+                        resumeText.append(" / 전공: ").append(education.getMajor());
+                    }
+                    if (education.getStartDate() != null && education.getEndDate() != null) {
+                        resumeText.append(" (").append(education.getStartDate()).append(" ~ ").append(education.getEndDate()).append(")");
+                    }
+                    resumeText.append("\n");
+                });
+                resumeText.append("\n");
+            } else {
+                log.info("  학력: 없음");
+            }
+
+            // 스킬 (기술 스택)
+            if (resume.getSkills() != null && !resume.getSkills().isEmpty()) {
+                log.info("  스킬 {}개 포함", resume.getSkills().size());
+                resumeText.append("【 스킬 】\n");
+                String skills = resume.getSkills().stream()
+                        .map(skill -> skill.getSkillKeyword())
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.joining(", "));
+                log.info("    기술: {}", skills);
+                resumeText.append("기술: ").append(skills).append("\n\n");
+            } else {
+                log.info("  스킬: 없음");
+            }
+
+            // 자격증
+            if (resume.getCertificates() != null && !resume.getCertificates().isEmpty()) {
+                log.info("  자격증 {}개 포함", resume.getCertificates().size());
+                resumeText.append("【 자격증 】\n");
+                resume.getCertificates().forEach(cert -> {
+                    if (cert.getQualification() != null && cert.getQualification().getName() != null) {
+                        log.info("    - {}", cert.getQualification().getName());
+                        resumeText.append("- ").append(cert.getQualification().getName());
+                    }
+                    if (cert.getAcquiredDate() != null) {
+                        resumeText.append(" (").append(cert.getAcquiredDate()).append(")");
+                    }
+                    resumeText.append("\n");
+                });
+                resumeText.append("\n");
+            } else {
+                log.info("  자격증: 없음");
+            }
+
+            // 장애 유형 (있을 경우)
+            if (resume.getDisabilities() != null && !resume.getDisabilities().isEmpty()) {
+                log.info("  장애 유형 {}개 포함", resume.getDisabilities().size());
+                resumeText.append("【 장애 유형 】\n");
+                resume.getDisabilities().forEach(disability -> {
+                    if (disability.getDisability() != null && disability.getDisability().getName() != null) {
+                        log.info("    - {}", disability.getDisability().getName());
+                        resumeText.append("- ").append(disability.getDisability().getName()).append("\n");
+                    }
+                });
+                resumeText.append("\n");
+            } else {
+                log.info("  장애 유형: 없음");
+            }
+
+            String result = resumeText.toString();
+            log.info("========================================");
+            log.info("✅ Resume text built successfully");
+            log.info("📊 총 길이: {} 문자", result.length());
+            log.info("📋 생성된 텍스트 미리보기:");
+            log.info("{}", result.substring(0, Math.min(500, result.length())));
+            log.info("========================================");
+            return result;
+
+        } catch (Exception e) {
+            log.error("❌ Error building resume text for resumeId: {}", resumeId, e);
+            return null;
+        }
     }
 }

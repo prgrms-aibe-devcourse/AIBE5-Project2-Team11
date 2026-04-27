@@ -256,86 +256,224 @@ public class AiController {
      *   ]
      * }
      */
-    @PostMapping("/recommend/disability")
-    public ResponseEntity<Map<String, Object>> recommendByDisability(@RequestBody Map<String, Object> request) {
-        try {
-            String disabilityType = (String) request.get("disabilityType");
-            String region = (String) request.get("region");
-            Integer topN = (Integer) request.getOrDefault("topN", 3);
+     @PostMapping("/recommend/disability")
+     public ResponseEntity<Map<String, Object>> recommendByDisability(@RequestBody Map<String, Object> request) {
+         try {
+             String disabilityType = (String) request.get("disabilityType");
+             String region = (String) request.get("region");
+             Integer topN = (Integer) request.getOrDefault("topN", 3);
 
-            if (disabilityType == null || disabilityType.trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("error", "장애 유형을 입력해주세요"));
-            }
+             if (disabilityType == null || disabilityType.trim().isEmpty()) {
+                 return ResponseEntity.badRequest()
+                         .body(Map.of("error", "장애 유형을 입력해주세요"));
+             }
 
-            log.info("Disability-based recommendation request: disability={}, region={}, topN={}", disabilityType, region, topN);
+             log.info("Disability-based recommendation request: disability={}, region={}, topN={}", disabilityType, region, topN);
 
-            // 1단계: DB에서 모든 활성화된 공고 조회
-            List<JobPosting> allJobs = jobPostingRepository.findAll().stream()
-                    .filter(job -> !job.getIsClosed())  // 마감되지 않은 공고만
-                    .collect(Collectors.toList());
+             // 1단계: DB에서 모든 활성화된 공고 조회
+             List<JobPosting> allJobs = jobPostingRepository.findAll().stream()
+                     .filter(job -> !job.getIsClosed())  // 마감되지 않은 공고만
+                     .collect(Collectors.toList());
 
-            // 지역 필터링
-            if (region != null && !region.isEmpty() && !"전체".equals(region)) {
-                allJobs = allJobs.stream()
-                        .filter(job -> job.getWorkRegion() != null && job.getWorkRegion().contains(region))
-                        .collect(Collectors.toList());
-                log.info("Filtered by region: {} (jobs: {})", region, allJobs.size());
-            }
+             // 지역 필터링
+             if (region != null && !region.isEmpty() && !"전체".equals(region)) {
+                 allJobs = allJobs.stream()
+                         .filter(job -> job.getWorkRegion() != null && job.getWorkRegion().contains(region))
+                         .collect(Collectors.toList());
+                 log.info("Filtered by region: {} (jobs: {})", region, allJobs.size());
+             }
 
-            // JobPosting을 Map으로 변환
-            List<Map<String, Object>> jobsMap = allJobs.stream()
-                    .map(job -> {
-                        Map<String, Object> jobMap = new HashMap<>();
-                        jobMap.put("id", job.getJobPostingId());
-                        jobMap.put("jobPostingId", job.getJobPostingId());
-                        jobMap.put("job_posting_id", job.getJobPostingId());
-                        jobMap.put("title", job.getTitle());
-                        jobMap.put("jobNm", job.getTitle());
-                        jobMap.put("company", job.getCompany() != null ? job.getCompany().getCompanyName() : "미정");
-                        jobMap.put("busplaName", job.getCompany() != null ? job.getCompany().getCompanyName() : "미정");
-                        jobMap.put("sub_category", job.getSubCategory());
-                        jobMap.put("job_category", job.getSubCategory());
-                        jobMap.put("work_region", job.getWorkRegion());
-                        jobMap.put("content", job.getContent());
-                        return jobMap;
-                    })
-                    .collect(Collectors.toList());
+             // JobPosting을 Map으로 변환
+             List<Map<String, Object>> jobsMap = allJobs.stream()
+                     .map(job -> {
+                         Map<String, Object> jobMap = new HashMap<>();
+                         jobMap.put("id", job.getJobPostingId());
+                         jobMap.put("jobPostingId", job.getJobPostingId());
+                         jobMap.put("job_posting_id", job.getJobPostingId());
+                         jobMap.put("title", job.getTitle());
+                         jobMap.put("jobNm", job.getTitle());
+                         jobMap.put("company", job.getCompany() != null ? job.getCompany().getCompanyName() : "미정");
+                         jobMap.put("busplaName", job.getCompany() != null ? job.getCompany().getCompanyName() : "미정");
+                         jobMap.put("sub_category", job.getSubCategory());
+                         jobMap.put("job_category", job.getSubCategory());
+                         jobMap.put("work_region", job.getWorkRegion());
+                         jobMap.put("content", job.getContent());
+                         return jobMap;
+                     })
+                     .collect(Collectors.toList());
 
-            log.info("Total jobs loaded: {}", jobsMap.size());
+             log.info("Total jobs loaded: {}", jobsMap.size());
 
-            // 2단계: 장애 유형별 추천 점수 계산
-            List<Map<String, Object>> recommendations = aiService.getDisabilityBasedRecommendations(
-                    jobsMap,
-                    disabilityType,
-                    topN
-            );
+             // 2단계: 장애 유형별 추천 점수 계산
+             List<Map<String, Object>> recommendations = aiService.getDisabilityBasedRecommendations(
+                     jobsMap,
+                     disabilityType,
+                     topN
+             );
 
-            // 3단계: 추천 설명 생성 (선택사항)
-            String explanation = aiService.generateDisabilityRecommendationExplanation(
-                    disabilityType,
-                    recommendations
-            );
+             // 3단계: 추천 설명 생성 (선택사항)
+             String explanation = aiService.generateDisabilityRecommendationExplanation(
+                     disabilityType,
+                     recommendations
+             );
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("disabilityType", disabilityType);
-            if (region != null && !region.isEmpty()) {
-                response.put("region", region);
-            }
-            response.put("count", recommendations.size());
-            response.put("totalJobCount", jobsMap.size());
-            response.put("recommendations", recommendations);
-            response.put("explanation", explanation);
+             Map<String, Object> response = new HashMap<>();
+             response.put("success", true);
+             response.put("disabilityType", disabilityType);
+             if (region != null && !region.isEmpty()) {
+                 response.put("region", region);
+             }
+             response.put("count", recommendations.size());
+             response.put("totalJobCount", jobsMap.size());
+             response.put("recommendations", recommendations);
+             response.put("explanation", explanation);
 
-            log.info("Successfully generated {} recommendations for disability: {}", recommendations.size(), disabilityType);
-            return ResponseEntity.ok(response);
+             log.info("Successfully generated {} recommendations for disability: {}", recommendations.size(), disabilityType);
+             return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
-            log.error("Error in disability-based recommendation endpoint", e);
-            return ResponseEntity.badRequest()
-                    .body(Map.of("success", false, "error", "오류가 발생했습니다: " + e.getMessage()));
-        }
-    }
+         } catch (Exception e) {
+             log.error("Error in disability-based recommendation endpoint", e);
+             return ResponseEntity.badRequest()
+                     .body(Map.of("success", false, "error", "오류가 발생했습니다: " + e.getMessage()));
+         }
+     }
 
-}
+     /**
+      * ⭐ 새로운 엔드포인트: 이력서 기반 공고 추천 (text-embedding-3-small 사용)
+      *
+      * 사용자가 선택한 이력서의 내용을 읽고, 이력서와 유사한 공고를 추천
+      *
+      * Request:
+      * {
+      *   "resumeId": 123,
+      *   "region": "서울" (선택사항)
+      *   "topN": 5 (상위 몇 개 추천할 것인지, 기본값 5)
+      * }
+      *
+      * Response:
+      * {
+      *   "success": true,
+      *   "topJobs": [
+      *     {
+      *       "id": 1,
+      *       "title": "공고 제목",
+      *       "company": "회사명",
+      *       "similarity": "0.8234"
+      *     }
+      *   ],
+      *   "explanation": "AI가 생성한 상세 설명...",
+      *   "count": 5
+      * }
+      */
+     @PostMapping("/recommend/resume")
+     public ResponseEntity<Map<String, Object>> recommendByResume(@RequestBody Map<String, Object> request) {
+         try {
+             Long resumeId = request.get("resumeId") instanceof Number 
+                     ? ((Number) request.get("resumeId")).longValue() 
+                     : Long.parseLong((String) request.get("resumeId"));
+             String region = (String) request.get("region");
+             Integer topN = (Integer) request.getOrDefault("topN", 5);
+
+             if (resumeId == null || resumeId <= 0) {
+                 return ResponseEntity.badRequest()
+                         .body(Map.of("success", false, "error", "이력서 ID를 입력해주세요"));
+             }
+
+             log.info("========================================");
+             log.info("📝 Resume-based recommendation request");
+             log.info("  resumeId={}, region={}, topN={}", resumeId, region, topN);
+             log.info("========================================");
+
+             // 1단계: 선택된 이력서의 내용 조회 및 텍스트로 변환
+             log.info("1️⃣ Extracting resume text...");
+             String resumeText = aiService.buildResumeTextFromResumeId(resumeId);
+             
+             if (resumeText == null || resumeText.trim().isEmpty()) {
+                 log.error("❌ Resume text is null or empty for resumeId: {}", resumeId);
+                 return ResponseEntity.badRequest()
+                         .body(Map.of("success", false, "error", "이력서 정보를 찾을 수 없습니다"));
+             }
+
+             log.info("✅ Resume text extracted (length: {})", resumeText.length());
+
+             // 2단계: DB에서 모든 활성화된 공고 조회
+             log.info("2️⃣ Loading job postings from DB...");
+             List<JobPosting> allJobs = jobPostingRepository.findAll().stream()
+                     .filter(job -> !job.getIsClosed())
+                     .collect(Collectors.toList());
+
+             log.info("✅ Loaded {} active job postings", allJobs.size());
+
+             // 지역 필터링
+             if (region != null && !region.isEmpty() && !"전체".equals(region)) {
+                 allJobs = allJobs.stream()
+                         .filter(job -> job.getWorkRegion() != null && job.getWorkRegion().contains(region))
+                         .collect(Collectors.toList());
+                 log.info("📍 Filtered by region: {} (jobs: {})", region, allJobs.size());
+             }
+
+             if (allJobs.isEmpty()) {
+                 log.warn("⚠️ No jobs found after filtering");
+                 return ResponseEntity.badRequest()
+                         .body(Map.of("success", false, "error", "해당 조건의 공고가 없습니다"));
+             }
+
+             // JobPosting을 Map으로 변환
+             log.info("3️⃣ Converting job postings to maps...");
+             List<Map<String, Object>> jobsMap = allJobs.stream()
+                     .map(job -> {
+                         Map<String, Object> jobMap = new HashMap<>();
+                         jobMap.put("id", job.getJobPostingId());
+                         jobMap.put("job_posting_id", job.getJobPostingId());
+                         jobMap.put("title", job.getTitle());
+                         jobMap.put("jobNm", job.getTitle());
+                         jobMap.put("company", job.getCompany() != null ? job.getCompany().getCompanyName() : "미정");
+                         jobMap.put("busplaName", job.getCompany() != null ? job.getCompany().getCompanyName() : "미정");
+                         jobMap.put("sub_category", job.getSubCategory());
+                         jobMap.put("job_category", job.getSubCategory());
+                         jobMap.put("work_region", job.getWorkRegion());
+                         jobMap.put("content", job.getContent());
+                         return jobMap;
+                     })
+                     .collect(Collectors.toList());
+
+             log.info("✅ Converted to {} job maps", jobsMap.size());
+
+             // 4단계: 이력서 임베딩으로 TOP N 공고 추천
+             log.info("4️⃣ Computing recommendations using embeddings...");
+             List<Map<String, Object>> topJobs = aiService.getTopRecommendations(resumeText, jobsMap, topN);
+
+             log.info("✅ Got {} top recommendations", topJobs.size());
+             for (int i = 0; i < topJobs.size(); i++) {
+                 Map<String, Object> job = topJobs.get(i);
+                 log.info("  {}. {} - similarity: {}",
+                     i + 1,
+                     job.getOrDefault("title", "?"),
+                     job.getOrDefault("similarity", "?"));
+             }
+
+             // 5단계: 추천 설명 생성
+             log.info("5️⃣ Generating recommendation explanation...");
+             String explanation = aiService.generateRecommendation(resumeText, topJobs);
+             log.info("✅ Explanation generated (length: {})", explanation.length());
+
+             Map<String, Object> response = new HashMap<>();
+             response.put("success", true);
+             response.put("topJobs", topJobs);
+             response.put("explanation", explanation);
+             response.put("count", topJobs.size());
+             response.put("region", region);
+
+             log.info("========================================");
+             log.info("✅ Successfully completed recommendation");
+             log.info("========================================");
+             return ResponseEntity.ok(response);
+
+         } catch (Exception e) {
+             log.error("❌ Error in resume-based recommendation endpoint", e);
+             return ResponseEntity.badRequest()
+                     .body(Map.of("success", false, "error", "오류가 발생했습니다: " + e.getMessage()));
+         }
+     }
+
+ }
