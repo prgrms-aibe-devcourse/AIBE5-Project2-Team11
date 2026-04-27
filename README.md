@@ -57,6 +57,16 @@
 
 ---
 
+## 👥 역할 분담
+
+| 👤 이름 | 🛠 주요 역할 |
+|--------|------------|
+| **이민홍** | 채용 공고 및 기업 관리 |
+| **황보혜** | 게시판 및 이력서 기능 |
+| **송지훈** | 로그인·회원가입(OAuth2), AI 챗봇 |
+| **전큰별** | 프론트엔드 구현 및 문서 정리 |
+
+
 ## 🛠 기술 스택
 
 ### 🎨 Frontend
@@ -82,13 +92,15 @@
 ### 🔧 Version Control
 - Git
 - GitHub
--  ESLint 9
+- ESLint 9
 
 ---
 
 ## 📂 프로젝트 구조
 
+
 ### 🖥 Backend
+```
 backend/
 ├── src/main/java/com/sprint/daonil/
 │   ├── domain/                 # 🚀 핵심 비즈니스 로직
@@ -109,8 +121,10 @@ backend/
 ├── src/main/resources/
 │   └── application.yml         # 환경 설정
 └── build.gradle                # 의존성 관리
+```
 
 ### 🌐 Frontend
+```
 frontend/
 ├── public/                     # 🖼️ 정적 리소스
 ├── src/
@@ -126,3 +140,4 @@ frontend/
 ├── index.html                  # 엔트리 파일
 ├── tailwind.config.js          # 스타일 설정
 └── vite.config.js              # 빌드 설정
+```
