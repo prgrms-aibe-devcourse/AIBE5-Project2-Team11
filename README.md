@@ -1,5 +1,7 @@
 # 🧑‍💼 다온일 (Daonil)
-
+<p style="margin-top: 30px;">
+  <img width="70" height="70" alt="daonil-logo" src="https://github.com/user-attachments/assets/2cb1b158-3077-462a-b1fc-5eb6f163cecd" />
+</p>
 > 장애인 맞춤형 채용 정보 플랫폼 및 AI 기반 일자리 추천 서비스
 
 ---
@@ -85,4 +87,39 @@
 ---
 
 ## 📂 프로젝트 구조
+backend/
+├── 📁 src/main/java/com/sprint/daonil/
+│   ├── 📦 domain/                 # 🚀 핵심 비즈니스 로직
+│   │   ├── 📂 alarm/              # 실시간/비동기 알림 서비스
+│   │   ├── 📂 apply/              # 채용 지원 및 상태 관리
+│   │   ├── 📂 certificate/        # 자격증 정보 연동 및 관리
+│   │   ├── 📂 community/          # 게시판 및 커뮤니티 기능
+│   │   ├── 📂 jobposting/         # 채용 공고(대/소분류) 관리
+│   │   ├── 📂 member/             # 회원가입, 로그인(OAuth2), 보안
+│   │   ├── 📂 profile/            # 장애 특화 프로필 및 이력서
+│   │   └── 📂 resume/             # 온라인 이력서 상세 관리
+│   ├── 📦 global/                 # 🌏 공통 모듈 및 설정
+│   │   ├── 📂 config/             # JPA, Security, QueryDSL 설정
+│   │   ├── 📂 error/              # 공통 예외 처리 (GlobalExceptionHandler)
+│   │   └── 📂 security/           # JWT, OAuth2 필터 및 인증 로직
+│   └── 📦 infra/                  # 🛠️ 외부 인프라 연동
+│       └── 📂 ai/                 # AI 임베딩 및 벡터 검색 연동
+├── 📁 src/main/resources/
+│   └── 📄 application.yml         # 환경 설정 정보
+└── 📄 build.gradle                # 프로젝트 의존성 관리
 
+frontend/
+├── 📁 public/                     # 🖼️ 정적 리소스 (로고, 파비콘 등)
+├── 📁 src/
+│   ├── 📂 api/                    # Axios 인스턴스 및 API 호출 함수
+│   ├── 📂 assets/                 # 스타일(CSS), 이미지 리소스
+│   ├── 📂 components/             #  재사용 가능한 UI 컴포넌트
+│   │   ├── 📂 common/             # Button, Input 등 공용 컴포넌트
+│   │   └── 📂 layout/             # Header, Footer, Sidebar 등
+│   ├── 📂 hooks/                  # 커스텀 훅 (useAuth, useFetch 등)
+│   ├── 📂 pages/                  # 📄페이지 단위 컴포넌트 (Route 매핑)
+│   ├── 📂 store/                  # 전역 상태 관리 (Context API)
+│   └── 📂 utils/                  # 유틸리티 함수 (날짜 포맷 등)
+├── 📄 index.html                  # 메인 HTML 엔트리
+├── 📄 tailwind.config.js          # Tailwind CSS 스타일 설정
+└── 📄 vite.config.js              # Vite 빌드 및 프록시 설정
